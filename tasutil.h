@@ -2,6 +2,7 @@
 #define tasutil_h
 
 #include "TLorentzVector.h"
+#include "Math/LorentzVector.h"
 
 namespace TasUtil
 {
@@ -12,11 +13,13 @@ namespace TasUtil
 
         // TLorentzVector
         TLorentzVector TLV(LorentzVector);
+        LorentzVector  LV (TLorentzVector);
 
         // LorentzVector
         float DPhi(LorentzVector, LorentzVector);
         float DEta(LorentzVector, LorentzVector);
         float DR  (LorentzVector, LorentzVector);
+        float MT  (LorentzVector, float, float);
     }
 }
 
