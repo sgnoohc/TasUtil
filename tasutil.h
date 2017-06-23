@@ -1,13 +1,23 @@
 #ifndef tasutil_h
 #define tasutil_h
 
-namespace Calc
+#include "TLorentzVector.h"
+
+namespace TasUtil
 {
-    typedef ROOT::Math::LorentzVector<ROOT::Math::PxPyPzE4D<float> > LorentzVector;
-    DPhi(LorentzVector, LorentzVector);
-    DEta(LorentzVector, LorentzVector);
-    DR  (LorentzVector, LorentzVector);
-    Mass(LorentzVector, LorentzVector);
+    namespace Calc
+    {
+        // Short hand for float LorentzVector
+        typedef ROOT::Math::LorentzVector<ROOT::Math::PxPyPzE4D<float> > LorentzVector;
+
+        // TLorentzVector
+        TLorentzVector TLV(LorentzVector);
+
+        // LorentzVector
+        float DPhi(LorentzVector, LorentzVector);
+        float DEta(LorentzVector, LorentzVector);
+        float DR  (LorentzVector, LorentzVector);
+    }
 }
 
 #endif
