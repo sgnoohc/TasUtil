@@ -81,6 +81,24 @@ TasUtil::Math::LorentzVector  TasUtil::Math::METLV(float met, float met_phi)
     return lv;
 }
 
+float TasUtil::Math::DEta(TLorentzVector a, TLorentzVector b) { return fabs(a.Eta() - b.Eta()); }
+float TasUtil::Math::DPhi(TLorentzVector a, TLorentzVector b) { return fabs(a.DeltaPhi(b));     }
+float TasUtil::Math::DR  (TLorentzVector a, TLorentzVector b) { return fabs(a.DeltaR(b));       }
+float TasUtil::Math::DPt (TLorentzVector a, TLorentzVector b) { return fabs(a.Pt()-b.Pt());     }
+float TasUtil::Math::Mass(TLorentzVector a, TLorentzVector b) { return (a + b).M();             }
+float TasUtil::Math::Pt  (TLorentzVector a, TLorentzVector b) { return (a + b).Pt();            }
+float TasUtil::Math::MT  (TLorentzVector p4  , float met, float met_phi) { return MT(p4, TLVMET(met, met_phi)); }
+
+float TasUtil::Math::DEta(TasUtil::Math::LorentzVector a, float                        b) { return DEta(TLV(a), TLVPtEtaPhiE(1,b,0,1)); }
+float TasUtil::Math::DPhi(TasUtil::Math::LorentzVector a, float                        b) { return DPhi(TLV(a), TLVPtEtaPhiE(1,0,b,1)); }
+float TasUtil::Math::DEta(TasUtil::Math::LorentzVector a, TasUtil::Math::LorentzVector b) { return DEta(TLV(a), TLV(b)               ); }
+float TasUtil::Math::DPhi(TasUtil::Math::LorentzVector a, TasUtil::Math::LorentzVector b) { return DPhi(TLV(a), TLV(b)               ); }
+float TasUtil::Math::DR  (TasUtil::Math::LorentzVector a, TasUtil::Math::LorentzVector b) { return DR  (TLV(a), TLV(b)               ); }
+float TasUtil::Math::DPt (TasUtil::Math::LorentzVector a, TasUtil::Math::LorentzVector b) { return DPt (TLV(a), TLV(b)               ); }
+float TasUtil::Math::Mass(TasUtil::Math::LorentzVector a, TasUtil::Math::LorentzVector b) { return Mass(TLV(a), TLV(b)               ); }
+float TasUtil::Math::Pt  (TasUtil::Math::LorentzVector a, TasUtil::Math::LorentzVector b) { return Pt  (TLV(a), TLV(b)               ); }
+float TasUtil::Math::MT  (TasUtil::Math::LorentzVector a, TasUtil::Math::LorentzVector b) { return MT  (TLV(a), TLV(b)               ); }
+float TasUtil::Math::MT  (TasUtil::Math::LorentzVector a, float met, float met_phi) { return MT(TLV(a), TLVMET(met, met_phi)); }
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 //

@@ -51,13 +51,13 @@ namespace TasUtil
         // The custom MT function, not from the TLorentzVector member function
         float MT  (TLorentzVector, TLorentzVector);
         // TLorentzVector
-        float DEta(TLorentzVector a, TLorentzVector b) { return fabs(a.Eta() - b.Eta()); }
-        float DPhi(TLorentzVector a, TLorentzVector b) { return fabs(a.DeltaPhi(b));     }
-        float DR  (TLorentzVector a, TLorentzVector b) { return fabs(a.DeltaR(b));       }
-        float DPt (TLorentzVector a, TLorentzVector b) { return fabs(a.Pt()-b.Pt());     }
-        float Mass(TLorentzVector a, TLorentzVector b) { return (a + b).M();             }
-        float Pt  (TLorentzVector a, TLorentzVector b) { return (a + b).Pt();            }
-        float MT  (TLorentzVector p4  , float met, float met_phi) { return MT(p4, TLVMET(met, met_phi)); }
+        float DEta(TLorentzVector a, TLorentzVector b);
+        float DPhi(TLorentzVector a, TLorentzVector b);
+        float DR  (TLorentzVector a, TLorentzVector b);
+        float DPt (TLorentzVector a, TLorentzVector b);
+        float Mass(TLorentzVector a, TLorentzVector b);
+        float Pt  (TLorentzVector a, TLorentzVector b);
+        float MT  (TLorentzVector p4  , float met, float met_phi);
         ///////////////////////////////////////////////////////////////////////////////////////////
         // LorentzVector related operations
         ///////////////////////////////////////////////////////////////////////////////////////////
@@ -66,16 +66,16 @@ namespace TasUtil
         LorentzVector LVXYZE(float, float, float, float);
         LorentzVector METLV(float, float);
         // LorentzVector
-        float DEta(LorentzVector a, float         b) { return DEta(TLV(a), TLVPtEtaPhiE(1,b,0,1)); }
-        float DPhi(LorentzVector a, float         b) { return DPhi(TLV(a), TLVPtEtaPhiE(1,0,b,1)); }
-        float DEta(LorentzVector a, LorentzVector b) { return DEta(TLV(a), TLV(b)               ); }
-        float DPhi(LorentzVector a, LorentzVector b) { return DPhi(TLV(a), TLV(b)               ); }
-        float DR  (LorentzVector a, LorentzVector b) { return DR  (TLV(a), TLV(b)               ); }
-        float DPt (LorentzVector a, LorentzVector b) { return DPt (TLV(a), TLV(b)               ); }
-        float Mass(LorentzVector a, LorentzVector b) { return Mass(TLV(a), TLV(b)               ); }
-        float Pt  (LorentzVector a, LorentzVector b) { return Pt  (TLV(a), TLV(b)               ); }
-        float MT  (LorentzVector a, LorentzVector b) { return MT  (TLV(a), TLV(b)               ); }
-        float MT  (LorentzVector a, float met, float met_phi) { return MT(TLV(a), TLVMET(met, met_phi)); }
+        float DEta(LorentzVector a, float         b);
+        float DPhi(LorentzVector a, float         b);
+        float DEta(LorentzVector a, LorentzVector b);
+        float DPhi(LorentzVector a, LorentzVector b);
+        float DR  (LorentzVector a, LorentzVector b);
+        float DPt (LorentzVector a, LorentzVector b);
+        float Mass(LorentzVector a, LorentzVector b);
+        float Pt  (LorentzVector a, LorentzVector b);
+        float MT  (LorentzVector a, LorentzVector b);
+        float MT  (LorentzVector a, float met, float met_phi);
     }
 
     ///////////////////////////////////////////////////////////////////////////////////////////////
