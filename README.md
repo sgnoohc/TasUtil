@@ -24,6 +24,8 @@ And just use like the following.
 
 A super simple CMS3 looper looks like this
 
+In a file called ```ScanChain.C``` copy paste the following
+
     #include "/home/users/phchang/cmstas/CORE_cms4/CMS3.cc"
     #include "tasutil.cc"
 
@@ -41,7 +43,7 @@ A super simple CMS3 looper looks like this
         }
     }
 
-And to actually loop over files create an entry script like...
+And to actually loop over files create an entry script like the following and call it ```run.C```
 
 
     {
@@ -51,4 +53,5 @@ And to actually loop over files create an entry script like...
         ch->Add("/hadoop/cms/store/group/snt/run2_data_test/DoubleEG_Run2017A-PromptReco-v2/V00-00-03_workaround/merged_ntuple_*.root");
         ScanChain(ch);
     }
+
 

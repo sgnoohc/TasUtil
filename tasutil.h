@@ -79,7 +79,7 @@ namespace TasUtil
     }
 
     ///////////////////////////////////////////////////////////////////////////////////////////////
-    // EventLooper (EL) class
+    // EventLooper (Looper) class
     ///////////////////////////////////////////////////////////////////////////////////////////////
     // NOTE: This class assumes accessing TTree in the SNT style which uses the following,
     // https://github.com/cmstas/Software/blob/master/makeCMS3ClassFiles/makeCMS3ClassFiles.C
@@ -88,7 +88,7 @@ namespace TasUtil
     // 2. "GetEntry(uint)"
     // 3. "progress(nevtProc'ed, total)"
     template <class TREECLASS>
-    class EL
+    class Looper
     {
         // Members
         TChain* tchain;
@@ -105,8 +105,8 @@ namespace TasUtil
         TREECLASS* treeclass;
         public:
         // Functions
-        EL(TChain* chain=0, TREECLASS* treeclass=0, int nEventsToProcess=-1);
-        ~EL();
+        Looper(TChain* chain=0, TREECLASS* treeclass=0, int nEventsToProcess=-1);
+        ~Looper();
         void setTChain(TChain* c);
         void setTreeClass(TREECLASS* t);
         bool allEventsInTreeProcessed();
@@ -125,7 +125,7 @@ namespace TasUtil
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 //
 //
-// Event Looper (EL) class template implementation
+// Event Looper (Looper) class template implementation
 //
 //
 ///////////////////////////////////////////////////////////////////////////////////////////////////
@@ -134,7 +134,7 @@ namespace TasUtil
 
 //_________________________________________________________________________________________________
 template <class TREECLASS>
-TasUtil::EL<TREECLASS>::EL(TChain* c, TREECLASS* t, int nevtToProc) :
+TasUtil::Looper<TREECLASS>::Looper(TChain* c, TREECLASS* t, int nevtToProc) :
     tchain(0),
     listOfFiles(0),
     fileIter(0),
@@ -156,7 +156,7 @@ TasUtil::EL<TREECLASS>::EL(TChain* c, TREECLASS* t, int nevtToProc) :
 
 //_________________________________________________________________________________________________
 template <class TREECLASS>
-TasUtil::EL<TREECLASS>::~EL()
+TasUtil::Looper<TREECLASS>::~Looper()
 {
     print("Finished EventLooping");
     exit();
@@ -166,7 +166,7 @@ TasUtil::EL<TREECLASS>::~EL()
 
 //_________________________________________________________________________________________________
 template <class TREECLASS>
-void TasUtil::EL<TREECLASS>::setTChain(TChain* c)
+void TasUtil::Looper<TREECLASS>::setTChain(TChain* c)
 {
     if (c)
     {
@@ -182,7 +182,7 @@ void TasUtil::EL<TREECLASS>::setTChain(TChain* c)
 
 //_________________________________________________________________________________________________
 template <class TREECLASS>
-void TasUtil::EL<TREECLASS>::setTreeClass(TREECLASS* t)
+void TasUtil::Looper<TREECLASS>::setTreeClass(TREECLASS* t)
 {
     if (t)
     {
@@ -196,7 +196,7 @@ void TasUtil::EL<TREECLASS>::setTreeClass(TREECLASS* t)
 
 //_________________________________________________________________________________________________
 template <class TREECLASS>
-bool TasUtil::EL<TREECLASS>::nextTree()
+bool TasUtil::Looper<TREECLASS>::nextTree()
 {
     if (!fileIter)
         error("fileIter not set but you are trying to access the next file", __FUNCTION__);
@@ -240,7 +240,7 @@ bool TasUtil::EL<TREECLASS>::nextTree()
 
 //_________________________________________________________________________________________________
 template <class TREECLASS>
-bool TasUtil::EL<TREECLASS>::allEventsInTreeProcessed()
+bool TasUtil::Looper<TREECLASS>::allEventsInTreeProcessed()
 {
     if (indexOfEventInTTree >= nEventsTotalInTree) return true;
     else return false;
@@ -248,7 +248,7 @@ bool TasUtil::EL<TREECLASS>::allEventsInTreeProcessed()
 
 //_________________________________________________________________________________________________
 template <class TREECLASS>
-bool TasUtil::EL<TREECLASS>::allEventsInChainProcessed()
+bool TasUtil::Looper<TREECLASS>::allEventsInChainProcessed()
 {
     if (nEventsProcessed >= (unsigned int) nEventsToProcess) return true;
     else return false;
@@ -256,7 +256,7 @@ bool TasUtil::EL<TREECLASS>::allEventsInChainProcessed()
 
 //_________________________________________________________________________________________________
 template <class TREECLASS>
-bool TasUtil::EL<TREECLASS>::nextEvent()
+bool TasUtil::Looper<TREECLASS>::nextEvent()
 {
     // Sanity check before loading the next event.
     if (!ttree) error("current ttree not set!", __FUNCTION__);
@@ -281,7 +281,7 @@ bool TasUtil::EL<TREECLASS>::nextEvent()
 
 //_________________________________________________________________________________________________
 template <class TREECLASS>
-void TasUtil::EL<TREECLASS>::setFileList()
+void TasUtil::Looper<TREECLASS>::setFileList()
 {
     if (!fileIter)
     {
@@ -292,7 +292,7 @@ void TasUtil::EL<TREECLASS>::setFileList()
 
 //_________________________________________________________________________________________________
 template <class TREECLASS>
-void TasUtil::EL<TREECLASS>::setNEventsToProcess()
+void TasUtil::Looper<TREECLASS>::setNEventsToProcess()
 {
     if (tchain)
     {
