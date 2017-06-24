@@ -1,5 +1,20 @@
 # TasUtil
 
+## Features
+
+- class Looper
+   The Looper class allows user to loop over events in a TChain easily.
+   The pre-requisite is that the TTree being looped over will be accessed by a separate class.
+   This "Tree Class" must contain ```Init```, ```GetEntry```, and ```progress``` methods.
+   One can create this kind of class using this [code](https://github.com/cmstas/Software/blob/master/makeCMS3ClassFiles/makeCMS3ClassFiles.C).
+- namespace Math
+   This namespace will hold various physics quantities that we compute over and over again.
+- class Particle
+   The Particle class is a bundle of various ```map<TString, 'value'>``` where, ```'value'``` can be a float, int, TLorentzVector, or TString.
+   Idea is to have an object that holds various 'properties'.
+   It's called "Particle", largely because a 'particle' is really nothing more than an object with various 'properties'.
+   TODO: Will add a feature to write this "particle" to a TTree easily.
+
 ## Setup
 
 The functions reside in one implementation file ```tasutil.cc``` and one header file ```tasutil.h```.
