@@ -26,7 +26,7 @@ A super simple CMS3 looper looks like this
 
 In a file called ```ScanChain.C``` copy paste the following
 
-    #include "/home/users/phchang/cmstas/CORE_cms4/CMS3.cc"
+    #include "CORE/CMS3.cc"
     #include "tasutil.cc"
 
     void ScanChain(TChain* chain)
