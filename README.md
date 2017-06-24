@@ -7,7 +7,7 @@ So I will first list the example usage case and explain the features and setup l
 
 ### Example: Simple CMS3 looper
 
-A super simple CMS3 looper looks like this
+A super simple CMS3 looper looks like this. (Assuming you have [CORE](https://github.com/cmstas/CORE/) checked out in the current working directory.)
 
 In a file called ```ScanChain.C``` copy paste the following
 
