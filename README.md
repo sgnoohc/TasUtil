@@ -35,6 +35,12 @@ And to actually loop over files create an entry script like the following and ca
         ScanChain(ch);
     }
 
+Then run,
+
+    root -l -b -q run.C
+
+This will loop over these root files and print transverse momentum of muons in the events for all events ```std::cout```.
+
 ### Example: Math functions in TasUtil
 
 The usual variables can be calculated using functions in Math namespace.
