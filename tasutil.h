@@ -33,6 +33,86 @@ namespace TasUtil
     void exit    (int quiet=0);
 
     ///////////////////////////////////////////////////////////////////////////////////////////////
+    // Particle class
+    ///////////////////////////////////////////////////////////////////////////////////////////////
+    // This class holds every information about a "particle".
+    // The class has a generic data structure using std::map<TString, 'data'>.
+    // User can use it for whatever reason.
+    class Particle
+    {
+
+        enum VarType
+        {
+            kINT = 0,
+            kFLT = 1,
+            kTLV = 2,
+            kSTR = 3,
+            kNON = -1
+        };
+
+        typedef std::vector<TString> vecStr;
+        typedef std::map<TString, VarType> mapTyp;
+        typedef std::map<TString, float> mapFlt;
+        typedef std::map<TString, int> mapInt;
+        typedef std::map<TString, TLorentzVector> mapTLV;
+        typedef std::map<TString, TString> mapStr;
+
+        private:
+
+        //================================================================================================
+        // Members
+        //================================================================================================
+
+        // Vector to hold the types
+        vecStr var_Nam;
+        mapStr var_Ttl;
+        mapTyp var_Typ;
+        mapFlt var_Flt;
+        mapInt var_Int;
+        mapTLV var_TLV;
+        mapStr var_Str;
+
+        public:
+
+        //================================================================================================
+        // Functions
+        //================================================================================================
+
+        Particle();
+        ~Particle();
+
+        bool varExists(TString name);
+        void createFltVar(TString name, TString title="");
+        void createIntVar(TString name, TString title="");
+        void createTLVVar(TString name, TString title="");
+        void createStrVar(TString name, TString title="");
+
+        static void printError             (TString name, TString msg, TString action, VarType type=kNON);
+        static void printAlreadyExistsError(TString name, TString action, VarType type=kNON);
+        static void printOutOfRangeError   (TString name, TString action, VarType type=kNON);
+
+        void setFltVar(TString name, float          var);
+        void setIntVar(TString name, int            var);
+        void setStrVar(TString name, TString        var);
+        void setTLVVar(TString name, TLorentzVector var);
+
+        const float&          getFltVar(TString name) const;
+        const int&            getIntVar(TString name) const;
+        const TLorentzVector& getTLVVar(TString name) const;
+        const TString&        getStrVar(TString name) const;
+
+        VarType getType(TString name);
+
+        void print();
+        void printFltVar(TString name);
+        void printIntVar(TString name);
+        void printTLVVar(TString name);
+        void printStrVar(TString name);
+
+    };
+
+
+    ///////////////////////////////////////////////////////////////////////////////////////////////
     // Math functions
     ///////////////////////////////////////////////////////////////////////////////////////////////
     namespace Math
@@ -79,7 +159,7 @@ namespace TasUtil
     }
 
     ///////////////////////////////////////////////////////////////////////////////////////////////
-    // EventLooper (Looper) class
+    // Looper class
     ///////////////////////////////////////////////////////////////////////////////////////////////
     // NOTE: This class assumes accessing TTree in the SNT style which uses the following,
     // https://github.com/cmstas/Software/blob/master/makeCMS3ClassFiles/makeCMS3ClassFiles.C
@@ -111,13 +191,14 @@ namespace TasUtil
         void setTreeClass(TREECLASS* t);
         bool allEventsInTreeProcessed();
         bool allEventsInChainProcessed();
-        bool nextTree();
         bool nextEvent();
         TTree* getTree() { return ttree; }
         unsigned int getNEventsProcessed() { return nEventsProcessed; }
         private:
         void setFileList();
         void setNEventsToProcess();
+        bool nextTree();
+        bool nextEventInTree();
     };
 
 }
@@ -256,7 +337,7 @@ bool TasUtil::Looper<TREECLASS>::allEventsInChainProcessed()
 
 //_________________________________________________________________________________________________
 template <class TREECLASS>
-bool TasUtil::Looper<TREECLASS>::nextEvent()
+bool TasUtil::Looper<TREECLASS>::nextEventInTree()
 {
     // Sanity check before loading the next event.
     if (!ttree) error("current ttree not set!", __FUNCTION__);
@@ -277,6 +358,74 @@ bool TasUtil::Looper<TREECLASS>::nextEvent()
     ++nEventsProcessed;
     // If all fine return true
     return true;
+}
+
+//_________________________________________________________________________________________________
+template <class TREECLASS>
+bool TasUtil::Looper<TREECLASS>::nextEvent()
+{
+    // If no tree it means this is the beginning of the loop.
+    if (!ttree)
+    {
+        // Load the next tree if it returns true, then proceed to next event in tree.
+        while (nextTree())
+        {
+            // If the next event in tree was successfully loaded return true, that it's good.
+            if (nextEventInTree())
+                return true;
+            // If the first event in this tree was not good, continue to the next tree
+            else
+                continue;
+        }
+        // If looping over all trees, we fail to find first event that's good,
+        // return false and call it quits.
+        // At this point it will exit the loop without processing any events.
+        return false;
+    }
+    // If tree exists, it means that we're in the middle of a loop
+    else
+    {
+        // If next event is successfully loaded proceed.
+        if (nextEventInTree())
+        {
+            return true;
+        }
+        // If next event is not loaded then check why.
+        else
+        {
+            // If failed because it was the last event in the whole chain to process, exit the loop.
+            // You're done!
+            if (allEventsInChainProcessed())
+            {
+                return false;
+            }
+            // If failed because it's last in the tree then load the next tree and the event
+            else if (allEventsInTreeProcessed())
+            {
+                // Load the next tree if it returns true, then proceed to next event in tree.
+                while (nextTree())
+                {
+                    // If the next event in tree was successfully loaded return true, that it's good.
+                    if (nextEventInTree())
+                        return true;
+                    // If the first event in this tree was not good, continue to the next tree
+                    else
+                        continue;
+                }
+                // If looping over all trees, we fail to find first event that's good,
+                // return false and call it quits.
+                // Again you're done!
+                return false;
+            }
+            else
+            {
+                // Why are you even here?
+                // spit error and return false to avoid warnings
+                error("You should not be here! Please contact philip@physics.ucsd.edu", __FUNCTION__);
+                return false;
+            }
+        }
+    }
 }
 
 //_________________________________________________________________________________________________

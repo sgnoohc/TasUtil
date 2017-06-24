@@ -31,15 +31,12 @@ In a file called ```ScanChain.C``` copy paste the following
 
     void ScanChain(TChain* chain)
     {
-        TasUtil::EL<CMS3> el(chain, &cms3);
-        while (el.nextTree())
+        TasUtil::Looper<CMS3> looper(chain, &cms3);
+        while (looper.nextEvent())
         {
-            while (el.nextEvent())
-            {
-                // do your cms3 stuff
-                for (auto& p4: cms3.mus_p4())
-                    TasUtil::print(TString::Format("muon Pt = %f", p4.pt()));
-            }
+            // do your cms3 stuff
+            for (auto& p4: cms3.mus_p4())
+                TasUtil::print(TString::Format("muon Pt = %f", p4.pt()));
         }
     }
 
