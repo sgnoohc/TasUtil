@@ -1,24 +1,21 @@
 # TasUtil
 
-## Quick start
+## Setup
 
-All you have to do to use the functions for almost any ROOT application is to source ```thistasutil.sh```,
+The functions reside in one implementation file ```tasutil.cc``` and one header file ```tasutil.h```.
+The user will have to simply include the source files using ```#include```.
+To have them directly accessible without pointing to relative path source ```thistasutil.sh```.
+It will basically add the path to the directory to ```$ROOT_INCLUDE_PATH```.
 
     source TasUtil/thistasutil.sh
 
+The magic export command is the following,
 
-And just use like the following.
+    export ROOT_INCLUDE_PATH=$ROOT_INCLUDE_PATH:$DIR
+
+This allows the following statement in your ROOT macros to work.
 
     #include "tasutil.cc"
-
-    void ScanChain( ... )
-    {
-        LorentzVector a;
-        LorentzVector b;
-        ...
-        ...
-        float dphi = TasUtil::Calc::DPhi(a, b);
-    }
 
 ## Example: Simple CMS3 looper
 
@@ -42,7 +39,6 @@ In a file called ```ScanChain.C``` copy paste the following
 
 And to actually loop over files create an entry script like the following and call it ```run.C```
 
-
     {
         gROOT->LoadMacro("ScanChain.C+");
         TChain *ch = new TChain("Events");
@@ -51,4 +47,18 @@ And to actually loop over files create an entry script like the following and ca
         ScanChain(ch);
     }
 
+## Example: Math functions in TasUtil
+
+The usual variables can be calculated using functions in Math namespace.
+
+    #include "tasutil.cc"
+
+    void ScanChain( ... )
+    {
+        LorentzVector a;
+        LorentzVector b;
+        ...
+        ...
+        float dphi = TasUtil::Math::DPhi(a, b);
+    }
 
