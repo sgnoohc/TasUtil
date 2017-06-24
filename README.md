@@ -1,5 +1,55 @@
 # TasUtil
 
+## What can it do?
+
+Learning by examples is often the fastest way to learn something.
+So I will first list the example usage case and explain the features and setup later.
+
+### Example: Simple CMS3 looper
+
+A super simple CMS3 looper looks like this
+
+In a file called ```ScanChain.C``` copy paste the following
+
+    #include "CORE/CMS3.cc"
+    #include "tasutil.cc"
+
+    void ScanChain(TChain* chain)
+    {
+        TasUtil::Looper<CMS3> looper(chain, &cms3);
+        while (looper.nextEvent())
+        {
+            // do your cms3 stuff
+            for (auto& p4: cms3.mus_p4())
+                TasUtil::print(TString::Format("muon Pt = %f", p4.pt()));
+        }
+    }
+
+And to actually loop over files create an entry script like the following and call it ```run.C```
+
+    {
+        gROOT->LoadMacro("ScanChain.C+");
+        TChain *ch = new TChain("Events");
+        ch->Add("/hadoop/cms/store/group/snt/run2_data_test/DoubleMuon_Run2017A-PromptReco-v2/V00-00-03_workaround/merged_ntuple_*.root");
+        ch->Add("/hadoop/cms/store/group/snt/run2_data_test/DoubleEG_Run2017A-PromptReco-v2/V00-00-03_workaround/merged_ntuple_*.root");
+        ScanChain(ch);
+    }
+
+### Example: Math functions in TasUtil
+
+The usual variables can be calculated using functions in Math namespace.
+
+    #include "tasutil.cc"
+
+    void ScanChain( ... )
+    {
+        LorentzVector a;
+        LorentzVector b;
+        ...
+        ...
+        float dphi = TasUtil::Math::DPhi(a, b);
+    }
+
 ## Features
 
 - class Looper
@@ -36,49 +86,4 @@ The magic export command is the following,
 This allows the following statement in your ROOT macros to work.
 
     #include "tasutil.cc"
-
-## Example: Simple CMS3 looper
-
-A super simple CMS3 looper looks like this
-
-In a file called ```ScanChain.C``` copy paste the following
-
-    #include "CORE/CMS3.cc"
-    #include "tasutil.cc"
-
-    void ScanChain(TChain* chain)
-    {
-        TasUtil::Looper<CMS3> looper(chain, &cms3);
-        while (looper.nextEvent())
-        {
-            // do your cms3 stuff
-            for (auto& p4: cms3.mus_p4())
-                TasUtil::print(TString::Format("muon Pt = %f", p4.pt()));
-        }
-    }
-
-And to actually loop over files create an entry script like the following and call it ```run.C```
-
-    {
-        gROOT->LoadMacro("ScanChain.C+");
-        TChain *ch = new TChain("Events");
-        ch->Add("/hadoop/cms/store/group/snt/run2_data_test/DoubleMuon_Run2017A-PromptReco-v2/V00-00-03_workaround/merged_ntuple_*.root");
-        ch->Add("/hadoop/cms/store/group/snt/run2_data_test/DoubleEG_Run2017A-PromptReco-v2/V00-00-03_workaround/merged_ntuple_*.root");
-        ScanChain(ch);
-    }
-
-## Example: Math functions in TasUtil
-
-The usual variables can be calculated using functions in Math namespace.
-
-    #include "tasutil.cc"
-
-    void ScanChain( ... )
-    {
-        LorentzVector a;
-        LorentzVector b;
-        ...
-        ...
-        float dphi = TasUtil::Math::DPhi(a, b);
-    }
 
