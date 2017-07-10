@@ -36,6 +36,10 @@
 ///////////////////////////////////////////////////////////////////////////////////////////////
 typedef ROOT::Math::LorentzVector<ROOT::Math::PxPyPzE4D<float> > LV;
 typedef std::vector<LV> LVs;
+typedef std::vector<bool> bools;
+typedef std::vector<int> ints;
+typedef std::vector<float> floats;
+typedef std::vector<double> doubles;
 
 namespace TasUtil
 {
