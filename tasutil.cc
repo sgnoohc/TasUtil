@@ -7,6 +7,8 @@
 
 #include "tasutil.h"
 
+using namespace TasUtil;
+
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 //
 //
@@ -804,4 +806,37 @@ void TasUtil::exit(int q)
     print("  (_)(_)  (_)(_)");
     print();
 }
+
+
+///////////////////////////////////////////////////////////////////////////////////////////////////
+//
+//
+// TTree++ (TTreexx) class
+//
+//
+///////////////////////////////////////////////////////////////////////////////////////////////////
+
+//_________________________________________________________________________________________________
+TasUtil::TTreexx::TTreexx()
+{
+}
+
+//_________________________________________________________________________________________________
+TasUtil::TTreexx::~TTreexx()
+{
+}
+
+//_________________________________________________________________________________________________
+void* TasUtil::TTreexx::getValPtr(TString brname)
+{
+    TBranch* br = GetBranch(brname);
+    unsigned int nleaves = br->GetListOfLeaves()->GetEntries();
+    if (nleaves != 1)
+        TasUtil::error("# of leaf for this branch="
+                + brname + " is not equals to 1!", __FUNCTION__);
+    if (!(((TLeaf*) br->GetListOfLeaves()->At(0))->GetValuePointer()))
+        GetEntry(0);
+    return ((TLeaf*) br->GetListOfLeaves()->At(0))->GetValuePointer();
+}
+
 //eof

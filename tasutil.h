@@ -20,6 +20,8 @@
 #include "TChain.h"
 #include "TFile.h"
 #include "TTree.h"
+#include "TBranch.h"
+#include "TLeaf.h"
 #include "TH1.h"
 #include "TH1D.h"
 #include "TH2D.h"
@@ -29,8 +31,15 @@
 #include "TLorentzVector.h"
 #include "Math/LorentzVector.h"
 
+///////////////////////////////////////////////////////////////////////////////////////////////
+// LorentzVector typedef that we use very often
+///////////////////////////////////////////////////////////////////////////////////////////////
+typedef ROOT::Math::LorentzVector<ROOT::Math::PxPyPzE4D<float> > LV;
+typedef std::vector<LV> LVs;
+
 namespace TasUtil
 {
+
     ///////////////////////////////////////////////////////////////////////////////////////////////
     // Printing functions
     ///////////////////////////////////////////////////////////////////////////////////////////////
@@ -99,6 +108,7 @@ namespace TasUtil
     class Particle
     {
 
+        public:
         enum VarType
         {
             kINT = 0,
@@ -267,6 +277,12 @@ namespace TasUtil
 
     class TTreexx : public TTree
     {
+        public:
+        TTreexx();
+        ~TTreexx();
+        void* getValPtr(TString brname);
+        template <class T>
+        T* get(TString brname, int entry=-1);
     };
 }
 
@@ -525,6 +541,15 @@ void TasUtil::Looper<TREECLASS>::setNEventsToProcess()
         if (nEventsToProcess < 0)
             nEventsToProcess = nEventsTotalInChain;
     }
+}
+
+//_________________________________________________________________________________________________
+template <class T>
+T* TasUtil::TTreexx::get(TString brname, int entry)
+{
+    if (entry >= 0)
+        GetEntry(entry);
+    return (T*) getValPtr(brname);
 }
 
 #endif
