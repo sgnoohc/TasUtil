@@ -2,6 +2,12 @@
 
 ## What can it do?
 
+  - Looper
+  - AutoHist
+  - Math
+
+## What can it do?
+
 Learning by examples is often the fastest way to learn something.
 So I will first list the example usage case and explain the features and setup later.
 

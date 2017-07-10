@@ -8,14 +8,21 @@
 #ifndef tasutil_h
 #define tasutil_h
 
-// C
+// C/C++
+#include <algorithm>
 #include <map>
 #include <vector>
+#include <stdarg.h>
+#include <functional>
+#include <cmath>
 
 // ROOT
 #include "TChain.h"
 #include "TFile.h"
 #include "TTree.h"
+#include "TH1.h"
+#include "TH1D.h"
+#include "TH2D.h"
 #include "TChainElement.h"
 #include "TTreeCache.h"
 #include "TSystem.h"
@@ -30,11 +37,58 @@ namespace TasUtil
     // No namespace given in order to minimize typing
     // (e.g. TasUtil::print v. TasUtil::NAMESPACE::print)
     void print   (TString msg="", const char* fname="", int flush_before=0, int flush_after=0);
-    void error   (TString msg, const char* fname, int is_error=1);
-    void warning (TString msg, const char* fname);
+    void error   (TString msg, const char* fname="", int is_error=1);
+    void warning (TString msg, const char* fname="");
     void announce(TString msg="", int quiet=0);
     void start   (int quiet=0, int sleep_time=0);
     void exit    (int quiet=0);
+
+    ///////////////////////////////////////////////////////////////////////////////////////////////
+    // Auto histogram maker
+    ///////////////////////////////////////////////////////////////////////////////////////////////
+    // The concept is to keep the histogram at precision of 0.001.
+    // So far in my experience of HEP, I never had to deal with precision more than 1/1000th
+    // This means that if I keep every histogram at the precision of Range / N bin = 0.001,
+    // I can always reproduce any other bin size histogram offline.
+    // So, all I have to do is start with some small number of histograms binned in 0.001,
+    // And slowly expand as the numbers come in.
+    // For small range histograms (ip, or isolation), we can still create at 1/1000-th precision.
+    // Then when the values that come in hits 50 or 100 (configurable), we blow it up.
+    class AutoHist
+    {
+
+        public:
+        int resolution;
+        std::map<TString, TH1*> histdb;
+
+        //////////////////////////////////////////////////////////////////////////////////////////////////
+        // Functions
+        //////////////////////////////////////////////////////////////////////////////////////////////////
+
+        AutoHist();
+        ~AutoHist();
+        // user interface
+        void fill(double xval, TString name, double wgt=1);
+        void fill(double xval, TString name, double wgt, int nbin, double xmin, double xmax);
+        void fill(double xval, double yval, TString name, double wgt, int, double, double, int, double, double);
+        void fill(double xval, TString name, double wgt, int nbin, double*);
+        void fill(double xval, double yval, TString name, double wgt, int, double*, int, double*);
+        void save(TString ofilename);
+        // under the hood (but not private...)
+        void fill(double xval, TH1*& h, double wgt=1, bool norebinning=false);
+        TH1* hadd(TH1*, TH1*);
+        TH1* get(TString);
+        static int getRes(double range);
+        static int getRes(TH1* h);
+        static void transfer(TH1*, TH1*);
+        static TH1* crop(TH1*, int, double, double);
+        static TH1* createHist(double xval, TString name, double wgt=1, bool alreadyneg=false, int forceres=-1);
+        static TH1* createFixedBinHist(double, TString, double, int, double, double);
+        static TH1* createFixedBinHist(double, TString, double, int, double*);
+        static TH1* createFixedBinHist(double, double, TString, double, int, double, double, int, double, double);
+        static TH1* createFixedBinHist(double, double, TString, double, int, double*, int, double*);
+
+    };
 
     ///////////////////////////////////////////////////////////////////////////////////////////////
     // Particle class
@@ -116,6 +170,10 @@ namespace TasUtil
     };
     typedef std::vector<Particle> Particles;
 
+    ///////////////////////////////////////////////////////////////////////////////////////////////
+    // Data extractor
+    ///////////////////////////////////////////////////////////////////////////////////////////////
+    Particles get(std::function<unsigned int()>, std::function<bool(int)>, std::function<Particle(int)>);
 
     ///////////////////////////////////////////////////////////////////////////////////////////////
     // Math functions
@@ -194,6 +252,7 @@ namespace TasUtil
         ~Looper();
         void setTChain(TChain* c);
         void setTreeClass(TREECLASS* t);
+        void printCurrentEventIndex();
         bool allEventsInTreeProcessed();
         bool allEventsInChainProcessed();
         bool nextEvent();
@@ -206,6 +265,9 @@ namespace TasUtil
         bool nextEventInTree();
     };
 
+    class TTreexx : public TTree
+    {
+    };
 }
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////
@@ -278,6 +340,15 @@ void TasUtil::Looper<TREECLASS>::setTreeClass(TREECLASS* t)
     {
         error("You provided a null TreeClass pointer!", __FUNCTION__);
     }
+}
+
+//_________________________________________________________________________________________________
+template <class TREECLASS>
+void TasUtil::Looper<TREECLASS>::printCurrentEventIndex()
+{
+    TasUtil::print(TString::Format("Current TFile = %s", tfile->GetName()));
+    TasUtil::print(TString::Format("Current TTree = %s", ttree->GetName()));
+    TasUtil::print(TString::Format("Current Entry # in TTree = %d", indexOfEventInTTree));
 }
 
 //_________________________________________________________________________________________________
