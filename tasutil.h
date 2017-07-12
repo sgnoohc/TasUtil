@@ -27,6 +27,7 @@
 #include "TH2D.h"
 #include "TChainElement.h"
 #include "TTreeCache.h"
+#include "TStopwatch.h"
 #include "TSystem.h"
 #include "TLorentzVector.h"
 #include "Math/LorentzVector.h"
@@ -54,7 +55,7 @@ namespace TasUtil
     void warning (TString msg, const char* fname="");
     void announce(TString msg="", int quiet=0);
     void start   (int quiet=0, int sleep_time=0);
-    void exit    (int quiet=0);
+    void end     (int quiet=0);
 
     ///////////////////////////////////////////////////////////////////////////////////////////////
     // Auto histogram maker
@@ -260,6 +261,9 @@ namespace TasUtil
         unsigned int indexOfEventInTTree;
         bool fastmode;
         TREECLASS* treeclass;
+        TStopwatch my_timer;
+        int bar_id;
+        int print_rate;
         public:
         // Functions
         Looper(TChain* chain=0, TREECLASS* treeclass=0, int nEventsToProcess=-1);
@@ -277,13 +281,15 @@ namespace TasUtil
         void setNEventsToProcess();
         bool nextTree();
         bool nextEventInTree();
+        void initProgressBar();
+        void printProgressBar();
     };
 
-    class TTreexx : public TTree
+    class TTreeX : public TTree
     {
         public:
-        TTreexx();
-        ~TTreexx();
+        TTreeX();
+        ~TTreeX();
         void* getValPtr(TString brname);
         template <class T>
         T* get(TString brname, int entry=-1);
@@ -314,8 +320,11 @@ TasUtil::Looper<TREECLASS>::Looper(TChain* c, TREECLASS* t, int nevtToProc) :
     nEventsProcessed(0),
     indexOfEventInTTree(0),
     fastmode(true),
-    treeclass(0)
+    treeclass(0),
+    bar_id(0),
+    print_rate(432)
 {
+    initProgressBar();
     print("Start EventLooping");
     start();
     if (c) setTChain(c);
@@ -327,7 +336,7 @@ template <class TREECLASS>
 TasUtil::Looper<TREECLASS>::~Looper()
 {
     print("Finished EventLooping");
-    exit();
+    end();
     if (fileIter) delete fileIter;
     if (tfile) delete tfile;
 }
@@ -447,7 +456,8 @@ bool TasUtil::Looper<TREECLASS>::nextEventInTree()
     // Set the event index in TREECLASS
     treeclass->GetEntry(indexOfEventInTTree);
     // Print progress
-    treeclass->progress(nEventsProcessed, nEventsToProcess);
+//    treeclass->progress(nEventsProcessed, nEventsToProcess);
+    printProgressBar();
     // Increment the counter for this ttree
     ++indexOfEventInTTree;
     // Increment the counter for the entire tchain
@@ -548,8 +558,108 @@ void TasUtil::Looper<TREECLASS>::setNEventsToProcess()
 }
 
 //_________________________________________________________________________________________________
+template <class TREECLASS>
+void TasUtil::Looper<TREECLASS>::initProgressBar()
+{
+    /// Init progress bar
+    my_timer.Start();
+    bar_id = 0;
+}
+
+//_________________________________________________________________________________________________
+template <class TREECLASS>
+void TasUtil::Looper<TREECLASS>::printProgressBar()
+{
+    /// Print progress bar
+
+    int entry = nEventsProcessed;
+    int totalN = nEventsToProcess;
+
+    if (totalN < 20)
+        totalN = 20;
+
+    // Progress bar
+    if (entry%(5*((int)print_rate)) < 100)
+    {
+
+        // sanity check
+        if (entry >= totalN+10) // +2 instead of +1 since, the loop might be a while loop where to check I got a bad event the index may go over 1.
+        {
+            TString msg = TString::Format("%d %d", entry, totalN);
+            TasUtil::print(msg, __FUNCTION__);
+            TasUtil::error("Total number of events processed went over max allowed! Check your loop boundary conditions!!", __FUNCTION__);
+        }
+
+        int nbars = entry/(totalN/20);
+        Double_t elapsed = my_timer.RealTime();
+        Double_t rate;
+        if (elapsed!=0)
+            rate = entry / elapsed;
+        else
+            rate = -999;
+        Double_t percentage = entry / (totalN * 1.) * 100;
+        const int mins_in_hour = 60;
+        const int secs_to_min = 60;
+        Int_t input_seconds = (totalN-entry)/rate;
+        Int_t seconds = input_seconds % secs_to_min;
+        Int_t minutes = input_seconds / secs_to_min % mins_in_hour;
+        Int_t hours   = input_seconds / secs_to_min / mins_in_hour;
+
+        print_rate = (int)(rate) + 1;
+
+        printf("\r");
+        if (bar_id%4 == 3) printf("-");
+        if (bar_id%4 == 2) printf("/");
+        if (bar_id%4 == 1) printf("|");
+        if (bar_id%4 == 0) printf("\\");
+        printf("|");
+        bar_id ++;
+
+        for (int nb = 0; nb < 20; ++nb)
+        {
+            if (nb < nbars) printf("=");
+            else printf(".");
+        }
+
+        printf("| %.1f %% (%d/%d) with  [%d Hz]   ETA %.2d:%.2d:%.2d         ", percentage, entry+1, totalN, (int)rate, hours, minutes, seconds);
+        fflush(stdout);
+
+    }
+    else if (entry == totalN - 1)
+    {
+        Double_t elapsed = my_timer.RealTime();
+        Double_t rate;
+        if (elapsed!=0)
+            rate = entry / elapsed;
+        else
+            rate = -999;
+        const int mins_in_hour = 60;
+        const int secs_to_min = 60;
+        Int_t input_seconds = elapsed;
+        Int_t seconds = input_seconds % secs_to_min;
+        Int_t minutes = input_seconds / secs_to_min % mins_in_hour;
+        Int_t hours   = input_seconds / secs_to_min / mins_in_hour;
+
+        printf("\r");
+        printf("+");
+        printf("|====================");
+
+        //for ( int nb = 0; nb < 20; ++nb )
+        //{
+        //  printf("=");
+        //}
+
+        printf("| %.1f %% (%d/%d) with  [avg. %d Hz]   Total Time: %.2d:%.2d:%.2d         ", 100.0, entry+1, totalN, (int)rate, hours, minutes, seconds);
+        fflush(stdout);
+        printf("\n");
+    }
+
+    my_timer.Start(kFALSE);
+}
+
+//_________________________________________________________________________________________________
 template <class T>
-T* TasUtil::TTreexx::get(TString brname, int entry)
+T* TasUtil::TTreeX::get(TString brname, int entry)
 {
     if (entry >= 0)
         GetEntry(entry);

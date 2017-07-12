@@ -791,7 +791,7 @@ void TasUtil::announce(TString msg, Int_t q)
 }
 
 //_________________________________________________________________________________________________
-void TasUtil::exit(int q)
+void TasUtil::end(int q)
 {
     /// Fun exit (from TM Hong's BaBar days)
     if (q)
@@ -811,23 +811,23 @@ void TasUtil::exit(int q)
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 //
 //
-// TTree++ (TTreexx) class
+// TTree++ (TTreeX) class
 //
 //
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 
 //_________________________________________________________________________________________________
-TasUtil::TTreexx::TTreexx()
+TasUtil::TTreeX::TTreeX()
 {
 }
 
 //_________________________________________________________________________________________________
-TasUtil::TTreexx::~TTreexx()
+TasUtil::TTreeX::~TTreeX()
 {
 }
 
 //_________________________________________________________________________________________________
-void* TasUtil::TTreexx::getValPtr(TString brname)
+void* TasUtil::TTreeX::getValPtr(TString brname)
 {
     TBranch* br = GetBranch(brname);
     unsigned int nleaves = br->GetListOfLeaves()->GetEntries();
