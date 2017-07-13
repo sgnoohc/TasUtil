@@ -3,3 +3,5 @@
 *_C_AC*
 CORE/
 clean.sh
+.tags
+*root
