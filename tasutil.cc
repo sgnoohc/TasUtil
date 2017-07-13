@@ -862,7 +862,7 @@ void TasUtil::TTreeX::clear()
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 
 //_________________________________________________________________________________________________
-TasUtil::COREHelper2016::COREHelper2016()
+TasUtil::CORE2016::CORE2016()
 {
     FactorizedJetCorrector   * jet_corrector_pfL1FastJetL2L3_current       = NULL;
     JetCorrectionUncertainty * jecUnc_current                              = NULL;
@@ -873,13 +873,19 @@ TasUtil::COREHelper2016::COREHelper2016()
 }
 
 //_________________________________________________________________________________________________
-TasUtil::COREHelper2016::~COREHelper2016()
+TasUtil::CORE2016::~CORE2016()
 {
 }
 
 //_________________________________________________________________________________________________
-void TasUtil::COREHelper2016::initializeCORE(TString option)
+void TasUtil::CORE2016::initializeCORE(TString option_)
 {
+
+    // -~-~-~-~-~-
+    // Set options
+    // -~-~-~-~-~-
+    option = option_;
+
     // -~-~-~-~-~-~-~-~
     // Electron ID tool
     // -~-~-~-~-~-~-~-~
@@ -1040,26 +1046,43 @@ void TasUtil::COREHelper2016::initializeCORE(TString option)
         if ( jetcorr_filenames_pfL1FastJetL2L3.size() == 0 )
             error("JECs are not set properly. Check the JECs.", __FUNCTION__);
 
-        print("JECs used:");
+        print("JECs used:", __FUNCTION__);
 
         for ( size_t jecind = 0; jecind < jetcorr_filenames_pfL1FastJetL2L3.size(); jecind++ )
-            print( TString( jetcorr_filenames_pfL1FastJetL2L3.at( jecind ) ) );
+            print( TString( jetcorr_filenames_pfL1FastJetL2L3.at( jecind ) ), __FUNCTION__ );
 
         jet_corrector_pfL1FastJetL2L3  = makeJetCorrector( jetcorr_filenames_pfL1FastJetL2L3 );
     }
 
 }
 
-///////////////////////////////////////////////////////////////////////////////////////////////////
-//
-//
-// Baby ntuple production utility
-//
-//
-///////////////////////////////////////////////////////////////////////////////////////////////////
 //_________________________________________________________________________________________________
-void TasUtil::BabyNtupUtil::createEventBranches(TTreeX* ttree)
+int TasUtil::CORE2016::getCMS3Version()
 {
+    TString cms3_version = cms3.evt_CMS3tag().at(0);
+    // convert last two digits of version number to int
+    int small_cms3_version = TString(cms3_version(cms3_version.Length()-2,cms3_version.Length())).Atoi();
+    return small_cms3_version;
+}
+
+//_________________________________________________________________________________________________
+void TasUtil::CORE2016::setJetCorrector()
+{
+    // set jet corrector based on run number for data
+    if (cms3.evt_isRealData() && cms3.evt_run() >= 278802 && cms3.evt_run() <= 278808) {
+        jet_corrector_pfL1FastJetL2L3_current = jet_corrector_pfL1FastJetL2L3_postrun278802;
+        jecUnc_current = jecUnc_postrun278802;
+    } 
+    else {
+        jet_corrector_pfL1FastJetL2L3_current = jet_corrector_pfL1FastJetL2L3;
+        jecUnc_current = jecUnc;
+    }
+}
+
+//_________________________________________________________________________________________________
+void TasUtil::CORE2016::createEventBranches(TTreeX* ttree)
+{
+    // Event info related
     ttree->createBranch<Int_t   >( "evt_run" );
     ttree->createBranch<Int_t   >( "evt_lumiBlock" );
     ttree->createBranch<Int_t   >( "evt_event" );
@@ -1069,12 +1092,12 @@ void TasUtil::BabyNtupUtil::createEventBranches(TTreeX* ttree)
     ttree->createBranch<Float_t >( "evt_xsec" );
     ttree->createBranch<Float_t >( "evt_kfactor" );
     ttree->createBranch<Float_t >( "evt_filt_eff" );
-    ttree->createBranch<Float_t >( "evt_rho" );
 }
 
 //_________________________________________________________________________________________________
-void TasUtil::BabyNtupUtil::setEventBranches(TTreeX* ttree)
+void TasUtil::CORE2016::setEventBranches(TTreeX* ttree)
 {
+    // Event info related
     ttree->setBranch<Int_t   >( "evt_run", cms3.evt_run() );
     ttree->setBranch<Int_t   >( "evt_lumiBlock", cms3.evt_lumiBlock() );
     ttree->setBranch<Int_t   >( "evt_event", cms3.evt_event() );
@@ -1084,7 +1107,58 @@ void TasUtil::BabyNtupUtil::setEventBranches(TTreeX* ttree)
     ttree->setBranch<Float_t >( "evt_xsec", cms3.evt_xsec_incl() );
     ttree->setBranch<Float_t >( "evt_kfactor", cms3.evt_kfactor() );
     ttree->setBranch<Float_t >( "evt_filt_eff", cms3.evt_filt_eff() );
+}
+
+//_________________________________________________________________________________________________
+void TasUtil::CORE2016::createPileUpBranches(TTreeX* ttree)
+{
+    // PileUp info related
+    ttree->createBranch<Float_t >( "evt_rho" );
+}
+
+//_________________________________________________________________________________________________
+void TasUtil::CORE2016::setPileUpBranches(TTreeX* ttree)
+{
+    // PileUp info related
     ttree->setBranch<Float_t >( "evt_rho", cms3.evt_fixgridfastjet_all_rho() );
+}
+
+//_________________________________________________________________________________________________
+void TasUtil::CORE2016::createMETBranches(TTreeX* ttree)
+{
+    // MET variables
+    ttree->createBranch<Float_t >( "gen_met" );
+    ttree->createBranch<Float_t >( "gen_metPhi" );
+    ttree->createBranch<Float_t >( "met_pt" );
+    ttree->createBranch<Float_t >( "met_phi" );
+}
+
+//_________________________________________________________________________________________________
+void TasUtil::CORE2016::setMETBranches(TTreeX* ttree)
+{
+    // MET variables
+    ttree->setBranch<Float_t >( "gen_met", cms3.gen_met() );
+    ttree->setBranch<Float_t >( "gen_metPhi", cms3.gen_metPhi() );
+    ttree->setBranch<Float_t >( "met_pt", cms3.evt_pfmet() );
+    ttree->setBranch<Float_t >( "met_phi", cms3.evt_pfmetPhi() );
+
+    if ( option.Contains( "applyJEC" ) )
+    {
+        setJetCorrector();
+
+        if ( cms3.evt_isRealData() && getCMS3Version() >= 18 )
+        {
+            ttree->setBranch<Float_t >( "met_pt", cms3.evt_muegclean_pfmet() );
+            ttree->setBranch<Float_t >( "met_phi", cms3.evt_muegclean_pfmetPhi() );
+        }
+        else
+        {
+            // met with no unc
+            pair <float, float> met_T1CHS_miniAOD_CORE_p2 = getT1CHSMET_fromMINIAOD( jet_corrector_pfL1FastJetL2L3_current );
+            ttree->setBranch<Float_t >( "met_pt", met_T1CHS_miniAOD_CORE_p2.first );
+            ttree->setBranch<Float_t >( "met_phi", met_T1CHS_miniAOD_CORE_p2.second );
+        }
+    }
 }
 
 #endif

@@ -4,9 +4,24 @@ DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 
 usage()
 {
-    echo "Usage: sh $(basename $0) scanchain lepbaby.root t output.root nevents [HADOOPDIRFORCONDOR]"
+    echo "Usage: sh $(basename $0) [-g] [-c] scanchain lepbaby.root t output.root nevents [HADOOPDIRFORCONDOR]"
+    echo ""
+    echo " -g option runs in gdb"
     exit
 }
+
+# Command-line opts
+while getopts ":gch" OPTION; do
+  case $OPTION in
+    g) DEBUG=true;;
+    c) FORCERECOMPILE="+";;
+    h) usage;;
+    :) usage;;
+  esac
+done
+
+# to shift away the parsed options
+shift $(($OPTIND - 1))
 
 if [ -z $1 ]; then usage; fi
 if [ -z $2 ]; then usage; fi
@@ -22,7 +37,14 @@ else
     tar xvzf condor.tgz
 fi
 
-root -l -b -q 'run.C("'$1'","'$2'","'$3'","'$4'","'$5'")'
+
+if [ "${DEBUG}" == true ]; then
+    COMPILERFLAG=${FORCERECOMPILE}g
+    gdb --args root.exe -l -b -q 'run.C("'$1'","'$2'","'$3'","'$4'","'$5'", "'${COMPILERFLAG}'")'
+else
+    COMPILERFLAG=${FORCERECOMPILE}O
+    root -l -b -q 'run.C("'$1'","'$2'","'$3'","'$4'","'$5'", "'${COMPILERFLAG}'")'
+fi
 
 if [ "x${_CONDOR_SLOT}" == "x" ]; then
     :

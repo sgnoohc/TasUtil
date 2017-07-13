@@ -1,7 +1,7 @@
-void run( TString scanchainname, TString input_path, TString treename, TString output_path, TString nevents = "-1" )
+void run( TString scanchainname, TString input_path, TString treename, TString output_path, TString nevents = "-1", TString compilerflag = "" )
 {
     gSystem->Load( "CMS3_CORE.so" );
-    gROOT->ProcessLine( ".L " + scanchainname + ".C+g" );
+    gROOT->ProcessLine( ".L " + scanchainname + ".C+" + compilerflag );
     gROOT->ProcessLine( "TString input_path = \"" + input_path + "\";" );
     gROOT->ProcessLine( "TString output_path = \"" + output_path + "\";" );
     gROOT->ProcessLine( "TString ttreename = \"" + treename + "\";" );

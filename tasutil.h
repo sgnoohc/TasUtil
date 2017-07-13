@@ -41,6 +41,7 @@
 #include "CORE/TriggerSelections.h"
 #include "CORE/ElectronSelections.h"
 #include "CORE/MuonSelections.h"
+#include "CORE/MetSelections.h"
 #include "CORE/IsolationTools.h"
 #include "CORE/Tools/goodrun.h"
 #include "CORE/Tools/JetCorrector.h"
@@ -364,12 +365,14 @@ namespace TasUtil
     template <> void TTreeX::createBranch<std::vector<LV     >>(TString bn) { Branch(bn, &(mapVecLV      [bn])); }
 
 #ifdef INCLUDE_CORE
-    class COREHelper2016
+    class CORE2016
     {
 
         public:
-        COREHelper2016();
-        ~COREHelper2016();
+        CORE2016();
+        ~CORE2016();
+
+        TString option;
 
         // stores current corrections for a given event
         FactorizedJetCorrector   * jet_corrector_pfL1FastJetL2L3_current;
@@ -386,13 +389,16 @@ namespace TasUtil
         JetCorrectionUncertainty * jecUnc_postrun278802;
 
         void initializeCORE(TString option);
-    };
-
-    namespace BabyNtupUtil
-    {
+        static int getCMS3Version();
+        void setJetCorrector();
         void createEventBranches(TTreeX* ttree);
         void setEventBranches(TTreeX* ttree);
-    }
+        void createPileUpBranches(TTreeX* ttree);
+        void setPileUpBranches(TTreeX* ttree);
+        void createMETBranches(TTreeX* ttree);
+        void setMETBranches(TTreeX* ttree);
+    };
+
 #endif
 
 }
@@ -420,7 +426,7 @@ TasUtil::Looper<TREECLASS>::Looper(TChain* c, TREECLASS* t, int nevtToProc) :
     nEventsToProcess(nevtToProc),
     nEventsProcessed(0),
     indexOfEventInTTree(0),
-    fastmode(true),
+    fastmode(false),
     treeclass(0),
     bar_id(0),
     print_rate(432)
@@ -430,6 +436,8 @@ TasUtil::Looper<TREECLASS>::Looper(TChain* c, TREECLASS* t, int nevtToProc) :
     start();
     if (c) setTChain(c);
     if (t) setTreeClass(t);
+    if (nevtToProc > 5000)
+        fastmode = true;
 }
 
 //_________________________________________________________________________________________________
@@ -545,6 +553,8 @@ bool TasUtil::Looper<TREECLASS>::allEventsInChainProcessed()
 template <class TREECLASS>
 bool TasUtil::Looper<TREECLASS>::nextEventInTree()
 {
+//    treeclass->progress(nEventsProcessed, nEventsToProcess);
+    printProgressBar();
     // Sanity check before loading the next event.
     if (!ttree) error("current ttree not set!", __FUNCTION__);
     if (!tfile) error("current tfile not set!", __FUNCTION__);
@@ -557,8 +567,6 @@ bool TasUtil::Looper<TREECLASS>::nextEventInTree()
     // Set the event index in TREECLASS
     treeclass->GetEntry(indexOfEventInTTree);
     // Print progress
-//    treeclass->progress(nEventsProcessed, nEventsToProcess);
-    printProgressBar();
     // Increment the counter for this ttree
     ++indexOfEventInTTree;
     // Increment the counter for the entire tchain
@@ -680,7 +688,35 @@ void TasUtil::Looper<TREECLASS>::printProgressBar()
         totalN = 20;
 
     // Progress bar
-    if (entry%(5*((int)print_rate)) < 100)
+    if (entry == totalN - 1)
+    {
+        Double_t elapsed = my_timer.RealTime();
+        Double_t rate;
+        if (elapsed!=0)
+            rate = entry / elapsed;
+        else
+            rate = -999;
+        const int mins_in_hour = 60;
+        const int secs_to_min = 60;
+        Int_t input_seconds = elapsed;
+        Int_t seconds = input_seconds % secs_to_min;
+        Int_t minutes = input_seconds / secs_to_min % mins_in_hour;
+        Int_t hours   = input_seconds / secs_to_min / mins_in_hour;
+
+        printf("\r");
+        printf("+");
+        printf("|====================");
+
+        //for ( int nb = 0; nb < 20; ++nb )
+        //{
+        //  printf("=");
+        //}
+
+        printf("| %.1f %% (%d/%d) with  [avg. %d Hz]   Total Time: %.2d:%.2d:%.2d         ", 100.0, entry+1, totalN, (int)rate, hours, minutes, seconds);
+        fflush(stdout);
+        printf("\n");
+    }
+    else if (entry%(5*((int)print_rate)) < 100)
     {
 
         // sanity check
@@ -708,7 +744,7 @@ void TasUtil::Looper<TREECLASS>::printProgressBar()
 
         print_rate = (int)(rate) + 1;
 
-        printf("\r");
+        printf("\rTasUtil:: ");
         if (bar_id%4 == 3) printf("-");
         if (bar_id%4 == 2) printf("/");
         if (bar_id%4 == 1) printf("|");
@@ -725,34 +761,6 @@ void TasUtil::Looper<TREECLASS>::printProgressBar()
         printf("| %.1f %% (%d/%d) with  [%d Hz]   ETA %.2d:%.2d:%.2d         ", percentage, entry+1, totalN, (int)rate, hours, minutes, seconds);
         fflush(stdout);
 
-    }
-    else if (entry == totalN - 1)
-    {
-        Double_t elapsed = my_timer.RealTime();
-        Double_t rate;
-        if (elapsed!=0)
-            rate = entry / elapsed;
-        else
-            rate = -999;
-        const int mins_in_hour = 60;
-        const int secs_to_min = 60;
-        Int_t input_seconds = elapsed;
-        Int_t seconds = input_seconds % secs_to_min;
-        Int_t minutes = input_seconds / secs_to_min % mins_in_hour;
-        Int_t hours   = input_seconds / secs_to_min / mins_in_hour;
-
-        printf("\r");
-        printf("+");
-        printf("|====================");
-
-        //for ( int nb = 0; nb < 20; ++nb )
-        //{
-        //  printf("=");
-        //}
-
-        printf("| %.1f %% (%d/%d) with  [avg. %d Hz]   Total Time: %.2d:%.2d:%.2d         ", 100.0, entry+1, totalN, (int)rate, hours, minutes, seconds);
-        fflush(stdout);
-        printf("\n");
     }
 
     my_timer.Start(kFALSE);

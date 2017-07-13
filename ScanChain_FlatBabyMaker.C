@@ -11,7 +11,7 @@ void ScanChain( TChain* chain, TString output_name, int nevents )
     // CORE Helper for 2016 Analysis
     // -~-~-~-~-~-~-~-~-~-~-~-~-~-~-
     // This sets up JEC/Elec MVA/Good Runs List and all the goodies.
-    COREHelper2016 core;
+    CORE2016 core;
     
     TString option = "";
     option += "applyJEC";
@@ -29,7 +29,8 @@ void ScanChain( TChain* chain, TString output_name, int nevents )
     ofile->cd();
     TTreeX* ttree = new TTreeX( "t", "A Baby Ntuple" );
     
-    BabyNtupUtil::createEventBranches( ttree );
+    core.createEventBranches( ttree );
+    core.createMETBranches( ttree );
     
     // -~-~-~-~-~
     // Event Loop
@@ -40,7 +41,8 @@ void ScanChain( TChain* chain, TString output_name, int nevents )
     {
     
         ttree->clear();
-        BabyNtupUtil::setEventBranches( ttree );
+        core.setEventBranches( ttree );
+        core.setMETBranches( ttree );
         ttree->Fill();
         
     }

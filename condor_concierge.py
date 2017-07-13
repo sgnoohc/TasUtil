@@ -13,10 +13,10 @@ except:
     import Utils
 
 def check_argument(arg):
-    print "condor_concierge: error found in the provided arguments."
+    print "condor_concierge.py: error found in the provided arguments."
     if arg:
         print "                  [Hint:] Could not find " + arg
-    print "Try 'condor_concierge -h' for more information"
+    print "Try 'condor_concierge.py -h' for more information"
     sys.exit()
 
 import argparse
@@ -30,7 +30,7 @@ parser = argparse.ArgumentParser(description=
 ###################################################################
 """,
 formatter_class=argparse.RawTextHelpFormatter,
-usage="%(prog)s action [options]\nTry 'condor_concierge -h' for more information."
+usage="%(prog)s action [options]\nTry 'condor_concierge.py -h' for more information."
 )
 
 # Positional arguments
@@ -51,7 +51,7 @@ parser.add_argument('action', action='store', help=
     [--taskname, -t]
     [--jobindex, -i]
 
-    e.g. $> condor_concierge submit \\
+    e.g. $> condor_concierge.py submit \\
             --executable exec.sh \\
            [--arguments '/input/file.root,/output/file.root'] \\
            [--package package.tgz,extra.cfg] \\
@@ -67,7 +67,7 @@ parser.add_argument('action', action='store', help=
     [--excludepattern, -x]
     [--requirepattern, -q]
     
-    e.g. $> condor_concierge submit_batch \\
+    e.g. $> condor_concierge.py submit_batch \\
             --executable exec.sh \\
             --joblist jobs.txt \\
            [--package package.tgz,extra.cfg] \\
@@ -163,9 +163,9 @@ if args.action == 'submit':
 
     # If no logdirpath provided check whether something already exists
     if os.path.isdir(args.logdirpath):
-        print "condor_concierge: error in the `--logdirpath="+args.logdirpath+"` option."
+        print "condor_concierge.py: error in the `--logdirpath="+args.logdirpath+"` option."
         print "A directory called "+args.logdirpath+" already exists. Please delete the directory before proceeding. (e.g. $> rm -r "+args.logdirpath+")"
-        print "Try 'condor_concierge -h' for more information."
+        print "Try 'condor_concierge.py -h' for more information."
         print "Cowardly exiting..."
         sys.exit(-1)
 
