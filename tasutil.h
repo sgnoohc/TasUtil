@@ -17,6 +17,7 @@
 #include <cmath>
 
 // ROOT
+#include "TBenchmark.h"
 #include "TChain.h"
 #include "TFile.h"
 #include "TTree.h"
@@ -45,6 +46,7 @@
 #include "CORE/Tools/JetCorrector.h"
 #include "CORE/Tools/jetcorr/FactorizedJetCorrector.h"
 #include "CORE/Tools/jetcorr/JetCorrectionUncertainty.h"
+using namespace tas;
 #endif
 
 ///////////////////////////////////////////////////////////////////////////////////////////////
