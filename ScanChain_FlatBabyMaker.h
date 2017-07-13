@@ -7,18 +7,6 @@
 // TasUtil tool
 #include "tasutil.cc"
 
-// CORE tools
-#include "CORE/CMS3.h"
-#include "CORE/Base.h"
-#include "CORE/TriggerSelections.h"
-#include "CORE/ElectronSelections.h"
-#include "CORE/MuonSelections.h"
-#include "CORE/IsolationTools.h"
-#include "CORE/Tools/goodrun.h"
-#include "CORE/Tools/JetCorrector.h"
-#include "CORE/Tools/jetcorr/FactorizedJetCorrector.h"
-#include "CORE/Tools/jetcorr/JetCorrectionUncertainty.h"
-
 //// CORE
 //#include "../CORE/CMS3.h"
 //#include "../CORE/Base.h"

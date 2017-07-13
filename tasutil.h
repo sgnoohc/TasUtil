@@ -32,6 +32,21 @@
 #include "TLorentzVector.h"
 #include "Math/LorentzVector.h"
 
+#if __has_include("CORE/CMS3.h")
+#define INCLUDE_CORE
+// CORE tools
+#include "CORE/CMS3.h"
+#include "CORE/Base.h"
+#include "CORE/TriggerSelections.h"
+#include "CORE/ElectronSelections.h"
+#include "CORE/MuonSelections.h"
+#include "CORE/IsolationTools.h"
+#include "CORE/Tools/goodrun.h"
+#include "CORE/Tools/JetCorrector.h"
+#include "CORE/Tools/jetcorr/FactorizedJetCorrector.h"
+#include "CORE/Tools/jetcorr/JetCorrectionUncertainty.h"
+#endif
+
 ///////////////////////////////////////////////////////////////////////////////////////////////
 // LorentzVector typedef that we use very often
 ///////////////////////////////////////////////////////////////////////////////////////////////
@@ -343,6 +358,32 @@ namespace TasUtil
     template <> void TTreeX::createBranch<std::vector<Bool_t >>(TString bn) { Branch(bn, &(mapVecBool_t  [bn])); }
     template <> void TTreeX::createBranch<std::vector<Float_t>>(TString bn) { Branch(bn, &(mapVecFloat_t [bn])); }
     template <> void TTreeX::createBranch<std::vector<LV     >>(TString bn) { Branch(bn, &(mapVecLV      [bn])); }
+
+#ifdef INCLUDE_CORE
+    class COREHelper2016
+    {
+
+        public:
+        COREHelper2016();
+        ~COREHelper2016();
+
+        // stores current corrections for a given event
+        FactorizedJetCorrector   * jet_corrector_pfL1FastJetL2L3_current;
+        JetCorrectionUncertainty * jecUnc_current;
+
+        // default corrections
+        std::vector<std::string> jetcorr_filenames_pfL1FastJetL2L3;
+        FactorizedJetCorrector   * jet_corrector_pfL1FastJetL2L3;
+        JetCorrectionUncertainty * jecUnc;
+
+        // corrections for later runs in 2016F
+        std::vector<std::string> jetcorr_filenames_pfL1FastJetL2L3_postrun278802;
+        FactorizedJetCorrector   * jet_corrector_pfL1FastJetL2L3_postrun278802;
+        JetCorrectionUncertainty * jecUnc_postrun278802;
+
+        void initializeCORE(TString option);
+    };
+#endif
 
 }
 
