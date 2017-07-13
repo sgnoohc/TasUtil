@@ -1,5 +1,8 @@
 # TasUtil
 
+## Test command
+    sh run.sh ScanChain_FlatBabyMaker /hadoop/cms/store/group/snt/run2_moriond17/WJetsToLNu_TuneCUETP8M1_13TeV-amcatnloFXFX-pythia8_RunIISummer16MiniAODv2-PUMoriond17_80X_mcRun2_asymptotic_2016_TrancheIV_v6-v1/V08-00-16/merged_ntuple_1.root Events testSummer16.root 100
+
 ## What can it do?
 
   - Looper
