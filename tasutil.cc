@@ -839,6 +839,19 @@ void* TasUtil::TTreeX::getValPtr(TString brname)
     return ((TLeaf*) br->GetListOfLeaves()->At(0))->GetValuePointer();
 }
 
+//__________________________________________________________________________________________________
+void TasUtil::TTreeX::clear()
+{
+    for (auto& pair : mapInt_t  ) pair.second = -999;
+    for (auto& pair : mapBool_t ) pair.second = 0;
+    for (auto& pair : mapFloat_t) pair.second = -999;
+    for (auto& pair : mapLV     ) pair.second.SetXYZT(0, 0, 0, 0 ) ;
+    for (auto& pair : mapVecInt_t  ) pair.second.clear();
+    for (auto& pair : mapVecBool_t ) pair.second.clear();
+    for (auto& pair : mapVecFloat_t) pair.second.clear();
+    for (auto& pair : mapVecLV     ) pair.second.clear();
+}
+
 #ifdef INCLUDE_CORE
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 //
@@ -1035,6 +1048,43 @@ void TasUtil::COREHelper2016::initializeCORE(TString option)
         jet_corrector_pfL1FastJetL2L3  = makeJetCorrector( jetcorr_filenames_pfL1FastJetL2L3 );
     }
 
+}
+
+///////////////////////////////////////////////////////////////////////////////////////////////////
+//
+//
+// Baby ntuple production utility
+//
+//
+///////////////////////////////////////////////////////////////////////////////////////////////////
+//_________________________________________________________________________________________________
+void TasUtil::BabyNtupUtil::createEventBranches(TTreeX* ttree)
+{
+    ttree->createBranch<Int_t   >( "evt_run" );
+    ttree->createBranch<Int_t   >( "evt_lumiBlock" );
+    ttree->createBranch<Int_t   >( "evt_event" );
+    ttree->createBranch<Int_t   >( "evt_isRealData" );
+    ttree->createBranch<Int_t   >( "evt_passgoodrunlist" );
+    ttree->createBranch<Float_t >( "evt_scale1fb" );
+    ttree->createBranch<Float_t >( "evt_xsec" );
+    ttree->createBranch<Float_t >( "evt_kfactor" );
+    ttree->createBranch<Float_t >( "evt_filt_eff" );
+    ttree->createBranch<Float_t >( "evt_rho" );
+}
+
+//_________________________________________________________________________________________________
+void TasUtil::BabyNtupUtil::setEventBranches(TTreeX* ttree)
+{
+    ttree->setBranch<Int_t   >( "evt_run", cms3.evt_run() );
+    ttree->setBranch<Int_t   >( "evt_lumiBlock", cms3.evt_lumiBlock() );
+    ttree->setBranch<Int_t   >( "evt_event", cms3.evt_event() );
+    ttree->setBranch<Int_t   >( "evt_isRealData", cms3.evt_isRealData() );
+    ttree->setBranch<Int_t   >( "evt_passgoodrunlist", cms3.evt_isRealData() ? goodrun(cms3.evt_run(), cms3.evt_lumiBlock()) : 1. );
+    ttree->setBranch<Float_t >( "evt_scale1fb", cms3.evt_scale1fb() );
+    ttree->setBranch<Float_t >( "evt_xsec", cms3.evt_xsec_incl() );
+    ttree->setBranch<Float_t >( "evt_kfactor", cms3.evt_kfactor() );
+    ttree->setBranch<Float_t >( "evt_filt_eff", cms3.evt_filt_eff() );
+    ttree->setBranch<Float_t >( "evt_rho", cms3.evt_fixgridfastjet_all_rho() );
 }
 
 #endif

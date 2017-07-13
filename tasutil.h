@@ -339,6 +339,8 @@ namespace TasUtil
         void createBranch(TString);
         template <class T>
         void setBranch(TString, T);
+
+        void clear();
     };
 
     //_________________________________________________________________________________________________
@@ -385,6 +387,12 @@ namespace TasUtil
 
         void initializeCORE(TString option);
     };
+
+    namespace BabyNtupUtil
+    {
+        void createEventBranches(TTreeX* ttree);
+        void setEventBranches(TTreeX* ttree);
+    }
 #endif
 
 }
