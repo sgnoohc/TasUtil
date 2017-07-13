@@ -287,13 +287,63 @@ namespace TasUtil
 
     class TTreeX : public TTree
     {
+
         public:
-        TTreeX();
+        enum kType
+        {
+            kInt_t      =  1,
+            kBool_t     =  2,
+            kFloat_t    =  3,
+            kLV         =  4,
+            kVecInt_t   = 11,
+            kVecBool_t  = 12,
+            kVecFloat_t = 13,
+            kVecLV      = 14
+        };
+
+        private:
+        std::map<TString, Int_t  > mapInt_t;
+        std::map<TString, Bool_t > mapBool_t;
+        std::map<TString, Float_t> mapFloat_t;
+        std::map<TString, LV     > mapLV;
+        std::map<TString, std::vector<Int_t  > > mapVecInt_t;
+        std::map<TString, std::vector<Bool_t > > mapVecBool_t;
+        std::map<TString, std::vector<Float_t> > mapVecFloat_t;
+        std::map<TString, std::vector<LV     > > mapVecLV;
+
+        public:
+        TTreeX(TString treename, TString title);
         ~TTreeX();
         void* getValPtr(TString brname);
         template <class T>
         T* get(TString brname, int entry=-1);
+
+        template <class T>
+        void createBranch(TString);
+        template <class T>
+        void setBranch(TString, T);
     };
+
+    //_________________________________________________________________________________________________
+    template <> void TTreeX::setBranch<Int_t               >(TString bn, Int_t                val) { mapInt_t     [bn] = val; }
+    template <> void TTreeX::setBranch<Bool_t              >(TString bn, Bool_t               val) { mapBool_t    [bn] = val; }
+    template <> void TTreeX::setBranch<Float_t             >(TString bn, Float_t              val) { mapFloat_t   [bn] = val; }
+    template <> void TTreeX::setBranch<LV                  >(TString bn, LV                   val) { mapLV        [bn] = val; }
+    template <> void TTreeX::setBranch<std::vector<Int_t  >>(TString bn, std::vector<Int_t  > val) { mapVecInt_t  [bn] = val; }
+    template <> void TTreeX::setBranch<std::vector<Bool_t >>(TString bn, std::vector<Bool_t > val) { mapVecBool_t [bn] = val; }
+    template <> void TTreeX::setBranch<std::vector<Float_t>>(TString bn, std::vector<Float_t> val) { mapVecFloat_t[bn] = val; }
+    template <> void TTreeX::setBranch<std::vector<LV     >>(TString bn, std::vector<LV     > val) { mapVecLV     [bn] = val; }
+
+    //_________________________________________________________________________________________________
+    template <> void TTreeX::createBranch<Int_t               >(TString bn) { Branch(bn, &(mapInt_t      [bn])); }
+    template <> void TTreeX::createBranch<Bool_t              >(TString bn) { Branch(bn, &(mapBool_t     [bn])); }
+    template <> void TTreeX::createBranch<Float_t             >(TString bn) { Branch(bn, &(mapFloat_t    [bn])); }
+    template <> void TTreeX::createBranch<LV                  >(TString bn) { Branch(bn, &(mapLV         [bn])); }
+    template <> void TTreeX::createBranch<std::vector<Int_t  >>(TString bn) { Branch(bn, &(mapVecInt_t   [bn])); }
+    template <> void TTreeX::createBranch<std::vector<Bool_t >>(TString bn) { Branch(bn, &(mapVecBool_t  [bn])); }
+    template <> void TTreeX::createBranch<std::vector<Float_t>>(TString bn) { Branch(bn, &(mapVecFloat_t [bn])); }
+    template <> void TTreeX::createBranch<std::vector<LV     >>(TString bn) { Branch(bn, &(mapVecLV      [bn])); }
+
 }
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////

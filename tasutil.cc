@@ -817,7 +817,7 @@ void TasUtil::end(int q)
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 
 //_________________________________________________________________________________________________
-TasUtil::TTreeX::TTreeX()
+TasUtil::TTreeX::TTreeX(TString treename, TString title) : TTree(treename.Data(), title.Data())
 {
 }
 
