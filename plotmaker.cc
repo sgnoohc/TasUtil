@@ -90,39 +90,44 @@ TString getOpt( TString key )
     TString gTickLength = "-0.02";
     TString gNdiv = "505";
 
-    if      ( key.EqualTo( "xTitle"         )  ) return getDefaultOpt( key, "XVar"             ) ;
-    else if ( key.EqualTo( "xTickLength"    )  ) return getDefaultOpt( key, gTickLength        ) ;
-    else if ( key.EqualTo( "xTitleOffset"   )  ) return getDefaultOpt( key, "1.2"              ) ;
-    else if ( key.EqualTo( "xLabelOffset"   )  ) return getDefaultOpt( key, gLabelOffset       ) ;
-    else if ( key.EqualTo( "xTitleSize"     )  ) return getDefaultOpt( key, gFontSize          ) ;
-    else if ( key.EqualTo( "xLabelSize"     )  ) return getDefaultOpt( key, gFontSize          ) ;
-    else if ( key.EqualTo( "xTitleFont"     )  ) return getDefaultOpt( key, gFont              ) ;
-    else if ( key.EqualTo( "xLabelFont"     )  ) return getDefaultOpt( key, gFont              ) ;
-    else if ( key.EqualTo( "xNdivisions"    )  ) return getDefaultOpt( key, gNdiv              ) ;
+    if      ( key.EqualTo( "xTitle"            )  ) return getDefaultOpt( key, "XVar"             ) ;
+    else if ( key.EqualTo( "xTickLength"       )  ) return getDefaultOpt( key, gTickLength        ) ;
+    else if ( key.EqualTo( "xTitleOffset"      )  ) return getDefaultOpt( key, "1.2"              ) ;
+    else if ( key.EqualTo( "xLabelOffset"      )  ) return getDefaultOpt( key, gLabelOffset       ) ;
+    else if ( key.EqualTo( "xTitleSize"        )  ) return getDefaultOpt( key, gFontSize          ) ;
+    else if ( key.EqualTo( "xLabelSize"        )  ) return getDefaultOpt( key, gFontSize          ) ;
+    else if ( key.EqualTo( "xTitleFont"        )  ) return getDefaultOpt( key, gFont              ) ;
+    else if ( key.EqualTo( "xLabelFont"        )  ) return getDefaultOpt( key, gFont              ) ;
+    else if ( key.EqualTo( "xNdivisions"       )  ) return getDefaultOpt( key, gNdiv              ) ;
 
-    else if ( key.EqualTo( "yTitle"         )  ) return getDefaultOpt( key, "YVar"             ) ;
-    else if ( key.EqualTo( "yTickLength"    )  ) return getDefaultOpt( key, gTickLength        ) ;
-    else if ( key.EqualTo( "yTitleOffset"   )  ) return getDefaultOpt( key, "2.1"              ) ;
-    else if ( key.EqualTo( "yLabelOffset"   )  ) return getDefaultOpt( key, gLabelOffset       ) ;
-    else if ( key.EqualTo( "yTitleSize"     )  ) return getDefaultOpt( key, gFontSize          ) ;
-    else if ( key.EqualTo( "yLabelSize"     )  ) return getDefaultOpt( key, gFontSize          ) ;
-    else if ( key.EqualTo( "yTitleFont"     )  ) return getDefaultOpt( key, gFont              ) ;
-    else if ( key.EqualTo( "yLabelFont"     )  ) return getDefaultOpt( key, gFont              ) ;
-    else if ( key.EqualTo( "yNdivisions"    )  ) return getDefaultOpt( key, gNdiv              ) ;
+    else if ( key.EqualTo( "yTitle"            )  ) return getDefaultOpt( key, "YVar"             ) ;
+    else if ( key.EqualTo( "yTickLength"       )  ) return getDefaultOpt( key, gTickLength        ) ;
+    else if ( key.EqualTo( "yTitleOffset"      )  ) return getDefaultOpt( key, "2.1"              ) ;
+    else if ( key.EqualTo( "yLabelOffset"      )  ) return getDefaultOpt( key, gLabelOffset       ) ;
+    else if ( key.EqualTo( "yTitleSize"        )  ) return getDefaultOpt( key, gFontSize          ) ;
+    else if ( key.EqualTo( "yLabelSize"        )  ) return getDefaultOpt( key, gFontSize          ) ;
+    else if ( key.EqualTo( "yTitleFont"        )  ) return getDefaultOpt( key, gFont              ) ;
+    else if ( key.EqualTo( "yLabelFont"        )  ) return getDefaultOpt( key, gFont              ) ;
+    else if ( key.EqualTo( "yNdivisions"       )  ) return getDefaultOpt( key, gNdiv              ) ;
 
-    else if ( key.EqualTo( "Minimum"        )  ) return getDefaultOpt( key, ""                 ) ;
-    else if ( key.EqualTo( "Maximum"        )  ) return getDefaultOpt( key, ""                 ) ;
+    else if ( key.EqualTo( "MaximumMultiplier" )  ) return getDefaultOpt( key, ""                 ) ;
 
-    else if ( key.EqualTo( "errorFillColor" )  ) return getDefaultOpt( key, "1"                ) ;
-    else if ( key.EqualTo( "errorFillStyle" )  ) return getDefaultOpt( key, "3245"             ) ;
+    else if ( key.EqualTo( "Minimum"           )  ) return getDefaultOpt( key, ""                 ) ;
+    else if ( key.EqualTo( "Maximum"           )  ) return getDefaultOpt( key, ""                 ) ;
 
-    else if ( key.EqualTo( "ratio_xTitle"   )  ) return getDefaultOpt( key, getOpt( "xTitle" ) ) ;
-    else if ( key.EqualTo( "ratio_yTitle"   )  ) return getDefaultOpt( key, "Data / MC"        ) ;
-    else if ( key.EqualTo( "ratio_Minimum"  )  ) return getDefaultOpt( key, "0.3"              ) ;
-    else if ( key.EqualTo( "ratio_Maximum"  )  ) return getDefaultOpt( key, "1.7"              ) ;
+    else if ( key.EqualTo( "errorFillColor"    )  ) return getDefaultOpt( key, "1"                ) ;
+    else if ( key.EqualTo( "errorFillStyle"    )  ) return getDefaultOpt( key, "3245"             ) ;
 
-    else if ( key.EqualTo( "plotOutputName" )  ) return getDefaultOpt( key, "test"             ) ;
-    else if ( key.EqualTo( "autoStack"      )  ) return getDefaultOpt( key, ""                 ) ;
+    else if ( key.EqualTo( "ratio_xTitle"      )  ) return getDefaultOpt( key, getOpt( "xTitle" ) ) ;
+    else if ( key.EqualTo( "ratio_yTitle"      )  ) return getDefaultOpt( key, "Data / MC"        ) ;
+    else if ( key.EqualTo( "ratio_Minimum"     )  ) return getDefaultOpt( key, "0.3"              ) ;
+    else if ( key.EqualTo( "ratio_Maximum"     )  ) return getDefaultOpt( key, "1.7"              ) ;
+    else if ( key.EqualTo( "ratio_DrawOpt"     )  ) return getDefaultOpt( key, "ex0p"             ) ;
+
+    else if ( key.EqualTo( "plotOutputName"    )  ) return getDefaultOpt( key, "test"             ) ;
+    else if ( key.EqualTo( "autoStack"         )  ) return getDefaultOpt( key, ""                 ) ;
+
+    else if ( key.EqualTo( "data_DrawOpt"      )  ) return getDefaultOpt( key, "ex0p"             ) ;
 
     else
     {
@@ -218,11 +223,18 @@ THStack* getStack( std::vector<TH1*> hists )
     THStack *stack = new THStack();
     stack->SetName( "stack" );
     stack->SetTitle( "" );
-    if ( !getOpt( "Minimum" ).IsNull() ) stack->SetMinimum( getOpt( "Minimum" ).Atof() );
-    if ( !getOpt( "Maximum" ).IsNull() ) stack->SetMaximum( getOpt( "Maximum" ).Atof() );
 
     for ( auto& hist : hists )
         stack->Add( hist, "" );
+
+    //
+    // Stupid ROOT THStack not reflecting maximum and minimum of pointer TH1* from "GetHistogram()" 
+    // So I have to add this here instead of "stylizeAxes"
+    //
+    if ( !getOpt( "MaximumMultiplier" ).IsNull() )
+        stack->SetMaximum( stack->GetMaximum() * getOpt( "MaximumMultiplier" ).Atof() );
+    if ( !getOpt( "Minimum" ).IsNull() ) stack->SetMinimum( getOpt( "Minimum" ).Atof() );
+    if ( !getOpt( "Maximum" ).IsNull() ) stack->SetMaximum( getOpt( "Maximum" ).Atof() );
 
     return stack;
 }
@@ -235,6 +247,8 @@ void stylizeAxes( TH1* h, TPad* pad )
 
     double WidthPixel =  pad->GetWw();
 
+    if ( !getOpt( "MaximumMultiplier" ).IsNull() )
+        h->SetMaximum( h->GetMaximum() * getOpt( "MaximumMultiplier" ).Atof() );
     if ( !getOpt( "Minimum" ).IsNull() ) h->SetMinimum( getOpt( "Minimum" ).Atof() );
     if ( !getOpt( "Maximum" ).IsNull() ) h->SetMaximum( getOpt( "Maximum" ).Atof() );
     h->SetDirectory( 0 );
@@ -485,7 +499,7 @@ void parseOptions( std::string options_string )
             TString val = so(delim_pos+1, so.Length());
             key.ReplaceAll("\n","");
             val.ReplaceAll("\n","");
-//            std::cout << ":" << key << ":" << val << ":" << std::endl; // for debugging
+            std::cout << ":" << key << ":" << val << ":" << std::endl; // for debugging
             options[key] = val;
         }
     }
@@ -625,7 +639,7 @@ void plotmaker(
         // ~-~-~-~-~-~-~-~-~-
         TH1* total = getTotalBkgHists( bkg_hists );
         draw( total, "hist p", pad0 );
-        draw( total, "e2psame ", pad0 );
+        draw( total, "e2p ", pad0 );
     }
     
     // ~-~-~-~-~
@@ -634,7 +648,7 @@ void plotmaker(
     if ( data_hists.size() )
     {
         for ( auto& data_hist : data_hists )
-            drawData( data_hist, "ex0p", pad0 );
+            drawData( data_hist, getOpt( "data_DrawOpt" ), pad0 );
     }
     
     // ~-~-~-~-~-~
@@ -653,7 +667,7 @@ void plotmaker(
     std::vector<TH1*> ratio_hists = getRatioHists( data_hists, getTotalBkgHists( bkg_hists ) );
 
     for (auto& ratio_hist : ratio_hists )
-        drawRatio( ratio_hist, "ex0p", pad2 );
+        drawRatio( ratio_hist, getOpt( "ratio_DrawOpt" ), pad2 );
 
     // ~-~-~-~-~-
     // Save plots
