@@ -13,6 +13,7 @@
 #include <map>
 #include <string>
 #include <utility>
+#include <cstdlib>
 
 typedef std::pair<TH1*, TH1*> Hist;
 typedef std::vector<Hist> Hists;
@@ -20,6 +21,8 @@ typedef std::vector<Hist> Hists;
 // =============
 // global option
 // =============
+std::vector<TString> options_array;
+std::map<TString, TString> options;
 
 // ==================
 // global th1 handler
@@ -60,6 +63,72 @@ inline std::vector <TString> GetParms( std::string blah )
     }
     
     return options;
+}
+
+//_________________________________________________________________________________________________
+TString getDefaultOpt(TString key, TString default_val)
+{
+    return options[key].IsNull() ? default_val : options[key];
+}
+
+//_________________________________________________________________________________________________
+TString getOpt( TString key )
+{
+
+    // General rule of thumb on the option names
+    // 0. If the option does not relate anything to ROOT, anything's fair game.
+    //    But please be mindful of options name being not to obscure.
+    // 1. Drop "Set" and see whether that is enough.
+    // 2. If another object is called before calling "Set", place a lower case indicator in front.
+    // 3. If following 1. and 2. there is a duplicate option name, (e.g. Ratio pane has same Maximum and Minimum)
+    //    then, place a "category" name of user's choosing (e.g. "ratio", "error", etc.)
+    //    and place a "_" delimiter.
+
+    TString gFont = "42";
+    TString gFontSize = "0.063";
+    TString gLabelOffset = "0.0225";
+    TString gTickLength = "-0.02";
+    TString gNdiv = "505";
+
+    if      ( key.EqualTo( "xTitle"         )  ) return getDefaultOpt( key, "XVar"             ) ;
+    else if ( key.EqualTo( "xTickLength"    )  ) return getDefaultOpt( key, gTickLength        ) ;
+    else if ( key.EqualTo( "xTitleOffset"   )  ) return getDefaultOpt( key, "1.2"              ) ;
+    else if ( key.EqualTo( "xLabelOffset"   )  ) return getDefaultOpt( key, gLabelOffset       ) ;
+    else if ( key.EqualTo( "xTitleSize"     )  ) return getDefaultOpt( key, gFontSize          ) ;
+    else if ( key.EqualTo( "xLabelSize"     )  ) return getDefaultOpt( key, gFontSize          ) ;
+    else if ( key.EqualTo( "xTitleFont"     )  ) return getDefaultOpt( key, gFont              ) ;
+    else if ( key.EqualTo( "xLabelFont"     )  ) return getDefaultOpt( key, gFont              ) ;
+    else if ( key.EqualTo( "xNdivisions"    )  ) return getDefaultOpt( key, gNdiv              ) ;
+
+    else if ( key.EqualTo( "yTitle"         )  ) return getDefaultOpt( key, "YVar"             ) ;
+    else if ( key.EqualTo( "yTickLength"    )  ) return getDefaultOpt( key, gTickLength        ) ;
+    else if ( key.EqualTo( "yTitleOffset"   )  ) return getDefaultOpt( key, "2.1"              ) ;
+    else if ( key.EqualTo( "yLabelOffset"   )  ) return getDefaultOpt( key, gLabelOffset       ) ;
+    else if ( key.EqualTo( "yTitleSize"     )  ) return getDefaultOpt( key, gFontSize          ) ;
+    else if ( key.EqualTo( "yLabelSize"     )  ) return getDefaultOpt( key, gFontSize          ) ;
+    else if ( key.EqualTo( "yTitleFont"     )  ) return getDefaultOpt( key, gFont              ) ;
+    else if ( key.EqualTo( "yLabelFont"     )  ) return getDefaultOpt( key, gFont              ) ;
+    else if ( key.EqualTo( "yNdivisions"    )  ) return getDefaultOpt( key, gNdiv              ) ;
+
+    else if ( key.EqualTo( "Minimum"        )  ) return getDefaultOpt( key, ""                 ) ;
+    else if ( key.EqualTo( "Maximum"        )  ) return getDefaultOpt( key, ""                 ) ;
+
+    else if ( key.EqualTo( "errorFillColor" )  ) return getDefaultOpt( key, "1"                ) ;
+    else if ( key.EqualTo( "errorFillStyle" )  ) return getDefaultOpt( key, "3245"             ) ;
+
+    else if ( key.EqualTo( "ratio_xTitle"   )  ) return getDefaultOpt( key, getOpt( "xTitle" ) ) ;
+    else if ( key.EqualTo( "ratio_yTitle"   )  ) return getDefaultOpt( key, "Data / MC"        ) ;
+    else if ( key.EqualTo( "ratio_Minimum"  )  ) return getDefaultOpt( key, "0.3"              ) ;
+    else if ( key.EqualTo( "ratio_Maximum"  )  ) return getDefaultOpt( key, "1.7"              ) ;
+
+    else if ( key.EqualTo( "plotOutputName" )  ) return getDefaultOpt( key, "test"             ) ;
+    else if ( key.EqualTo( "autoStack"      )  ) return getDefaultOpt( key, ""                 ) ;
+
+    else
+    {
+        std::cout << "[plotmaker::] Unrecognized option! option = " << key << std::endl;
+        exit(-1);
+    }
 }
 
 //_________________________________________________________________________________________________
@@ -137,13 +206,11 @@ TH1* getTotalBkgHists( std::vector<TH1*> hists )
     sum_hist->SetMarkerColor( 9999 );
     sum_hist->SetLineColor( 1 );
     sum_hist->SetLineColor( 1 );
-    sum_hist->SetFillColor( 1 );
-    sum_hist->SetFillStyle( 3245 );
+    sum_hist->SetFillColor( getOpt( "errorFillColor" ).Atoi() );
+    sum_hist->SetFillStyle( getOpt( "errorFillStyle" ).Atoi() );
 
     return sum_hist;
 }
-
-//_________________________________________________________________________________________________
 
 //_________________________________________________________________________________________________
 THStack* getStack( std::vector<TH1*> hists )
@@ -151,7 +218,8 @@ THStack* getStack( std::vector<TH1*> hists )
     THStack *stack = new THStack();
     stack->SetName( "stack" );
     stack->SetTitle( "" );
-    stack->SetMaximum( 86510.64 );
+    if ( !getOpt( "Minimum" ).IsNull() ) stack->SetMinimum( getOpt( "Minimum" ).Atof() );
+    if ( !getOpt( "Maximum" ).IsNull() ) stack->SetMaximum( getOpt( "Maximum" ).Atof() );
 
     for ( auto& hist : hists )
         stack->Add( hist, "" );
@@ -167,33 +235,34 @@ void stylizeAxes( TH1* h, TPad* pad )
 
     double WidthPixel =  pad->GetWw();
 
-    h->SetMinimum( 0 );
-    h->SetMaximum( 90836.17 );
+    if ( !getOpt( "Minimum" ).IsNull() ) h->SetMinimum( getOpt( "Minimum" ).Atof() );
+    if ( !getOpt( "Maximum" ).IsNull() ) h->SetMaximum( getOpt( "Maximum" ).Atof() );
     h->SetDirectory( 0 );
     h->SetStats( 0 );
     h->SetFillColor( -1 );
-    h->GetXaxis ( )->SetNdivisions  ( 505 );
-    h->GetXaxis ( )->SetLabelFont   ( 42 );
-    h->GetXaxis ( )->SetLabelOffset ( 0.0225 );
-    h->GetXaxis ( )->SetLabelSize   ( 0.063 );
-    h->GetXaxis ( )->SetTitleSize   ( 0.063 );
-    h->GetXaxis ( )->SetTitle       ( "XVar" );
-    h->GetXaxis ( )->SetTickLength  ( -0.02 );
-    h->GetXaxis ( )->SetTitleOffset ( 1.2 );
-    h->GetXaxis ( )->SetTitleFont   ( 42 );
-    h->GetYaxis ( )->SetNdivisions  ( 505 );
-    h->GetYaxis ( )->SetLabelFont   ( 42 );
-    h->GetYaxis ( )->SetLabelOffset ( 0.0225 );
-    h->GetYaxis ( )->SetLabelSize   ( 0.063 );
-    h->GetYaxis ( )->SetTitleSize   ( 0.063 );
-    h->GetYaxis ( )->SetTitle       ( "YVar" );
-    h->GetYaxis ( )->SetTickLength  ( -0.02 );
-    h->GetYaxis ( )->SetTitleOffset ( 2.1 );
-    h->GetYaxis ( )->SetTitleFont   ( 42 );
-    h->GetZaxis ( )->SetLabelFont   ( 42 );
-    h->GetZaxis ( )->SetLabelSize   ( 0.035 );
-    h->GetZaxis ( )->SetTitleSize   ( 0.035 );
-    h->GetZaxis ( )->SetTitleFont   ( 42 );
+    h->GetXaxis ( ) ->SetNdivisions  ( getOpt( "xNdivisions"  ) .Atoi( )   ) ;
+    h->GetXaxis ( ) ->SetLabelFont   ( getOpt( "xLabelFont"   ) .Atoi( )   ) ;
+    h->GetXaxis ( ) ->SetLabelOffset ( getOpt( "xLabelOffset" ) .Atof( )   ) ;
+    h->GetXaxis ( ) ->SetLabelSize   ( getOpt( "xLabelSize"   ) .Atof( )   ) ;
+    h->GetXaxis ( ) ->SetTitleSize   ( getOpt( "xTitleSize"   ) .Atof( )   ) ;
+    h->GetXaxis ( ) ->SetTitle       ( getOpt( "xTitle"       )            ) ;
+    h->GetXaxis ( ) ->SetTickLength  ( getOpt( "xTickLength"  ) .Atof( )   ) ;
+    h->GetXaxis ( ) ->SetTitleOffset ( getOpt( "xTitleOffset" ) .Atof( )   ) ;
+    h->GetXaxis ( ) ->SetTitleFont   ( getOpt( "xLabelFont"   ) .Atoi( )   ) ;
+    h->GetYaxis ( ) ->SetNdivisions  ( getOpt( "yNdivisions"  ) .Atoi( )   ) ;
+    h->GetYaxis ( ) ->SetLabelFont   ( getOpt( "yLabelFont"   ) .Atoi( )   ) ;
+    h->GetYaxis ( ) ->SetLabelOffset ( getOpt( "yLabelOffset" ) .Atof( )   ) ;
+    h->GetYaxis ( ) ->SetLabelSize   ( getOpt( "yLabelSize"   ) .Atof( )   ) ;
+    h->GetYaxis ( ) ->SetTitleSize   ( getOpt( "yTitleSize"   ) .Atof( )   ) ;
+    h->GetYaxis ( ) ->SetTitle       ( getOpt( "yTitle"       )            ) ;
+    h->GetYaxis ( ) ->SetTickLength  ( getOpt( "yTickLength"  ) .Atof( )   ) ;
+    h->GetYaxis ( ) ->SetTitleOffset ( getOpt( "yTitleOffset" ) .Atof( )   ) ;
+    h->GetYaxis ( ) ->SetTitleFont   ( getOpt( "xLabelFont"   ) .Atoi( )   ) ;
+//    // TODO: Come back below when we need to implement it
+//    h->GetZaxis ( )->SetLabelFont   ( getOpt( "zLabelFont" ).Atoi() );
+//    h->GetZaxis ( )->SetLabelSize   ( 0.035 );
+//    h->GetZaxis ( )->SetTitleSize   ( 0.035 );
+//    h->GetZaxis ( )->SetTitleFont   ( getOpt( "zTitleFont" ).Atoi() );
 }
 
 //_________________________________________________________________________________________________
@@ -204,35 +273,35 @@ void stylizeRatioAxes( TH1* h, TPad* pad )
 
     double WidthPixel =  pad->GetWw();
 
-    float padding_scale_factor = 0.7 / 0.3;
+    float sf = 0.7 / 0.3;
 
     h->SetTitle("");
-    h->SetMinimum( 0.3 );
-    h->SetMaximum( 1.7 );
-    h->SetEntries( 17204.55 );
+    h->SetMinimum( getOpt( "ratio_Minimum" ).Atof() );
+    h->SetMaximum( getOpt( "ratio_Maximum" ).Atof() );
     h->SetMarkerStyle( 19 );
-    h->GetXaxis()->SetNdivisions( 505 );
-    h->GetXaxis()->SetLabelFont( 42 );
-    h->GetXaxis()->SetLabelOffset( 0.0225 * padding_scale_factor );
-    h->GetXaxis()->SetLabelSize( 0.063 * padding_scale_factor );
-    h->GetXaxis()->SetTitleSize( 0.063 * padding_scale_factor );
-    h->GetXaxis()->SetTickLength( -0.02 * padding_scale_factor );
-    h->GetXaxis()->SetTitleOffset( 1.2 );
-    h->GetXaxis()->SetTitleFont( 42 );
-    h->GetXaxis()->SetTitle( "Ratio" );
-    h->GetYaxis()->SetNdivisions( 505 );
-    h->GetYaxis()->SetLabelFont( 42 );
-    h->GetYaxis()->SetLabelOffset( 0.0225 );
-    h->GetYaxis()->SetLabelSize( 0.063 * padding_scale_factor );
-    h->GetYaxis()->SetTitleSize( 0.063 * padding_scale_factor );
-    h->GetYaxis()->SetTickLength( -0.02 * ( 10. / 6. ) );
-    h->GetYaxis()->SetTitleOffset( 2.1 / padding_scale_factor );
-    h->GetYaxis()->SetTitleFont( 42 );
-    h->GetYaxis()->SetTitle( "Ratio" );
-    h->GetZaxis()->SetLabelFont( 42 );
-    h->GetZaxis()->SetLabelSize( 0.035 );
-    h->GetZaxis()->SetTitleSize( 0.035 );
-    h->GetZaxis()->SetTitleFont( 42 );
+    h->GetXaxis( ) ->SetNdivisions( getOpt( "xNdivisions" ).Atoi( ) );
+    h->GetXaxis( ) ->SetLabelFont( getOpt( "xLabelFont" ) .Atoi( ) ) ;
+    h->GetXaxis( ) ->SetLabelOffset( getOpt( "xLabelOffset" ).Atof() * sf ) ;
+    h->GetXaxis( ) ->SetLabelSize( getOpt( "xLabelSize" ).Atof() * sf ) ;
+    h->GetXaxis( ) ->SetTitleSize( getOpt( "xLabelSize" ).Atof() * sf ) ;
+    h->GetXaxis( ) ->SetTickLength( getOpt( "xTickLength" ).Atof() * sf ) ;
+    h->GetXaxis( ) ->SetTitleOffset( getOpt( "xTitleOffset" ).Atof() ) ;
+    h->GetXaxis( ) ->SetTitleFont( getOpt( "xLabelFont" ).Atoi( ) );
+    h->GetXaxis( ) ->SetTitle( getOpt( "ratio_xTitle" ) );
+    h->GetYaxis( ) ->SetNdivisions( getOpt( "yNdivisions" ).Atoi( ) );
+    h->GetYaxis( ) ->SetLabelFont( getOpt( "yLabelFont" ).Atoi( ) );
+    h->GetYaxis( ) ->SetLabelOffset( getOpt( "yLabelOffset" ).Atof( ) );
+    h->GetYaxis( ) ->SetLabelSize( getOpt( "yLabelSize" ).Atof() * sf ) ;
+    h->GetYaxis( ) ->SetTitleSize( getOpt( "yTitleSize" ).Atof() * sf ) ;
+    h->GetYaxis( ) ->SetTickLength( getOpt( "yTickLength" ).Atof() * ( 10. / 6. ) ) ;
+    h->GetYaxis( ) ->SetTitleOffset( getOpt( "yTitleOffset" ).Atof() / sf ) ;
+    h->GetYaxis( ) ->SetTitleFont( getOpt( "yTitleFont" ).Atoi() );
+    h->GetYaxis( ) ->SetTitle( getOpt( "ratio_yTitle" ) );
+//    // TODO: When we need to we'll implement this
+//    h->GetZaxis( ) ->SetLabelFont( 42 ) ;
+//    h->GetZaxis( ) ->SetLabelSize( 0.035 ) ;
+//    h->GetZaxis( ) ->SetTitleSize( 0.035 ) ;
+//    h->GetZaxis( ) ->SetTitleFont( 42 ) ;
 
 }
 
@@ -366,6 +435,7 @@ void drawLegend( std::vector<TH1*> data_hists, std::vector<TH1*> bkg_hists, std:
     for ( auto& data_hist : data_hists )
         addToLegend( data_hist, leg, "ep" );
         
+    std::reverse( std::begin( bkg_hists ), std::end( bkg_hists ) );
     for ( auto& bkg_hist : bkg_hists )
         addToLegend( bkg_hist, leg, "f" );
         
@@ -392,6 +462,37 @@ void drawLogos( TPad* pad )
 }
 
 //_________________________________________________________________________________________________
+void parseOptions( std::string options_string )
+{
+    options_array.clear();
+    options.clear();
+    options_array = GetParms( options_string );
+    for ( auto& option : options_array )
+    {
+        TObjArray* oa = option.Tokenize(" ");
+        if ( oa->GetEntries() == 1 )
+        {
+            TString key = ((TObjString*) oa->At(0))->GetString();
+            key.ReplaceAll("\n","");
+            std::cout << ":" << key << ":" << "true" << ":" << std::endl; // for debugging
+            options[key] = "true";
+        }
+        else
+        {
+            TString so = option.Strip(TString::kBoth);
+            Ssiz_t delim_pos = so.First(" ");
+            TString key = so(0, delim_pos);
+            TString val = so(delim_pos+1, so.Length());
+            key.ReplaceAll("\n","");
+            val.ReplaceAll("\n","");
+//            std::cout << ":" << key << ":" << val << ":" << std::endl; // for debugging
+            options[key] = val;
+        }
+    }
+
+}
+
+//_________________________________________________________________________________________________
 void plotmaker(
     std::string options_string,
     Hists datas_pair_in,
@@ -404,10 +505,10 @@ void plotmaker(
     // ~-~-~-~-~-~-~-~
     gStyle->SetOptStat( 0 );
 
-    // ~-~-~-~-~-~-~
-    // Parse options
-    // ~-~-~-~-~-~-~
-    std::vector<TString> Options = GetParms( options_string );
+    // ~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~
+    // Parse options in to a global variable
+    // ~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~
+    parseOptions( options_string );
     
     // ~-~-~-~-~-~-~-~
     // The main canvas
@@ -469,6 +570,7 @@ void plotmaker(
     pad2->SetLeftMargin( 150. / 600. );
     pad2->SetRightMargin( 50. / 600. );
     pad2->SetBottomMargin( 0.4 );
+    pad2->SetTopMargin( 0.01 );
     pad2->SetFrameBorderMode( 0 );
     pad2->SetFrameBorderSize( 0 );
     pad2->SetFrameBorderMode( 0 );
@@ -496,6 +598,22 @@ void plotmaker(
     // ~-~-~-~-~-~-~-~
     if ( bkg_hists.size() )
     {
+
+        // ~-~-~-~-~-~-~-~-
+        // auto stack order
+        // ~-~-~-~-~-~-~-~-
+        if ( !getOpt( "autoStack" ).IsNull() )
+        {
+            std::cout << "here" << std::endl;
+            struct {
+                bool operator() (TH1* a, TH1* b) const
+                {
+                    return a->Integral() < b->Integral();
+                }
+            } sortByIntegral;
+            std::sort( bkg_hists.begin(), bkg_hists.end(), sortByIntegral );
+        }
+
         // ~-~-~-~-~-~-~-~-~-
         // Main bkg stack plot
         // ~-~-~-~-~-~-~-~-~-
@@ -540,10 +658,18 @@ void plotmaker(
     // ~-~-~-~-~-
     // Save plots
     // ~-~-~-~-~-
-    canvas->SaveAs( "test.png" );
-    canvas->SaveAs( "test.pdf" );
+    canvas->SaveAs( getOpt( "plotOutputName" ) + ".png" );
+    canvas->SaveAs( getOpt( "plotOutputName" ) + ".pdf" );
+    pad0->SetLogy();
+    canvas->SaveAs( getOpt( "plotOutputName" ) + "_logy.png" );
+    canvas->SaveAs( getOpt( "plotOutputName" ) + "_logy.pdf" );
     pad0->cd();
-    pad0->SaveAs( "test_bare.pdf" );
+    pad0->SetLogy(0);
+    pad0->SaveAs( getOpt( "plotOutputName" ) + "_noratio.pdf" );
+    pad0->SetLogy();
+    pad0->SaveAs( getOpt( "plotOutputName" ) + "_noratio_logy.pdf" );
+
+    delete canvas;
 }
 
 //_________________________________________________________________________________________________
