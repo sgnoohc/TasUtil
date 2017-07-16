@@ -121,6 +121,8 @@ if [ -e ${MAKECLASSNAME}.h ]; then
     fi
 fi
 
+source $DIR/root.sh ""
+
 if [ -e ~/cmstas/Software/makeCMS3ClassFiles/makeCMS3ClassFiles.C ]; then
   root -l -b -q ~/cmstas/Software/makeCMS3ClassFiles/makeCMS3ClassFiles.C\(\"${ROOTFILE}\",\"${TTREENAME}\",\"${MAKECLASSNAME}\",\"${NAMESPACENAME}\",\"${TREEINSTANCENAME}\"\) &> /dev/null
 else

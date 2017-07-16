@@ -17,7 +17,7 @@ fi
 echo 'which root'
 which root
 
-if [ -z $1 ]; then
+if [ -z "$1" ]; then
     :
 else
     root -l $1
