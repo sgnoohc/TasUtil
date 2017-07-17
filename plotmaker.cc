@@ -99,6 +99,7 @@ TString getOpt( TString key )
     else if ( key.EqualTo( "xTitleFont"        )  ) return getDefaultOpt( key, gFont              ) ;
     else if ( key.EqualTo( "xLabelFont"        )  ) return getDefaultOpt( key, gFont              ) ;
     else if ( key.EqualTo( "xNdivisions"       )  ) return getDefaultOpt( key, gNdiv              ) ;
+    else if ( key.EqualTo( "xRebin"            )  ) return getDefaultOpt( key, ""                 ) ;
 
     else if ( key.EqualTo( "yTitle"            )  ) return getDefaultOpt( key, "YVar"             ) ;
     else if ( key.EqualTo( "yTickLength"       )  ) return getDefaultOpt( key, gTickLength        ) ;
@@ -115,19 +116,29 @@ TString getOpt( TString key )
     else if ( key.EqualTo( "Minimum"           )  ) return getDefaultOpt( key, ""                 ) ;
     else if ( key.EqualTo( "Maximum"           )  ) return getDefaultOpt( key, ""                 ) ;
 
-    else if ( key.EqualTo( "errorFillColor"    )  ) return getDefaultOpt( key, "1"                ) ;
-    else if ( key.EqualTo( "errorFillStyle"    )  ) return getDefaultOpt( key, "3245"             ) ;
+    else if ( key.EqualTo( "error_FillColor"   )  ) return getDefaultOpt( key, "1"                ) ;
+    else if ( key.EqualTo( "error_FillStyle"   )  ) return getDefaultOpt( key, "3245"             ) ;
 
     else if ( key.EqualTo( "ratio_xTitle"      )  ) return getDefaultOpt( key, getOpt( "xTitle" ) ) ;
     else if ( key.EqualTo( "ratio_yTitle"      )  ) return getDefaultOpt( key, "Data / MC"        ) ;
-    else if ( key.EqualTo( "ratio_Minimum"     )  ) return getDefaultOpt( key, "0.3"              ) ;
-    else if ( key.EqualTo( "ratio_Maximum"     )  ) return getDefaultOpt( key, "1.7"              ) ;
+    else if ( key.EqualTo( "ratio_Minimum"     )  ) return getDefaultOpt( key, "0.7"              ) ;
+    else if ( key.EqualTo( "ratio_Maximum"     )  ) return getDefaultOpt( key, "1.3"              ) ;
     else if ( key.EqualTo( "ratio_DrawOpt"     )  ) return getDefaultOpt( key, "ex0p"             ) ;
+
+    else if ( key.EqualTo( "data_DrawOpt"      )  ) return getDefaultOpt( key, "ex0p"             ) ;
+
+    else if ( key.EqualTo( "stack_DrawOpt"     )  ) return getDefaultOpt( key, "hist"             ) ;
+
+    else if ( key.EqualTo( "legend_bkgDrawOpt" )  ) return getDefaultOpt( key, "f"                ) ;
 
     else if ( key.EqualTo( "plotOutputName"    )  ) return getDefaultOpt( key, "test"             ) ;
     else if ( key.EqualTo( "autoStack"         )  ) return getDefaultOpt( key, ""                 ) ;
-
-    else if ( key.EqualTo( "data_DrawOpt"      )  ) return getDefaultOpt( key, "ex0p"             ) ;
+    else if ( key.EqualTo( "showOverflow"      )  ) return getDefaultOpt( key, ""                 ) ;
+    else if ( key.EqualTo( "showUnderflow"     )  ) return getDefaultOpt( key, ""                 ) ;
+    else if ( key.EqualTo( "printRatio"        )  ) return getDefaultOpt( key, ""                 ) ;
+    else if ( key.EqualTo( "sumDataHists"      )  ) return getDefaultOpt( key, ""                 ) ;
+    else if ( key.EqualTo( "reverseRatio"      )  ) return getDefaultOpt( key, ""                 ) ;
+    else if ( key.EqualTo( "ratioPaneAtBottom" )  ) return getDefaultOpt( key, ""                 ) ;
 
     else
     {
@@ -144,6 +155,55 @@ std::vector<double> getBinInfo( std::vector<TH1*> hists )
     bininfo.push_back( hists[0]->GetXaxis()->GetXmin() );
     bininfo.push_back( hists[0]->GetXaxis()->GetXmax() );
     return bininfo;
+}
+
+//_________________________________________________________________________________________________
+void showOverflow( TH1* hist )
+{
+    double overflow_content = hist->GetBinContent( hist->GetNbinsX() + 1 );
+    double overflow_error   = hist->GetBinError  ( hist->GetNbinsX() + 1 );
+    double lastbin_content = hist->GetBinContent( hist->GetNbinsX()  );
+    double lastbin_error   = hist->GetBinError  ( hist->GetNbinsX()  );
+    hist->SetBinContent( hist->GetNbinsX(), overflow_content + lastbin_content );
+    hist->SetBinError  ( hist->GetNbinsX(), sqrt( pow( overflow_error, 2 ) + pow( lastbin_error, 2 ) ) );
+}
+
+//_________________________________________________________________________________________________
+void showUnderflow( TH1* hist )
+{
+    double underflow_content = hist->GetBinContent( 0 );
+    double underflow_error   = hist->GetBinError  ( 0 );
+    double firstbin_content = hist->GetBinContent( 1  );
+    double firstbin_error   = hist->GetBinError  ( 1  );
+    hist->SetBinContent( hist->GetNbinsX(), underflow_content + firstbin_content );
+    hist->SetBinError  ( hist->GetNbinsX(), sqrt( pow( underflow_error, 2 ) + pow( firstbin_error, 2 ) ) );
+}
+
+//_________________________________________________________________________________________________
+void correctOverUnderflow( TH1* hist )
+{
+    if ( !getOpt( "showOverflow" ).IsNull() ) showOverflow( hist );
+    if ( !getOpt( "showUnderflow" ).IsNull() ) showUnderflow( hist );
+}
+
+//_________________________________________________________________________________________________
+void rebin( TH1* hist )
+{
+    if ( !getOpt( "xRebin" ).IsNull() )
+    {
+        int target_nbin = getOpt( "xRebin" ).Atoi();
+        int current_nbin = hist->GetNbinsX();
+        if ( current_nbin % target_nbin != 0 )
+        {
+            std::cout << "[plotmaker::] The target bin you asked target_nbin=";
+            std::cout << target_nbin << " ";
+            std::cout << "is not possible for a bin with current_nbin=";
+            std::cout << current_nbin << std::endl;
+            exit(-1);
+        }
+        int rebin_factor = current_nbin / target_nbin;
+        hist->Rebin( rebin_factor );
+    }
 }
 
 //_________________________________________________________________________________________________
@@ -164,7 +224,10 @@ TH1* histWithFullError( TH1* nominal, TH1* error )
         nominal_with_full_error->SetBinContent( ibin, content );
         nominal_with_full_error->SetBinError( ibin, all_error );
     }
-    
+
+    correctOverUnderflow( nominal_with_full_error );
+    rebin( nominal_with_full_error );
+
     return nominal_with_full_error;
 }
 
@@ -203,6 +266,11 @@ TH1* getSumHists( std::vector<TH1*> hists )
 //_________________________________________________________________________________________________
 TH1* getTotalBkgHists( std::vector<TH1*> hists )
 {
+    if ( hists.size() == 0)
+    {
+        std::cout << "[plotmaker::] You asked for a total bkg hist when there are no bkg hists provided." << std::endl;
+        exit(-1);
+    }
     TH1* sum_hist = getSumHists( hists );
     if ( !gROOT->GetColor( 9999 ) )
         new TColor( 9999, 0.1, 0.2, 0.3, "", 0. ); // alpha = 0.5
@@ -211,8 +279,8 @@ TH1* getTotalBkgHists( std::vector<TH1*> hists )
     sum_hist->SetMarkerColor( 9999 );
     sum_hist->SetLineColor( 1 );
     sum_hist->SetLineColor( 1 );
-    sum_hist->SetFillColor( getOpt( "errorFillColor" ).Atoi() );
-    sum_hist->SetFillStyle( getOpt( "errorFillStyle" ).Atoi() );
+    sum_hist->SetFillColor( getOpt( "error_FillColor" ).Atoi() );
+    sum_hist->SetFillStyle( getOpt( "error_FillStyle" ).Atoi() );
 
     return sum_hist;
 }
@@ -358,12 +426,15 @@ void drawData( TH1* h, TString option, TPad* pad )
 {
     h->SetMarkerStyle(19);
     h->SetMarkerSize(1);
-    h->SetLineColor(1);
+//    h->SetLineColor(1);
 
     pad->cd();
 
+    std::cout << "drawData" << map_pad_drawn[pad] << std::endl;
+
     if ( !map_pad_drawn[pad] )
     {
+        std::cout << "here" << std::endl;
         h->Draw( option.Data() );
         stylizeAxes( h, pad );
         map_pad_drawn[pad] = true;
@@ -383,6 +454,9 @@ void drawRatio( TH1* h, TString option, TPad* pad )
 
     pad->cd();
 
+    if ( !getOpt( "printRatio" ).IsNull() )
+        h->Print("all");
+
     if ( !map_pad_drawn[pad] )
     {
         h->Draw( option.Data() );
@@ -399,7 +473,8 @@ void drawRatio( TH1* h, TString option, TPad* pad )
 void addToLegend( TH1* h, TLegend* legend, const char* option )
 {
     TString name = h->GetName();
-    legend->AddEntry( h, name.Data(), option );
+    if ( !name.Contains( "skip" ) )
+        legend->AddEntry( h, name.Data(), option );
 }
 
 //_________________________________________________________________________________________________
@@ -416,7 +491,11 @@ std::vector<TH1*> getRatioHists( std::vector<TH1*> data_hists, std::vector<TH1*>
             
         ratio->SetDirectory( 0 );
         
-        ratio->Divide( data_hists[ihist], bkg_hists.size() == 1 ? bkg_hists[0] : bkg_hists[ihist] );
+        if ( !getOpt( "reverseRatio" ).IsNull() )
+            ratio->Divide( bkg_hists.size() == 1 ? bkg_hists[0] : bkg_hists[ihist], data_hists[ihist] );
+        else
+            ratio->Divide( data_hists[ihist], bkg_hists.size() == 1 ? bkg_hists[0] : bkg_hists[ihist] );
+
         ratio_hists.push_back( ratio );
     }
     
@@ -451,7 +530,7 @@ void drawLegend( std::vector<TH1*> data_hists, std::vector<TH1*> bkg_hists, std:
         
     std::reverse( std::begin( bkg_hists ), std::end( bkg_hists ) );
     for ( auto& bkg_hist : bkg_hists )
-        addToLegend( bkg_hist, leg, "f" );
+        addToLegend( bkg_hist, leg, getOpt( "legend_bkgDrawOpt" ) );
         
     for ( auto& sig_hist : sig_hists )
         addToLegend( sig_hist, leg, "l" );
@@ -507,13 +586,34 @@ void parseOptions( std::string options_string )
 }
 
 //_________________________________________________________________________________________________
-void plotmaker(
+void replaceWithSummedHist( std::vector<TH1*>& hists )
+{
+    TH1* summed_hist = getSumHists( hists );
+    hists.clear();
+    hists.push_back( summed_hist );
+}
+
+//_________________________________________________________________________________________________
+void clearGlobalSettings()
+{
+    options_array.clear();
+    options.clear();
+    map_pad_drawn.clear();
+}
+
+//_________________________________________________________________________________________________
+std::vector<TH1*> plotmaker(
     std::string options_string,
     Hists datas_pair_in,
     Hists bkgs_pair_in,
     Hists sigs_pair_in = Hists()
 )
 {
+    // ~-~-~-~-~-~-~-~-~-~-~
+    // Clear global settings
+    // ~-~-~-~-~-~-~-~-~-~-~
+    clearGlobalSettings();
+
     // ~-~-~-~-~-~-~-~
     // gStyle settings
     // ~-~-~-~-~-~-~-~
@@ -543,7 +643,11 @@ void plotmaker(
     // The main TPad
     // ~-~-~-~-~-~-~
     // The bottom main pain with 70% height in y-axis
-    TPad* pad0 = new TPad( "pad0", "pad0", 0, 0, 1 - 0.4, 0.7 );
+    TPad* pad0 = 0;
+    if ( !getOpt( "ratioPaneAtBottom" ).IsNull() )
+        pad0 = new TPad( "pad0", "pad0", 0, 0.3, 1 - 0.4, 1.0 );
+    else
+        pad0 = new TPad( "pad0", "pad0", 0, 0, 1 - 0.4, 0.7 );
     pad0->Draw();
     pad0->cd();
     pad0->Range( -80, -25953.19, 320, 103812.8 );
@@ -572,7 +676,11 @@ void plotmaker(
     // The Ratio TPad
     // ~-~-~-~-~-~-~-~
     canvas->cd();
-    TPad *pad2 = new TPad( "pad2", "pad2", 0, 0.7, 0.6, 1 );
+    TPad* pad2 = 0;
+    if ( !getOpt( "ratioPaneAtBottom" ).IsNull() )
+        pad2 = new TPad( "pad2", "pad2", 0, 0.125, 0.6, 0.425 );
+    else
+        pad2 = new TPad( "pad2", "pad2", 0, 0.7, 0.6, 1 );
     pad2->Draw();
     pad2->cd();
     pad2->Range( -80, -0.82, 320, 1.98 );
@@ -597,7 +705,7 @@ void plotmaker(
     {
         std::cout << "[plotmaker::] No histograms were provided!" << std::endl;
         std::cout << "[plotmaker::] What the hell do you want me to do with no TH1's?" << std::endl;
-        return;
+        return std::vector<TH1*>();
     }
     
     // ~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~
@@ -618,7 +726,6 @@ void plotmaker(
         // ~-~-~-~-~-~-~-~-
         if ( !getOpt( "autoStack" ).IsNull() )
         {
-            std::cout << "here" << std::endl;
             struct {
                 bool operator() (TH1* a, TH1* b) const
                 {
@@ -632,7 +739,7 @@ void plotmaker(
         // Main bkg stack plot
         // ~-~-~-~-~-~-~-~-~-
         THStack* stack = getStack( bkg_hists );
-        draw( stack, "hist", pad0 );
+        draw( stack, getOpt( "stack_DrawOpt" ), pad0 );
         
         // ~-~-~-~-~-~-~-~-~-
         // Total bkg histogram
@@ -647,6 +754,9 @@ void plotmaker(
     // ~-~-~-~-~
     if ( data_hists.size() )
     {
+        if ( !getOpt( "sumDataHists" ).IsNull() )
+            replaceWithSummedHist( data_hists );
+
         for ( auto& data_hist : data_hists )
             drawData( data_hist, getOpt( "data_DrawOpt" ), pad0 );
     }
@@ -664,10 +774,14 @@ void plotmaker(
     // ~-~-~-~-~-~-~-~
     // Draw Ratio plot
     // ~-~-~-~-~-~-~-~
-    std::vector<TH1*> ratio_hists = getRatioHists( data_hists, getTotalBkgHists( bkg_hists ) );
+    std::vector<TH1*> ratio_hists;
+    if ( data_hists.size() != 0 && bkg_hists.size() != 0 )
+    {
+        ratio_hists = getRatioHists( data_hists, getTotalBkgHists( bkg_hists ) );
 
-    for (auto& ratio_hist : ratio_hists )
-        drawRatio( ratio_hist, getOpt( "ratio_DrawOpt" ), pad2 );
+        for (auto& ratio_hist : ratio_hists )
+            drawRatio( ratio_hist, getOpt( "ratio_DrawOpt" ), pad2 );
+    }
 
     // ~-~-~-~-~-
     // Save plots
@@ -684,10 +798,12 @@ void plotmaker(
     pad0->SaveAs( getOpt( "plotOutputName" ) + "_noratio_logy.pdf" );
 
     delete canvas;
+
+    return ratio_hists;
 }
 
 //_________________________________________________________________________________________________
-void plotmaker(
+std::vector<TH1*> plotmaker(
     std::string options_string,
     TH1* data_in,
     Hists bkgs_pair_in,
@@ -697,11 +813,11 @@ void plotmaker(
     Hists datas_pair_in;
     datas_pair_in.push_back( std::pair<TH1*, TH1*>( data_in, 0 ) );
     
-    plotmaker( options_string, datas_pair_in, bkgs_pair_in, sigs_pair_in );
+    return plotmaker( options_string, datas_pair_in, bkgs_pair_in, sigs_pair_in );
 }
 
 //_________________________________________________________________________________________________
-void plotmaker(
+std::vector<TH1*> plotmaker(
     std::string options_string,
     TH1* data_in,
     std::vector<TH1*> bkg_hists,
@@ -722,7 +838,57 @@ void plotmaker(
     for ( auto& sig_hist : sig_hists )
         sigs_pair_in.push_back( std::pair<TH1*, TH1*>( sig_hist, 0 ) );
         
-    plotmaker( options_string, datas_pair_in, bkgs_pair_in, sigs_pair_in );
+    return plotmaker( options_string, datas_pair_in, bkgs_pair_in, sigs_pair_in );
+}
+
+//_________________________________________________________________________________________________
+std::vector<TH1*> plotmaker(
+    std::string options_string,
+    TH1* data_in,
+    TH1* bkg_in,
+    std::vector<TH1*> sig_hists = std::vector<TH1*>()
+)
+{
+
+    Hists datas_pair_in;
+    datas_pair_in.push_back( std::pair<TH1*, TH1*>( data_in, 0 ) );
+    
+    Hists bkgs_pair_in;
+    bkgs_pair_in.push_back( std::pair<TH1*, TH1*>( bkg_in, 0 ) );
+    
+    Hists sigs_pair_in;
+    
+    for ( auto& sig_hist : sig_hists )
+        sigs_pair_in.push_back( std::pair<TH1*, TH1*>( sig_hist, 0 ) );
+        
+    return plotmaker( options_string, datas_pair_in, bkgs_pair_in, sigs_pair_in );
+}
+
+//_________________________________________________________________________________________________
+std::vector<TH1*> plotmaker(
+    std::string options_string,
+    std::vector<TH1*> data_hists,
+    std::vector<TH1*> bkg_hists,
+    std::vector<TH1*> sig_hists = std::vector<TH1*>()
+)
+{
+
+    Hists datas_pair_in;
+    
+    for ( auto& data_hist : data_hists )
+        datas_pair_in.push_back( std::pair<TH1*, TH1*>( data_hist, 0 ) );
+        
+    Hists bkgs_pair_in;
+    
+    for ( auto& bkg_hist : bkg_hists )
+        bkgs_pair_in.push_back( std::pair<TH1*, TH1*>( bkg_hist, 0 ) );
+        
+    Hists sigs_pair_in;
+    
+    for ( auto& sig_hist : sig_hists )
+        sigs_pair_in.push_back( std::pair<TH1*, TH1*>( sig_hist, 0 ) );
+        
+    return plotmaker( options_string, datas_pair_in, bkgs_pair_in, sigs_pair_in );
 }
 
 ////_________________________________________________________________________________________________
