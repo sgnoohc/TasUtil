@@ -99,7 +99,7 @@ TString getOpt( TString key )
     else if ( key.EqualTo( "xTitleFont"        )  ) return getDefaultOpt( key, gFont              ) ;
     else if ( key.EqualTo( "xLabelFont"        )  ) return getDefaultOpt( key, gFont              ) ;
     else if ( key.EqualTo( "xNdivisions"       )  ) return getDefaultOpt( key, gNdiv              ) ;
-    else if ( key.EqualTo( "xRebin"            )  ) return getDefaultOpt( key, ""                 ) ;
+    else if ( key.EqualTo( "xNbin"            )  ) return getDefaultOpt( key, ""                 ) ;
 
     else if ( key.EqualTo( "yTitle"            )  ) return getDefaultOpt( key, "YVar"             ) ;
     else if ( key.EqualTo( "yTickLength"       )  ) return getDefaultOpt( key, gTickLength        ) ;
@@ -111,7 +111,7 @@ TString getOpt( TString key )
     else if ( key.EqualTo( "yLabelFont"        )  ) return getDefaultOpt( key, gFont              ) ;
     else if ( key.EqualTo( "yNdivisions"       )  ) return getDefaultOpt( key, gNdiv              ) ;
 
-    else if ( key.EqualTo( "MaximumMultiplier" )  ) return getDefaultOpt( key, ""                 ) ;
+    else if ( key.EqualTo( "MaximumMultiplier" )  ) return getDefaultOpt( key, "1.2"              ) ;
 
     else if ( key.EqualTo( "Minimum"           )  ) return getDefaultOpt( key, ""                 ) ;
     else if ( key.EqualTo( "Maximum"           )  ) return getDefaultOpt( key, ""                 ) ;
@@ -120,7 +120,7 @@ TString getOpt( TString key )
     else if ( key.EqualTo( "error_FillStyle"   )  ) return getDefaultOpt( key, "3245"             ) ;
 
     else if ( key.EqualTo( "ratio_xTitle"      )  ) return getDefaultOpt( key, getOpt( "xTitle" ) ) ;
-    else if ( key.EqualTo( "ratio_yTitle"      )  ) return getDefaultOpt( key, "Data / MC"        ) ;
+    else if ( key.EqualTo( "ratio_yTitle"      )  ) return getDefaultOpt( key, getOpt( "reverseRatio" ).IsNull() ? "Data / MC" : "MC / Data" ) ;
     else if ( key.EqualTo( "ratio_Minimum"     )  ) return getDefaultOpt( key, "0.7"              ) ;
     else if ( key.EqualTo( "ratio_Maximum"     )  ) return getDefaultOpt( key, "1.3"              ) ;
     else if ( key.EqualTo( "ratio_DrawOpt"     )  ) return getDefaultOpt( key, "ex0p"             ) ;
@@ -136,9 +136,12 @@ TString getOpt( TString key )
     else if ( key.EqualTo( "showOverflow"      )  ) return getDefaultOpt( key, ""                 ) ;
     else if ( key.EqualTo( "showUnderflow"     )  ) return getDefaultOpt( key, ""                 ) ;
     else if ( key.EqualTo( "printRatio"        )  ) return getDefaultOpt( key, ""                 ) ;
+    else if ( key.EqualTo( "printTotalBkg"     )  ) return getDefaultOpt( key, ""                 ) ;
+    else if ( key.EqualTo( "printData"         )  ) return getDefaultOpt( key, ""                 ) ;
     else if ( key.EqualTo( "sumDataHists"      )  ) return getDefaultOpt( key, ""                 ) ;
     else if ( key.EqualTo( "reverseRatio"      )  ) return getDefaultOpt( key, ""                 ) ;
     else if ( key.EqualTo( "ratioPaneAtBottom" )  ) return getDefaultOpt( key, ""                 ) ;
+    else if ( key.EqualTo( "divideByBinWidth"  )  ) return getDefaultOpt( key, ""                 ) ;
 
     else
     {
@@ -189,9 +192,9 @@ void correctOverUnderflow( TH1* hist )
 //_________________________________________________________________________________________________
 void rebin( TH1* hist )
 {
-    if ( !getOpt( "xRebin" ).IsNull() )
+    if ( !getOpt( "xNbin" ).IsNull() )
     {
-        int target_nbin = getOpt( "xRebin" ).Atoi();
+        int target_nbin = getOpt( "xNbin" ).Atoi();
         int current_nbin = hist->GetNbinsX();
         if ( current_nbin % target_nbin != 0 )
         {
@@ -207,11 +210,26 @@ void rebin( TH1* hist )
 }
 
 //_________________________________________________________________________________________________
+void divideByBinWidth( TH1* hist )
+{
+    if ( !getOpt( "divideByBinWidth" ).IsNull() )
+    {
+        for ( unsigned int ibin = 1; ibin <= hist->GetNbinsX(); ibin++ )
+        {
+            hist->SetBinContent( ibin, hist->GetBinContent( ibin ) / hist->GetBinWidth( ibin ) );
+            hist->SetBinError( ibin, hist->GetBinError( ibin ) / hist->GetBinWidth( ibin ) );
+        }
+    }
+}
+
+//_________________________________________________________________________________________________
 TH1* histWithFullError( TH1* nominal, TH1* error )
 {
-    TH1D* nominal_with_full_error = (TH1D*) nominal->Clone(nominal->GetName());
+    TH1D* nominal_with_full_error = ( TH1D* ) nominal->Clone( nominal->GetName() );
+    
     if ( !nominal_with_full_error->GetSumw2N() )
         nominal_with_full_error->Sumw2();
+        
     nominal_with_full_error->SetDirectory( 0 );
     
     for ( unsigned int ibin = 0; ibin <= nominal->GetNbinsX() + 1; ibin++ )
@@ -220,14 +238,15 @@ TH1* histWithFullError( TH1* nominal, TH1* error )
         double nominal_hist_error = nominal->GetBinError( ibin );
         double additional_error = error ? error->GetBinContent( ibin ) : 0;
         double all_error = error ? sqrt( pow( nominal_hist_error, 2 ) + pow( additional_error, 2 ) )
-                                 : nominal_hist_error;
+                           : nominal_hist_error;
         nominal_with_full_error->SetBinContent( ibin, content );
         nominal_with_full_error->SetBinError( ibin, all_error );
     }
-
+    
     correctOverUnderflow( nominal_with_full_error );
     rebin( nominal_with_full_error );
-
+    divideByBinWidth( nominal_with_full_error );
+    
     return nominal_with_full_error;
 }
 
@@ -281,6 +300,12 @@ TH1* getTotalBkgHists( std::vector<TH1*> hists )
     sum_hist->SetLineColor( 1 );
     sum_hist->SetFillColor( getOpt( "error_FillColor" ).Atoi() );
     sum_hist->SetFillStyle( getOpt( "error_FillStyle" ).Atoi() );
+
+    if ( !getOpt( "printTotalBkg" ).IsNull() )
+    {
+        std::cout << "[plotmaker::] Printing total background histogram." << std::endl;
+        sum_hist->Print("all");
+    }
 
     return sum_hist;
 }
@@ -428,13 +453,13 @@ void drawData( TH1* h, TString option, TPad* pad )
     h->SetMarkerSize(1);
 //    h->SetLineColor(1);
 
-    pad->cd();
+    if ( !getOpt( "printData" ).IsNull() )
+        h->Print( "all" );
 
-    std::cout << "drawData" << map_pad_drawn[pad] << std::endl;
+    pad->cd();
 
     if ( !map_pad_drawn[pad] )
     {
-        std::cout << "here" << std::endl;
         h->Draw( option.Data() );
         stylizeAxes( h, pad );
         map_pad_drawn[pad] = true;
@@ -450,7 +475,7 @@ void drawRatio( TH1* h, TString option, TPad* pad )
 {
     h->SetMarkerStyle(19);
     h->SetMarkerSize(1);
-    h->SetLineColor(1);
+//    h->SetLineColor(1);
 
     pad->cd();
 
@@ -567,7 +592,7 @@ void parseOptions( std::string options_string )
         {
             TString key = ((TObjString*) oa->At(0))->GetString();
             key.ReplaceAll("\n","");
-            std::cout << ":" << key << ":" << "true" << ":" << std::endl; // for debugging
+//            std::cout << ":" << key << ":" << "true" << ":" << std::endl; // for debugging
             options[key] = "true";
         }
         else
@@ -578,7 +603,7 @@ void parseOptions( std::string options_string )
             TString val = so(delim_pos+1, so.Length());
             key.ReplaceAll("\n","");
             val.ReplaceAll("\n","");
-            std::cout << ":" << key << ":" << val << ":" << std::endl; // for debugging
+//            std::cout << ":" << key << ":" << val << ":" << std::endl; // for debugging
             options[key] = val;
         }
     }
@@ -684,8 +709,8 @@ std::vector<TH1*> plotmaker(
     pad2->Draw();
     pad2->cd();
     pad2->Range( -80, -0.82, 320, 1.98 );
-    pad2->SetFillColor( -1 );
-    pad2->SetFillStyle( 4000 );
+    pad2->SetFillColor( 0 );
+//    pad2->SetFillStyle( 4000 );
     pad2->SetBorderMode( 0 );
     pad2->SetBorderSize( 2 );
     pad2->SetGridy();
@@ -787,15 +812,15 @@ std::vector<TH1*> plotmaker(
     // Save plots
     // ~-~-~-~-~-
     canvas->SaveAs( getOpt( "plotOutputName" ) + ".png" );
-    canvas->SaveAs( getOpt( "plotOutputName" ) + ".pdf" );
+//    canvas->SaveAs( getOpt( "plotOutputName" ) + ".pdf" );
     pad0->SetLogy();
     canvas->SaveAs( getOpt( "plotOutputName" ) + "_logy.png" );
-    canvas->SaveAs( getOpt( "plotOutputName" ) + "_logy.pdf" );
+//    canvas->SaveAs( getOpt( "plotOutputName" ) + "_logy.pdf" );
     pad0->cd();
     pad0->SetLogy(0);
-    pad0->SaveAs( getOpt( "plotOutputName" ) + "_noratio.pdf" );
+//    pad0->SaveAs( getOpt( "plotOutputName" ) + "_noratio.pdf" );
     pad0->SetLogy();
-    pad0->SaveAs( getOpt( "plotOutputName" ) + "_noratio_logy.pdf" );
+//    pad0->SaveAs( getOpt( "plotOutputName" ) + "_noratio_logy.pdf" );
 
     delete canvas;
 
