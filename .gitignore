@@ -5,3 +5,4 @@ CORE/
 clean.sh
 .tags
 *root
+*pyc
