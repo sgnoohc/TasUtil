@@ -852,6 +852,37 @@ void TasUtil::TTreeX::clear()
     for (auto& pair : mapVecLV     ) pair.second.clear();
 }
 
+//__________________________________________________________________________________________________
+void TTreeX::sortVecBranchesByPt(TString p4_bn, std::vector<TString> aux_float_bns, std::vector<TString> aux_int_bns, std::vector<TString> aux_bool_bns)
+{
+    // https://stackoverflow.com/questions/236172/how-do-i-sort-a-stdvector-by-the-values-of-a-different-stdvector
+    // The first argument is the p4 branches
+    // The rest of the argument holds the list of auxilary branches that needs to be sorted together.
+
+    // Creating a "ordered" index list
+    vector<pair<size_t, lviter> > order(mapVecLV[p4_bn].size());
+
+    size_t n = 0;
+    for (lviter it = mapVecLV[p4_bn].begin(); it != mapVecLV[p4_bn].end(); ++it, ++n)
+            order[n] = make_pair(n, it);
+
+    sort(order.begin(), order.end(), ordering());
+
+    // Sort!
+    mapVecLV[p4_bn] = sortFromRef<LV>(mapVecLV[p4_bn], order);
+
+    for ( auto& aux_float_bn : aux_float_bns )
+        mapVecFloat_t[aux_float_bn] = sortFromRef<Float_t>(mapVecFloat_t[aux_float_bn], order);
+
+    for ( auto& aux_int_bn : aux_int_bns )
+        mapVecInt_t[aux_int_bn] = sortFromRef<Int_t>(mapVecInt_t[aux_int_bn], order);
+
+    for ( auto& aux_bool_bn : aux_bool_bns )
+        mapVecBool_t[aux_bool_bn] = sortFromRef<Bool_t>(mapVecBool_t[aux_bool_bn], order);
+
+}
+
+
 #ifdef INCLUDE_CORE
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 //
@@ -1162,7 +1193,145 @@ void TasUtil::CORE2016::setMETBranches(TTreeX* ttree)
 }
 
 //_________________________________________________________________________________________________
-void TasUtil::CORE2016::createLeptonBranches(TTreeX* ttree, std::vector<id_level_t> ids)
+void TasUtil::CORE2016::createLeptonBranches(TTreeX* ttree, std::vector<std::pair<id_level_t, TString>> ids)
+{
+
+    // four vectors of the leptons
+    // pdgid
+    // and pass_X
+    // Auxiliary variable will be an option
+
+    // Set the lepton_ids
+    lepton_ids = ids;
+
+    ttree->createBranch<std::vector<LV    >>( "lep_p4"    );
+    ttree->createBranch<std::vector<Int_t >>( "lep_pdgId" );
+
+    for ( auto& id : lepton_ids )
+        ttree->createBranch<std::vector<Int_t>>( "lep_pass_" + id.second );
+}
+
+//_________________________________________________________________________________________________
+void TasUtil::CORE2016::setLeptonBranches(TTreeX* ttree)
+{
+    setElectronBranches(ttree);
+    setMuonBranches(ttree);
+
+    // Sorting leptons
+    std::vector<TString> v_int_br_name;
+
+    v_int_br_name.push_back( "lep_pdgId" );
+
+    for ( auto& id : lepton_ids )
+        v_int_br_name.push_back( id.second );
+
+    ttree->sortVecBranchesByPt( "lep_p4", {}, v_int_br_name, {} );
+}
+
+//_________________________________________________________________________________________________
+void TasUtil::CORE2016::setElectronBranches(TTreeX* ttree)
+{
+
+    // List of LVs of leptons for this event
+    std::vector<LV> lvs;
+
+    // List of pass_id_flag
+    std::map<TString, std::vector<Int_t>> passids;
+
+    // loop over electrons
+    for ( unsigned int iel = 0; iel < cms3.els_p4().size(); ++iel )
+    {
+        // The following variable keeps track of pass/fail of the ids of interest.
+        std::vector<bool> pass_or_fail_book_keeping;
+
+        // Loop over ids, and create a pass_fail_book_keeping;
+        for ( auto& id : lepton_ids )
+        {
+            if ( electronID( iel, id.first ) )
+                pass_or_fail_book_keeping.push_back( 1 );
+            else
+                pass_or_fail_book_keeping.push_back( 0 );
+        }
+
+        // Check whether this lepton failed all of the ids of interest. If so, skip.
+        if ( std::all_of(pass_or_fail_book_keeping.begin(),
+                         pass_or_fail_book_keeping.end(), [](bool v) { return !v; }) )
+            continue;
+
+        // If you are here, the lepton is now accepted. Add to the collection
+        ttree->pushbackToBranch<LV   >( "lep_p4", cms3.els_p4()[iel] );
+        ttree->pushbackToBranch<Int_t>( "lep_pdgId", cms3.els_charge()[iel] * -11 );
+
+        // Also loop over IDs and flag whether this lepton passed or failed
+        for ( unsigned int ith_id = 0; ith_id < lepton_ids.size(); ++ith_id )
+        {
+            // Get the id name
+            TString& idname = lepton_ids[ith_id].second;
+
+            // Check whether this id passed 
+            if ( pass_or_fail_book_keeping[ith_id] )
+                ttree->pushbackToBranch<Int_t>( "lep_pass_" + idname, 1 );
+            else
+                ttree->pushbackToBranch<Int_t>( "lep_pass_" + idname, 0 );
+        }
+
+    }
+
+}
+
+//_________________________________________________________________________________________________
+void TasUtil::CORE2016::setMuonBranches(TTreeX* ttree)
+{
+
+    // List of LVs of leptons for this event
+    std::vector<LV> lvs;
+
+    // List of pass_id_flag
+    std::map<TString, std::vector<Int_t>> passids;
+
+    // loop over electrons
+    for ( unsigned int imu = 0; imu < cms3.mus_p4().size(); ++imu )
+    {
+        // The following variable keeps track of pass/fail of the ids of interest.
+        std::vector<bool> pass_or_fail_book_keeping;
+
+        // Loop over ids, and create a pass_fail_book_keeping;
+        for ( auto& id : lepton_ids )
+        {
+            if ( muonID( imu, id.first ) )
+                pass_or_fail_book_keeping.push_back( 1 );
+            else
+                pass_or_fail_book_keeping.push_back( 0 );
+        }
+
+        // Check whether this lepton failed all of the ids of interest. If so, skip.
+        if ( std::all_of(pass_or_fail_book_keeping.begin(),
+                         pass_or_fail_book_keeping.end(), [](bool v) { return !v; }) )
+            continue;
+
+        // If you are here, the lepton is now accepted. Add to the collection
+        ttree->pushbackToBranch<LV   >( "lep_p4", cms3.mus_p4()[imu] );
+        ttree->pushbackToBranch<Int_t>( "lep_pdgId", cms3.mus_charge()[imu] * -11 );
+
+        // Also loop over IDs and flag whether this lepton passed or failed
+        for ( unsigned int ith_id = 0; ith_id < lepton_ids.size(); ++ith_id )
+        {
+            // Get the id name
+            TString& idname = lepton_ids[ith_id].second;
+
+            // Check whether this id passed 
+            if ( pass_or_fail_book_keeping[ith_id] )
+                ttree->pushbackToBranch<Int_t>( "lep_pass_" + idname, 1 );
+            else
+                ttree->pushbackToBranch<Int_t>( "lep_pass_" + idname, 0 );
+        }
+
+    }
+
+}
+
+//_________________________________________________________________________________________________
+void TasUtil::CORE2016::createJetBranches(TTreeX* ttree)
 {
 }
 

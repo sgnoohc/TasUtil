@@ -318,6 +318,7 @@ namespace TasUtil
             kVecFloat_t = 13,
             kVecLV      = 14
         };
+        typedef vector<LV>::const_iterator lviter;
 
         private:
         std::map<TString, Int_t  > mapInt_t;
@@ -340,6 +341,19 @@ namespace TasUtil
         void createBranch(TString);
         template <class T>
         void setBranch(TString, T);
+        template <class T>
+        void pushbackToBranch(TString, T);
+
+        void sortVecBranchesByPt(TString, std::vector<TString>, std::vector<TString>, std::vector<TString>);
+        template <class T>
+        std::vector<T> sortFromRef( std::vector<T> const& in, std::vector<std::pair<size_t, lviter> > const& reference);
+        struct ordering
+        {
+            bool operator ()(std::pair<size_t, lviter> const& a, std::pair<size_t, lviter> const& b) 
+            {
+                return (*(a.second)).pt() > (*(b.second)).pt();
+            }
+        };
 
         void clear();
     };
@@ -353,6 +367,10 @@ namespace TasUtil
     template <> void TTreeX::setBranch<std::vector<Bool_t >>(TString bn, std::vector<Bool_t > val) { mapVecBool_t [bn] = val; }
     template <> void TTreeX::setBranch<std::vector<Float_t>>(TString bn, std::vector<Float_t> val) { mapVecFloat_t[bn] = val; }
     template <> void TTreeX::setBranch<std::vector<LV     >>(TString bn, std::vector<LV     > val) { mapVecLV     [bn] = val; }
+    template <> void TTreeX::pushbackToBranch<Int_t        >(TString bn, Int_t       val) { mapVecInt_t  [bn].push_back(val); }
+    template <> void TTreeX::pushbackToBranch<Bool_t       >(TString bn, Bool_t      val) { mapVecBool_t [bn].push_back(val); }
+    template <> void TTreeX::pushbackToBranch<Float_t      >(TString bn, Float_t     val) { mapVecFloat_t[bn].push_back(val); }
+    template <> void TTreeX::pushbackToBranch<LV           >(TString bn, LV          val) { mapVecLV     [bn].push_back(val); }
 
     //_________________________________________________________________________________________________
     template <> void TTreeX::createBranch<Int_t               >(TString bn) { Branch(bn, &(mapInt_t      [bn])); }
@@ -363,6 +381,17 @@ namespace TasUtil
     template <> void TTreeX::createBranch<std::vector<Bool_t >>(TString bn) { Branch(bn, &(mapVecBool_t  [bn])); }
     template <> void TTreeX::createBranch<std::vector<Float_t>>(TString bn) { Branch(bn, &(mapVecFloat_t [bn])); }
     template <> void TTreeX::createBranch<std::vector<LV     >>(TString bn) { Branch(bn, &(mapVecLV      [bn])); }
+    template <class T>
+    std::vector<T> TTreeX::sortFromRef( std::vector<T> const& in, std::vector<std::pair<size_t, TTreeX::lviter> > const& reference)
+    {
+        std::vector<T> ret(in.size());
+
+        size_t const size = in.size();
+        for (size_t i = 0; i < size; ++i)
+            ret[i] = in[reference[i].first];
+
+        return ret;
+    }
 
 #ifdef INCLUDE_CORE
     class CORE2016
@@ -388,6 +417,9 @@ namespace TasUtil
         FactorizedJetCorrector   * jet_corrector_pfL1FastJetL2L3_postrun278802;
         JetCorrectionUncertainty * jecUnc_postrun278802;
 
+        // lepton ids
+        std::vector<std::pair<id_level_t, TString>> lepton_ids;
+
         void initializeCORE(TString option);
         static int getCMS3Version();
         void setJetCorrector();
@@ -397,7 +429,11 @@ namespace TasUtil
         void setPileUpBranches(TTreeX* ttree);
         void createMETBranches(TTreeX* ttree);
         void setMETBranches(TTreeX* ttree);
-        void createLeptonBranches(TTreeX* ttree, std::vector<id_level_t>);
+        void createLeptonBranches(TTreeX* ttree, std::vector<std::pair<id_level_t, TString>>);
+        void setLeptonBranches(TTreeX* ttree);
+        void setElectronBranches(TTreeX* ttree);
+        void setMuonBranches(TTreeX* ttree);
+        void createJetBranches(TTreeX* ttree);
     };
 
 #endif
@@ -546,7 +582,7 @@ bool TasUtil::Looper<TREECLASS>::allEventsInTreeProcessed()
 template <class TREECLASS>
 bool TasUtil::Looper<TREECLASS>::allEventsInChainProcessed()
 {
-    if (nEventsProcessed >= (unsigned int) nEventsToProcess) return true;
+    if (nEventsProcessed > (unsigned int) nEventsToProcess) return true;
     else return false;
 }
 
@@ -555,11 +591,15 @@ template <class TREECLASS>
 bool TasUtil::Looper<TREECLASS>::nextEventInTree()
 {
 //    treeclass->progress(nEventsProcessed, nEventsToProcess);
-    printProgressBar();
     // Sanity check before loading the next event.
     if (!ttree) error("current ttree not set!", __FUNCTION__);
     if (!tfile) error("current tfile not set!", __FUNCTION__);
     if (!fileIter) error("fileIter not set!", __FUNCTION__);
+    // Increment the counter for this ttree
+    ++indexOfEventInTTree;
+    // Increment the counter for the entire tchain
+    ++nEventsProcessed;
+    // If all fine return true
     // Check whether I processed everything
     if (allEventsInTreeProcessed()) return false;
     if (allEventsInChainProcessed()) return false;
@@ -568,11 +608,7 @@ bool TasUtil::Looper<TREECLASS>::nextEventInTree()
     // Set the event index in TREECLASS
     treeclass->GetEntry(indexOfEventInTTree);
     // Print progress
-    // Increment the counter for this ttree
-    ++indexOfEventInTTree;
-    // Increment the counter for the entire tchain
-    ++nEventsProcessed;
-    // If all fine return true
+    printProgressBar();
     return true;
 }
 
@@ -689,7 +725,11 @@ void TasUtil::Looper<TREECLASS>::printProgressBar()
         totalN = 20;
 
     // Progress bar
-    if (entry == totalN - 1)
+    if (entry > totalN)
+    {
+        printf("Why are you here?\n");
+    }
+    else if (entry == totalN)
     {
         Double_t elapsed = my_timer.RealTime();
         Double_t rate;
@@ -704,7 +744,7 @@ void TasUtil::Looper<TREECLASS>::printProgressBar()
         Int_t minutes = input_seconds / secs_to_min % mins_in_hour;
         Int_t hours   = input_seconds / secs_to_min / mins_in_hour;
 
-        printf("\r");
+        printf("\rTasUtil::");
         printf("+");
         printf("|====================");
 
@@ -713,7 +753,7 @@ void TasUtil::Looper<TREECLASS>::printProgressBar()
         //  printf("=");
         //}
 
-        printf("| %.1f %% (%d/%d) with  [avg. %d Hz]   Total Time: %.2d:%.2d:%.2d         ", 100.0, entry+1, totalN, (int)rate, hours, minutes, seconds);
+        printf("| %.1f %% (%d/%d) with  [avg. %d Hz]   Total Time: %.2d:%.2d:%.2d         ", 100.0, entry, totalN, (int)rate, hours, minutes, seconds);
         fflush(stdout);
         printf("\n");
     }
