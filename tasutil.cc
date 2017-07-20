@@ -1161,6 +1161,11 @@ void TasUtil::CORE2016::setMETBranches(TTreeX* ttree)
     }
 }
 
+//_________________________________________________________________________________________________
+void TasUtil::CORE2016::createLeptonBranches(TTreeX* ttree, std::vector<id_level_t> ids)
+{
+}
+
 #endif
 
 //eof

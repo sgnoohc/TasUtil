@@ -397,6 +397,7 @@ namespace TasUtil
         void setPileUpBranches(TTreeX* ttree);
         void createMETBranches(TTreeX* ttree);
         void setMETBranches(TTreeX* ttree);
+        void createLeptonBranches(TTreeX* ttree, std::vector<id_level_t>);
     };
 
 #endif
