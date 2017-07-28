@@ -9,6 +9,12 @@
 
 using namespace TasUtil;
 
+// This is meant to be passed as the third argument, the predicate, of the standard library sort algorithm
+inline bool sortByValue( const std::pair<int, float>& pair1, const std::pair<int, float>& pair2 )
+{
+    return pair1.second > pair2.second;
+}
+
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 //
 //
@@ -337,7 +343,7 @@ void TasUtil::AutoHist::fill(
 //__________________________________________________________________________________________________
 void TasUtil::AutoHist::fill(
         double xval, double yval, TString name, double wgt,
-        int nbx, double* bx, 
+        int nbx, double* bx,
         int nby, double* by)
 {
     TH1* hist = 0;
@@ -1090,7 +1096,7 @@ void TasUtil::CORE2016::initializeCORE(TString option_)
 //_________________________________________________________________________________________________
 int TasUtil::CORE2016::getCMS3Version()
 {
-    TString cms3_version = cms3.evt_CMS3tag().at(0);
+    TString cms3_version = cms3.evt_CMS3tag()[0];
     // convert last two digits of version number to int
     int small_cms3_version = TString(cms3_version(cms3_version.Length()-2,cms3_version.Length())).Atoi();
     return small_cms3_version;
@@ -1103,7 +1109,7 @@ void TasUtil::CORE2016::setJetCorrector()
     if (cms3.evt_isRealData() && cms3.evt_run() >= 278802 && cms3.evt_run() <= 278808) {
         jet_corrector_pfL1FastJetL2L3_current = jet_corrector_pfL1FastJetL2L3_postrun278802;
         jecUnc_current = jecUnc_postrun278802;
-    } 
+    }
     else {
         jet_corrector_pfL1FastJetL2L3_current = jet_corrector_pfL1FastJetL2L3;
         jecUnc_current = jecUnc;
@@ -1268,7 +1274,7 @@ void TasUtil::CORE2016::setElectronBranches(TTreeX* ttree)
             // Get the id name
             TString& idname = lepton_ids[ith_id].second;
 
-            // Check whether this id passed 
+            // Check whether this id passed
             if ( pass_or_fail_book_keeping[ith_id] )
                 ttree->pushbackToBranch<Int_t>( "lep_pass_" + idname, 1 );
             else
@@ -1319,7 +1325,7 @@ void TasUtil::CORE2016::setMuonBranches(TTreeX* ttree)
             // Get the id name
             TString& idname = lepton_ids[ith_id].second;
 
-            // Check whether this id passed 
+            // Check whether this id passed
             if ( pass_or_fail_book_keeping[ith_id] )
                 ttree->pushbackToBranch<Int_t>( "lep_pass_" + idname, 1 );
             else
@@ -1331,8 +1337,273 @@ void TasUtil::CORE2016::setMuonBranches(TTreeX* ttree)
 }
 
 //_________________________________________________________________________________________________
-void TasUtil::CORE2016::createJetBranches(TTreeX* ttree)
+void TasUtil::CORE2016::createJetBranches( TTreeX* ttree )
 {
+    ttree->createBranch<std::vector<LV     >>( "jets_p4" );
+    ttree->createBranch<std::vector<Float_t>>( "jets_csv" );
+    if ( !option.Contains("isData") )
+    {
+        ttree->createBranch<std::vector<Int_t>>( "jets_mcFlavour" );
+        ttree->createBranch<std::vector<Int_t>>( "jets_mcHadronFlav" );
+    }
+}
+
+//_________________________________________________________________________________________________
+void TasUtil::CORE2016::setJetBranches( TTreeX* ttree )
+{
+    //JETS
+    //correct jets and check baseline selections
+    std::vector<LV> p4sCorrJets; // store corrected p4 for ALL jets, so indices match CMS3 ntuple
+    std::vector<LV> p4sCorrJets_up; // store corrected p4 for ALL jets, so indices match CMS3 ntuple
+    std::vector<LV> p4sCorrJets_dn; // store corrected p4 for ALL jets, so indices match CMS3 ntuple
+    std::vector<Float_t      > jet_corrfactor; // store correction for ALL jets, and indices match CMS3 ntuple
+    std::vector<std::pair<int, Float_t> > passJets; //index of jets that pass baseline selections with their corrected pt
+    std::vector<Float_t      > jet_corrfactor_up; // store correction for ALL jets, and vary by uncertainties
+    std::vector<Float_t      > jet_corrfactor_dn; // store correction for ALL jets, and vary by uncertainties
+
+    for ( unsigned int iJet = 0; iJet < cms3.pfjets_p4().size(); iJet++ )
+    {
+
+        LorentzVector pfjet_p4_cor = cms3.pfjets_p4()[iJet];
+
+        double corr = 1.0;
+        double shift = 0.0;
+
+        if ( option.Contains( "applyJEC" ) )
+        {
+
+            // get uncorrected jet p4 to use as input for corrections
+            LorentzVector pfjet_p4_uncor = cms3.pfjets_p4()[iJet] * cms3.pfjets_undoJEC()[iJet];
+
+            std::vector<float> corr_vals;
+
+            // get L1FastL2L3Residual total correction
+            jet_corrector_pfL1FastJetL2L3_current->setRho( cms3.evt_fixgridfastjet_all_rho() );
+            jet_corrector_pfL1FastJetL2L3_current->setJetA( cms3.pfjets_area()[iJet] );
+            jet_corrector_pfL1FastJetL2L3_current->setJetPt( pfjet_p4_uncor.pt() );
+            jet_corrector_pfL1FastJetL2L3_current->setJetEta( pfjet_p4_uncor.eta() );
+            //get actual corrections
+            corr_vals = jet_corrector_pfL1FastJetL2L3_current->getSubCorrections();
+            corr      = corr_vals[corr_vals.size() - 1]; // All corrections
+            shift = 0.0;
+
+            if ( jecUnc_current != 0 )
+            {
+                jecUnc_current->setJetEta( pfjet_p4_uncor.eta() );
+                jecUnc_current->setJetPt( pfjet_p4_uncor.pt()*corr );
+                double unc = jecUnc_current->getUncertainty( true );
+
+                // note that this always checks the "default" filename vector size, not the run-dependent for late 2016F
+                if ( cms3.evt_isRealData() && jetcorr_filenames_pfL1FastJetL2L3.size() == 4 )
+                    shift = sqrt(
+                            unc * unc +
+                            pow( ( corr_vals[corr_vals.size() - 1] / corr_vals[corr_vals.size() - 2] - 1. ), 2 ) );
+
+                else
+                    shift = unc;
+            }
+
+            // apply new JEC to p4
+            pfjet_p4_cor = pfjet_p4_uncor * corr;
+        }
+
+        p4sCorrJets.push_back( pfjet_p4_cor );
+        p4sCorrJets_up.push_back( pfjet_p4_cor * ( 1.0 + shift ) );
+        p4sCorrJets_dn.push_back( pfjet_p4_cor * ( 1.0 - shift ) );
+        jet_corrfactor.push_back( corr );
+        jet_corrfactor_up.push_back( 1.0 + shift );
+        jet_corrfactor_dn.push_back( 1.0 - shift );
+
+        if ( p4sCorrJets[iJet].pt() < 15.0 )
+            continue;
+
+        if ( fabs( p4sCorrJets[iJet].eta() ) > 5.2 )
+            continue;
+
+        // note this uses the eta of the jet as stored in CMS3
+        //  chance for small discrepancies if JEC changes direction slightly..
+        if ( !option.Contains("isFastSim") && !isLoosePFJet_Summer16_v1( iJet ) )
+            continue;
+
+        if (  option.Contains("isFastSim") &&  isBadFastsimJet         ( iJet ) )
+            continue;
+
+        passJets.push_back( std::pair<int, float>( iJet, pfjet_p4_cor.pt() ) );
+
+    }
+
+    // sort passing jets by corrected pt
+    std::sort( passJets.begin(), passJets.end(), sortByValue );
+
+    //now fill variables for jets that pass baseline selections and don't overlap with a lepton
+    for ( unsigned int passIdx = 0; passIdx < passJets.size(); passIdx++ )
+    {
+
+        int iJet = passJets[passIdx].first;
+
+        float current_csv_val = getbtagvalue( "pfCombinedInclusiveSecondaryVertexV2BJetTags", iJet );
+        float current_muf_val = cms3.pfjets_muonE()[iJet] /
+                                ( cms3.pfjets_undoJEC()[iJet] * cms3.pfjets_p4()[iJet].energy() );
+
+        ttree->pushbackToBranch<LV     >( "jets_p4" , p4sCorrJets[iJet] );
+        ttree->pushbackToBranch<Float_t>( "jets_csv", current_csv_val );
+        if ( !option.Contains( "isData" ) )
+        {
+            ttree->pushbackToBranch<Int_t>( "jets_mcFlavour"   , cms3.pfjets_partonFlavour()[iJet] );
+            ttree->pushbackToBranch<Int_t>( "jets_mcHadronFlav", cms3.pfjets_hadronFlavour()[iJet] );
+        }
+
+
+//        if ( ( p4sCorrJets_up.at( iJet ).pt() > BJET_PT_MIN ) && abs( p4sCorrJets_up.at( iJet ).eta() ) < JET_ETA_MAX )
+//        {
+//            if ( p4sCorrJets_up.at( iJet ).pt() > JET_PT_MIN )
+//            {
+//                njets_up++;
+//                jets_up_p4    .push_back( p4sCorrJets_up.at( iJet ) );
+//                jets_up_csv   .push_back( current_csv_val );
+//            }
+//        }
+//
+//        if ( verbose )
+//            cout << "Before filling jet dn branches" << endl;
+//
+//        if ( ( p4sCorrJets_dn.at( iJet ).pt() > BJET_PT_MIN ) && abs( p4sCorrJets_dn.at( iJet ).eta() ) < JET_ETA_MAX )
+//        {
+//            if ( p4sCorrJets_dn.at( iJet ).pt() > JET_PT_MIN )
+//            {
+//                njets_dn++;
+//                jets_dn_p4    .push_back( p4sCorrJets_dn.at( iJet ) );
+//                jets_dn_csv   .push_back( current_csv_val );
+//            }
+//        }
+    }
+}
+
+//_________________________________________________________________________________________________
+void TasUtil::CORE2016::createGenBranches( TTreeX* ttree )
+{
+    ttree->createBranch<std::vector<LV   >>( "gen_p4" );
+    ttree->createBranch<std::vector<Int_t>>( "gen_pdgId" );
+    ttree->createBranch<std::vector<Int_t>>( "gen_status" );
+    ttree->createBranch<std::vector<Int_t>>( "gen_charge" );
+    ttree->createBranch<std::vector<Int_t>>( "gen_motherId" );
+    ttree->createBranch<std::vector<Int_t>>( "gen_grandmaId" );
+}
+
+//_________________________________________________________________________________________________
+void TasUtil::CORE2016::setGenBranches( TTreeX* ttree )
+{
+    for ( unsigned int igen = 0; igen < cms3.genps_p4().size(); ++igen )
+    {
+        ttree->pushbackToBranch<LV   >( "gen_p4"        , cms3.genps_p4()[igen]               );
+        ttree->pushbackToBranch<Int_t>( "gen_pdgId"     , cms3.genps_id()[igen]               );
+        ttree->pushbackToBranch<Int_t>( "gen_status"    , cms3.genps_status()[igen]           );
+        ttree->pushbackToBranch<Int_t>( "gen_charge"    , cms3.genps_charge()[igen]           );
+        ttree->pushbackToBranch<Int_t>( "gen_motherId"  , cms3.genps_id_simplemother()[igen]  );
+        ttree->pushbackToBranch<Int_t>( "gen_grandmaId" , cms3.genps_id_simplegrandma()[igen] );
+    }
+}
+
+//_________________________________________________________________________________________________
+void TasUtil::CORE2016::createFatJetBranches( TTreeX* ttree )
+{
+    // product of this EDProducer
+    ttree->createBranch<std::vector<LV     >>( "ak8jets_p4"                  );
+    ttree->createBranch<std::vector<Float_t>>( "ak8jets_mass"                );
+    ttree->createBranch<std::vector<Float_t>>( "ak8jets_undoJEC"             );
+    ttree->createBranch<std::vector<Float_t>>( "ak8jets_area"                );
+    ttree->createBranch<std::vector<Int_t  >>( "ak8jets_partonFlavour"       );
+    ttree->createBranch<std::vector<Float_t>>( "ak8jets_nJettinessTau1"      );
+    ttree->createBranch<std::vector<Float_t>>( "ak8jets_nJettinessTau2"      );
+    ttree->createBranch<std::vector<Float_t>>( "ak8jets_nJettinessTau3"      );
+    ttree->createBranch<std::vector<Float_t>>( "ak8jets_topMass"             );
+    ttree->createBranch<std::vector<Float_t>>( "ak8jets_minMass"             );
+    ttree->createBranch<std::vector<Int_t  >>( "ak8jets_nSubJets"            );
+    ttree->createBranch<std::vector<Float_t>>( "ak8jets_prunedMass"          );
+    ttree->createBranch<std::vector<Float_t>>( "ak8jets_trimmedMass"         );
+    ttree->createBranch<std::vector<Float_t>>( "ak8jets_filteredMass"        );
+    ttree->createBranch<std::vector<Float_t>>( "ak8jets_softdropMass"        );
+//    ttree->createBranch<std::vector<Float_t>>( "ak8jets_puppinJettinessTau1" );
+//    ttree->createBranch<std::vector<Float_t>>( "ak8jets_puppinJettinessTau2" );
+//    ttree->createBranch<std::vector<Float_t>>( "ak8jets_puppinJettinessTau3" );
+//    ttree->createBranch<std::vector<Float_t>>( "ak8jets_puppipt"             );
+//    ttree->createBranch<std::vector<Float_t>>( "ak8jets_puppimass"           );
+//    ttree->createBranch<std::vector<Float_t>>( "ak8jets_puppieta"            );
+//    ttree->createBranch<std::vector<Float_t>>( "ak8jets_puppiphi"            );
+//    ttree->createBranch<std::vector<LV     >>( "ak8jets_softdropPuppiSubjet1");
+//    ttree->createBranch<std::vector<LV     >>( "ak8jets_softdropPuppiSubjet2");
+//    ttree->createBranch<std::vector<Float_t>>( "ak8jets_puppisoftdropMass"   );
+//    ttree->createBranch<std::vector<std::vector<int> >  > ( "ak8jetspfcandIndicies"                   ).setBranchAlias( "ak8jets_pfcandIndicies"            );
+
+}
+
+//_________________________________________________________________________________________________
+void TasUtil::CORE2016::setFatJetBranches( TTreeX* ttree )
+{
+    for ( unsigned int ifatjet = 0; ifatjet < cms3.ak8jets_p4().size(); ++ifatjet )
+    {
+        ttree->pushbackToBranch<LV     >( "ak8jets_p4"                  , cms3.ak8jets_p4()[ifatjet]                  );
+        ttree->pushbackToBranch<Float_t>( "ak8jets_mass"                , cms3.ak8jets_mass()[ifatjet]                );
+        ttree->pushbackToBranch<Float_t>( "ak8jets_undoJEC"             , cms3.ak8jets_undoJEC()[ifatjet]             );
+        ttree->pushbackToBranch<Float_t>( "ak8jets_area"                , cms3.ak8jets_area()[ifatjet]                );
+        ttree->pushbackToBranch<Int_t  >( "ak8jets_partonFlavour"       , cms3.ak8jets_partonFlavour()[ifatjet]       );
+        ttree->pushbackToBranch<Float_t>( "ak8jets_nJettinessTau1"      , cms3.ak8jets_nJettinessTau1()[ifatjet]      );
+        ttree->pushbackToBranch<Float_t>( "ak8jets_nJettinessTau2"      , cms3.ak8jets_nJettinessTau2()[ifatjet]      );
+        ttree->pushbackToBranch<Float_t>( "ak8jets_nJettinessTau3"      , cms3.ak8jets_nJettinessTau3()[ifatjet]      );
+        ttree->pushbackToBranch<Float_t>( "ak8jets_topMass"             , cms3.ak8jets_topMass()[ifatjet]             );
+        ttree->pushbackToBranch<Float_t>( "ak8jets_minMass"             , cms3.ak8jets_minMass()[ifatjet]             );
+        ttree->pushbackToBranch<Int_t  >( "ak8jets_nSubJets"            , cms3.ak8jets_nSubJets()[ifatjet]            );
+        ttree->pushbackToBranch<Float_t>( "ak8jets_prunedMass"          , cms3.ak8jets_prunedMass()[ifatjet]          );
+        ttree->pushbackToBranch<Float_t>( "ak8jets_trimmedMass"         , cms3.ak8jets_trimmedMass()[ifatjet]         );
+        ttree->pushbackToBranch<Float_t>( "ak8jets_filteredMass"        , cms3.ak8jets_filteredMass()[ifatjet]        );
+        ttree->pushbackToBranch<Float_t>( "ak8jets_softdropMass"        , cms3.ak8jets_softdropMass()[ifatjet]        );
+//        ttree->pushbackToBranch<Float_t>( "ak8jets_puppinJettinessTau1" , cms3.ak8jets_puppinJettinessTau1()[ifatjet] );
+//        ttree->pushbackToBranch<Float_t>( "ak8jets_puppinJettinessTau2" , cms3.ak8jets_puppinJettinessTau2()[ifatjet] );
+//        ttree->pushbackToBranch<Float_t>( "ak8jets_puppinJettinessTau3" , cms3.ak8jets_puppinJettinessTau3()[ifatjet] );
+//        ttree->pushbackToBranch<Float_t>( "ak8jets_puppipt"             , cms3.ak8jets_puppipt()[ifatjet]             );
+//        ttree->pushbackToBranch<Float_t>( "ak8jets_puppimass"           , cms3.ak8jets_puppimass()[ifatjet]           );
+//        ttree->pushbackToBranch<Float_t>( "ak8jets_puppieta"            , cms3.ak8jets_puppieta()[ifatjet]            );
+//        ttree->pushbackToBranch<Float_t>( "ak8jets_puppiphi"            , cms3.ak8jets_puppiphi()[ifatjet]            );
+//        ttree->pushbackToBranch<LV     >( "ak8jets_softdropPuppiSubjet1", cms3.ak8jets_softdropPuppiSubjet1()[ifatjet]);
+//        ttree->pushbackToBranch<LV     >( "ak8jets_softdropPuppiSubjet2", cms3.ak8jets_softdropPuppiSubjet2()[ifatjet]);
+//        ttree->pushbackToBranch<Float_t>( "ak8jets_puppisoftdropMass"   , cms3.ak8jets_puppisoftdropMass()[ifatjet]   );
+    }
+}
+
+//_________________________________________________________________________________________________
+void TasUtil::CORE2016::createTrigBranches( TTreeX* ttree, std::vector<TString> trigger_patterns_ )
+{
+//    ttree->createBranch<std::vector<TString>>( "hlt_trigNames" );
+//    ttree->createBranch<TBits               >( "hlt_bits"      );
+
+    // Set the triggers
+    trigger_patterns = trigger_patterns_;
+
+    cms3.GetEntry(0);
+
+    for ( auto& triggerName : cms3.hlt_trigNames() )
+    {
+        for ( auto& trigger_pattern : trigger_patterns )
+        {
+            if ( triggerName.Contains( trigger_pattern ) )
+            {
+                TString tmpstr =
+                    ((TObjString*) triggerName.Tokenize( "v" )->At(0))->GetString();
+                TString version_sffx_rm_trig_name = tmpstr(0, tmpstr.Length() - 1);
+                ttree->createBranch<Int_t>( "pass_trig_" + version_sffx_rm_trig_name );
+                triggers.push_back( { version_sffx_rm_trig_name, triggerName } );
+            }
+        }
+    }
+}
+
+//_________________________________________________________________________________________________
+void TasUtil::CORE2016::setTrigBranches( TTreeX* ttree )
+{
+//    ttree->setBranch<std::vector<TString>>( "hlt_trigNames", cms3.hlt_trigNames() );
+//    ttree->setBranch<TBits               >( "hlt_bits"     , cms3.hlt_bits()      );
+    for ( auto& pair_trigname : triggers )
+        ttree->setBranch<Int_t>( "pass_trig_" + pair_trigname.first, passHLTTriggerPattern( pair_trigname.second ) );
 }
 
 #endif

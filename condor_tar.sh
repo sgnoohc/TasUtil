@@ -25,7 +25,7 @@ while getopts ":o:h" OPTION; do
   esac
 done
 
-if [ -z ${PACKAGEOUTPUT} ]; then usage; fi
+if [ -z ${PACKAGEOUTPUT} ]; then PACKAGEOUTPUT=condor.tgz; fi
 
 # to shift away the parsed options
 shift $(($OPTIND - 1))
@@ -37,7 +37,7 @@ if [ -e ${PACKAGEOUTPUT} ]; then
     LATESTFILE=$(find $@ ${PACKAGEOUTPUT} -type f -printf '%T@ %p\n' | sort -n | tail -1 | cut -f2- -d" ")
 
     if [ "x${LATESTFILE}" == x${PACKAGEOUTPUT} ]; then
-        echo "All files up to date in the condor_package.tgz"
+        echo "All files up to date in the ${PACKAGEOUTPUT}"
         exit
     fi
 
@@ -104,9 +104,9 @@ elif [ "x${LOGOINDEX}" == x2 ]; then
     echo ""
 fi
 
-tar czf condor_package.tgz $@
+tar czf ${PACKAGEOUTPUT} $@
 
-INDEX=$((1 + RANDOM % 10))
+INDEX=$((1 + RANDOM % 4))
 if [ "x${INDEX}" == x1 ]; then
     echo "Everything I touch is food for my hunger!"
     echo "My hunger for power!"

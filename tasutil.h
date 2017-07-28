@@ -18,6 +18,7 @@
 
 // ROOT
 #include "TBenchmark.h"
+#include "TBits.h"
 #include "TChain.h"
 #include "TFile.h"
 #include "TTree.h"
@@ -33,14 +34,14 @@
 #include "TLorentzVector.h"
 #include "Math/LorentzVector.h"
 
-#if __has_include("CORE/CMS3.h")
-#define INCLUDE_CORE
+#ifdef INCLUDE_CORE
 // CORE tools
 #include "CORE/CMS3.h"
 #include "CORE/Base.h"
 #include "CORE/TriggerSelections.h"
 #include "CORE/ElectronSelections.h"
 #include "CORE/MuonSelections.h"
+#include "CORE/JetSelections.h"
 #include "CORE/MetSelections.h"
 #include "CORE/IsolationTools.h"
 #include "CORE/Tools/goodrun.h"
@@ -325,9 +326,11 @@ namespace TasUtil
         std::map<TString, Bool_t > mapBool_t;
         std::map<TString, Float_t> mapFloat_t;
         std::map<TString, LV     > mapLV;
+        std::map<TString, TBits  > mapTBits;
         std::map<TString, std::vector<Int_t  > > mapVecInt_t;
         std::map<TString, std::vector<Bool_t > > mapVecBool_t;
         std::map<TString, std::vector<Float_t> > mapVecFloat_t;
+        std::map<TString, std::vector<TString> > mapVecTString;
         std::map<TString, std::vector<LV     > > mapVecLV;
 
         public:
@@ -363,13 +366,16 @@ namespace TasUtil
     template <> void TTreeX::setBranch<Bool_t              >(TString bn, Bool_t               val) { mapBool_t    [bn] = val; }
     template <> void TTreeX::setBranch<Float_t             >(TString bn, Float_t              val) { mapFloat_t   [bn] = val; }
     template <> void TTreeX::setBranch<LV                  >(TString bn, LV                   val) { mapLV        [bn] = val; }
+    template <> void TTreeX::setBranch<TBits               >(TString bn, TBits                val) { mapTBits     [bn] = val; }
     template <> void TTreeX::setBranch<std::vector<Int_t  >>(TString bn, std::vector<Int_t  > val) { mapVecInt_t  [bn] = val; }
     template <> void TTreeX::setBranch<std::vector<Bool_t >>(TString bn, std::vector<Bool_t > val) { mapVecBool_t [bn] = val; }
     template <> void TTreeX::setBranch<std::vector<Float_t>>(TString bn, std::vector<Float_t> val) { mapVecFloat_t[bn] = val; }
+    template <> void TTreeX::setBranch<std::vector<TString>>(TString bn, std::vector<TString> val) { mapVecTString[bn] = val; }
     template <> void TTreeX::setBranch<std::vector<LV     >>(TString bn, std::vector<LV     > val) { mapVecLV     [bn] = val; }
     template <> void TTreeX::pushbackToBranch<Int_t        >(TString bn, Int_t       val) { mapVecInt_t  [bn].push_back(val); }
     template <> void TTreeX::pushbackToBranch<Bool_t       >(TString bn, Bool_t      val) { mapVecBool_t [bn].push_back(val); }
     template <> void TTreeX::pushbackToBranch<Float_t      >(TString bn, Float_t     val) { mapVecFloat_t[bn].push_back(val); }
+    template <> void TTreeX::pushbackToBranch<TString      >(TString bn, TString     val) { mapVecTString[bn].push_back(val); }
     template <> void TTreeX::pushbackToBranch<LV           >(TString bn, LV          val) { mapVecLV     [bn].push_back(val); }
 
     //_________________________________________________________________________________________________
@@ -377,9 +383,11 @@ namespace TasUtil
     template <> void TTreeX::createBranch<Bool_t              >(TString bn) { Branch(bn, &(mapBool_t     [bn])); }
     template <> void TTreeX::createBranch<Float_t             >(TString bn) { Branch(bn, &(mapFloat_t    [bn])); }
     template <> void TTreeX::createBranch<LV                  >(TString bn) { Branch(bn, &(mapLV         [bn])); }
+    template <> void TTreeX::createBranch<TBits               >(TString bn) { Branch(bn, &(mapTBits      [bn])); }
     template <> void TTreeX::createBranch<std::vector<Int_t  >>(TString bn) { Branch(bn, &(mapVecInt_t   [bn])); }
     template <> void TTreeX::createBranch<std::vector<Bool_t >>(TString bn) { Branch(bn, &(mapVecBool_t  [bn])); }
     template <> void TTreeX::createBranch<std::vector<Float_t>>(TString bn) { Branch(bn, &(mapVecFloat_t [bn])); }
+    template <> void TTreeX::createBranch<std::vector<TString>>(TString bn) { Branch(bn, &(mapVecTString [bn])); }
     template <> void TTreeX::createBranch<std::vector<LV     >>(TString bn) { Branch(bn, &(mapVecLV      [bn])); }
     template <class T>
     std::vector<T> TTreeX::sortFromRef( std::vector<T> const& in, std::vector<std::pair<size_t, TTreeX::lviter> > const& reference)
@@ -420,6 +428,10 @@ namespace TasUtil
         // lepton ids
         std::vector<std::pair<id_level_t, TString>> lepton_ids;
 
+        // triggers
+        std::vector<TString> trigger_patterns;
+        std::vector<std::pair<TString, TString>> triggers;
+
         void initializeCORE(TString option);
         static int getCMS3Version();
         void setJetCorrector();
@@ -434,6 +446,13 @@ namespace TasUtil
         void setElectronBranches(TTreeX* ttree);
         void setMuonBranches(TTreeX* ttree);
         void createJetBranches(TTreeX* ttree);
+        void setJetBranches(TTreeX* ttree);
+        void createGenBranches(TTreeX* ttree);
+        void setGenBranches(TTreeX* ttree);
+        void createFatJetBranches(TTreeX* ttree);
+        void setFatJetBranches(TTreeX* ttree);
+        void createTrigBranches(TTreeX* ttree, std::vector<TString>);
+        void setTrigBranches(TTreeX* ttree);
     };
 
 #endif
@@ -475,6 +494,8 @@ TasUtil::Looper<TREECLASS>::Looper(TChain* c, TREECLASS* t, int nevtToProc) :
     if (t) setTreeClass(t);
     if (nevtToProc > 5000)
         fastmode = true;
+    c->GetEntry( 0 );
+    t->Init( c->GetTree() );
 }
 
 //_________________________________________________________________________________________________
@@ -753,7 +774,7 @@ void TasUtil::Looper<TREECLASS>::printProgressBar()
         //  printf("=");
         //}
 
-        printf("| %.1f %% (%d/%d) with  [avg. %d Hz]   Total Time: %.2d:%.2d:%.2d         ", 100.0, entry, totalN, (int)rate, hours, minutes, seconds);
+        printf("| %.1f %% (%d/%d) with  [avg. %d Hz]   Total Time: %.2d:%.2d:%.2d         \r", 100.0, entry, totalN, (int)rate, hours, minutes, seconds);
         fflush(stdout);
         printf("\n");
     }

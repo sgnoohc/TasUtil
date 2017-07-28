@@ -142,6 +142,7 @@ TString getOpt( TString key )
     else if ( key.EqualTo( "reverseRatio"      )  ) return getDefaultOpt( key, ""                 ) ;
     else if ( key.EqualTo( "ratioPaneAtBottom" )  ) return getDefaultOpt( key, ""                 ) ;
     else if ( key.EqualTo( "divideByBinWidth"  )  ) return getDefaultOpt( key, ""                 ) ;
+    else if ( key.EqualTo( "scaleByLumi"       )  ) return getDefaultOpt( key, ""                 ) ;
 
     else
     {
@@ -226,6 +227,7 @@ void divideByBinWidth( TH1* hist )
 TH1* histWithFullError( TH1* nominal, TH1* error )
 {
     TH1D* nominal_with_full_error = ( TH1D* ) nominal->Clone( nominal->GetName() );
+    nominal_with_full_error->SetTitle("");
     
     if ( !nominal_with_full_error->GetSumw2N() )
         nominal_with_full_error->Sumw2();

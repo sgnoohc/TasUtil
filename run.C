@@ -8,6 +8,22 @@ void run( TString scanchainname, TString input_path, TString treename, TString o
     gROOT->ProcessLine( "TChain *chain = new TChain(ttreename);" );
     gROOT->ProcessLine( "TObjArray* files = input_path.Tokenize(\",\");" );
     gROOT->ProcessLine( "for (unsigned int ifile = 0; ifile < files->GetEntries(); ++ifile) { TString filepath = ((TObjString*) files->At(ifile))->GetString(); std::cout << \"Adding to TChain: file = \" << filepath << std::endl; chain->Add(filepath); }" );
-    gROOT->ProcessLine( "ScanChain(chain,output_path," + nevents + ");" );
+    gROOT->ProcessLine( "TString CMSxVersion = TString(gSystem->BaseName(gSystem->DirName(chain->GetListOfFiles()->At(0)->GetTitle())));");//.ReplaceAll(\"/\",\"_\").ReplaceAll(\"-\",\"_\");" );
+    gROOT->ProcessLine( "TString sample_name = TString(gSystem->BaseName(gSystem->DirName(gSystem->DirName(chain->GetListOfFiles()->At(0)->GetTitle()))));");//.ReplaceAll(\"/\",\"_\").ReplaceAll(\"-\",\"_\");" );
+    gROOT->ProcessLine( "TString sample_name_based_opt_string = sample_name + \"_\" + CMSxVersion;");//.ReplaceAll(\"/\",\"_\").ReplaceAll(\"-\",\"_\");" );
+    gROOT->ProcessLine( "std::cout << \"base_optstr = \" << sample_name_based_opt_string << std::endl;" );
+    gROOT->ProcessLine( "std::cout << std::endl;" );
+    gROOT->ProcessLine( "std::cout << std::endl;" );
+    gROOT->ProcessLine( "std::cout << \"   .\" << std::endl;" );
+    gROOT->ProcessLine( "std::cout << \"  ..: Start " + scanchainname + " ...\" << std::endl;" );
+    gROOT->ProcessLine( "std::cout << std::endl;" );
+    gROOT->ProcessLine( "std::cout << std::endl;" );
+    gROOT->ProcessLine( "ScanChain(chain,output_path,sample_name_based_opt_string," + nevents + ");" );
+    gROOT->ProcessLine( "std::cout << std::endl;" );
+    gROOT->ProcessLine( "std::cout << std::endl;" );
+    gROOT->ProcessLine( "std::cout << \"   .\" << std::endl;" );
+    gROOT->ProcessLine( "std::cout << \"  ..: Finished " + scanchainname + " ...\" << std::endl;" );
+    gROOT->ProcessLine( "std::cout << std::endl;" );
+    gROOT->ProcessLine( "std::cout << std::endl;" );
     
 }
