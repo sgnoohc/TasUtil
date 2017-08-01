@@ -198,15 +198,19 @@ if args.action == 'submit':
             print "  Submitting a list of jobs from a list of arguments in file=",joblistfilepath
             for index, argset in enumerate(joblist):
 
+                skip = False
                 if args.excludepattern:
                     for patt in args.excludepattern.split(','):
                         if argset.find(patt) != -1:
-                            continue
+                            skip = True
 
                 if args.requirepattern:
                     for patt in args.requirepattern.split(','):
                         if argset.find(patt) == -1:
-                            continue
+                            skip = True
+
+                if skip:
+                    continue
 
                 condorjobid = Utils.condor_submit(
                     executable=args.executable,

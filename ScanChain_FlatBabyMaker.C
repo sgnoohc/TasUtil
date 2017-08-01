@@ -34,7 +34,7 @@ void ScanChain( TChain* chain, TString output_name, TString base_optstr, int nev
     TTreeX* ttree = new TTreeX( "t", "A Baby Ntuple" );
 
     core.createEventBranches( ttree );
-    core.createGenBranches( ttree );
+//    core.createGenBranches( ttree );
     core.createJetBranches( ttree );
     core.createFatJetBranches( ttree );
     core.createMETBranches( ttree );
@@ -64,7 +64,7 @@ void ScanChain( TChain* chain, TString output_name, TString base_optstr, int nev
         core.setJetCorrector();
 
         core.setEventBranches( ttree );
-        core.setGenBranches( ttree );
+//        core.setGenBranches( ttree );
         core.setJetBranches( ttree );
         core.setFatJetBranches( ttree );
         core.setMETBranches( ttree );

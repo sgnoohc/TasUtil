@@ -2,7 +2,9 @@
 *_C.so
 *_C_AC*
 CORE/
+WWW_CORE/
 clean.sh
 .tags
 *root
 *pyc
+.tmp_submit.cmd

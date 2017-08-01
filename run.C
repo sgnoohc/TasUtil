@@ -1,6 +1,24 @@
 void run( TString scanchainname, TString input_path, TString treename, TString output_path, TString nevents = "-1", TString compilerflag = "" )
 {
-    gSystem->Load( "CMS3_CORE.so" );
+
+    // Load all *.so files in current directory
+    TSystemDirectory dir( "./", "./" );
+    TList *files = dir.GetListOfFiles();
+
+    if ( files )
+    {
+        TSystemFile *file;
+        TString fname;
+        TIter next( files );
+
+        while ( ( file = ( TSystemFile* )next() ) )
+        {
+            fname = file->GetName();
+
+            if ( !file->IsDirectory() && fname.EndsWith( "CORE.so" ) )
+                gSystem->Load( fname );
+        }
+    }
     gROOT->ProcessLine( ".L " + scanchainname + ".C+" + compilerflag );
     gROOT->ProcessLine( "TString input_path = \"" + input_path + "\";" );
     gROOT->ProcessLine( "TString output_path = \"" + output_path + "\";" );

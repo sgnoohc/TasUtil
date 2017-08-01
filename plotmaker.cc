@@ -130,6 +130,7 @@ TString getOpt( TString key )
     else if ( key.EqualTo( "stack_DrawOpt"     )  ) return getDefaultOpt( key, "hist"             ) ;
 
     else if ( key.EqualTo( "legend_bkgDrawOpt" )  ) return getDefaultOpt( key, "f"                ) ;
+    else if ( key.EqualTo( "legend_NColumns"   )  ) return getDefaultOpt( key, "1"                ) ;
 
     else if ( key.EqualTo( "plotOutputName"    )  ) return getDefaultOpt( key, "test"             ) ;
     else if ( key.EqualTo( "autoStack"         )  ) return getDefaultOpt( key, ""                 ) ;
@@ -139,6 +140,7 @@ TString getOpt( TString key )
     else if ( key.EqualTo( "printTotalBkg"     )  ) return getDefaultOpt( key, ""                 ) ;
     else if ( key.EqualTo( "printData"         )  ) return getDefaultOpt( key, ""                 ) ;
     else if ( key.EqualTo( "sumDataHists"      )  ) return getDefaultOpt( key, ""                 ) ;
+    else if ( key.EqualTo( "sumSigHists"       )  ) return getDefaultOpt( key, ""                 ) ;
     else if ( key.EqualTo( "reverseRatio"      )  ) return getDefaultOpt( key, ""                 ) ;
     else if ( key.EqualTo( "ratioPaneAtBottom" )  ) return getDefaultOpt( key, ""                 ) ;
     else if ( key.EqualTo( "divideByBinWidth"  )  ) return getDefaultOpt( key, ""                 ) ;
@@ -561,6 +563,8 @@ void drawLegend( std::vector<TH1*> data_hists, std::vector<TH1*> bkg_hists, std:
         
     for ( auto& sig_hist : sig_hists )
         addToLegend( sig_hist, leg, "l" );
+
+    leg->SetNColumns( getOpt( "legend_NColumns" ).Atoi() );
         
     int entries = leg->GetNRows();
     leg->SetY1( 0.65 - leg->GetEntrySeparation() * entries );
@@ -774,6 +778,27 @@ std::vector<TH1*> plotmaker(
         TH1* total = getTotalBkgHists( bkg_hists );
         draw( total, "hist p", pad0 );
         draw( total, "e2p ", pad0 );
+    }
+
+    // ~-~-~-~-~-~
+    // Draw signal
+    // ~-~-~-~-~-~
+    if ( sig_hists.size() )
+    {
+        for ( auto& sig_hist : sig_hists )
+            draw( sig_hist, "hist", pad0 );
+
+        if ( !getOpt( "sumSigHists" ).IsNull() )
+        {
+            TH1* sumsig = getSumHists( sig_hists );
+            TString sumsigname = "";
+            for ( auto& sig_hist : sig_hists )
+                sumsigname += sig_hist->GetName();
+            sumsig->SetName( sumsigname );
+            sumsig->SetLineStyle( 2 );
+            sig_hists.push_back( sumsig );
+            draw( sumsig, "hist", pad0 );
+        }
     }
     
     // ~-~-~-~-~
