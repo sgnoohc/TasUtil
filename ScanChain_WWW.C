@@ -30,6 +30,16 @@ void ScanChain( TChain* chain, TString output_name, TString base_optstr, int nev
 
     while ( looper.nextEvent() )
     {
+        duplicate_removal::DorkyEventIdentifier id(wwwbaby.run(), wwwbaby.evt(), wwwbaby.lumi());
+
+        if (is_duplicate(id))
+        {
+            TasUtil::warning(
+                    Form( "duplicate events found run=%d, evt=%d, lumi=%d",
+                        wwwbaby.run(), wwwbaby.evt(), wwwbaby.lumi() ));
+            continue;
+        }
+
         setObjectIndices();
         doSS( hists );
         doSSAR( hists );

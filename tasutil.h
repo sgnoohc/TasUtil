@@ -721,6 +721,7 @@ void TasUtil::Looper<TREECLASS>::setNEventsToProcess()
         nEventsTotalInChain = tchain->GetEntries();
         if (nEventsToProcess < 0)
             nEventsToProcess = nEventsTotalInChain;
+        print( TString::Format( "Total Events in this Chain to process = %d", nEventsToProcess ) );
     }
 }
 

@@ -11,16 +11,18 @@ usage()
   echo
   echo "Options with arguments:"
   echo "  -h    Help                   (Display this message)"
+  echo "  -f    Force                  (Display this message)"
   echo "  -o    package output path    (e.g. -o /path/to/condor.tgz)"
   echo
   exit
 }
 
 # Command-line opts
-while getopts ":o:h" OPTION; do
+while getopts ":o:fh" OPTION; do
   case $OPTION in
     o) PACKAGEOUTPUT=${OPTARG};;
     h) usage;;
+    f) FORCE=true;;
     :) usage;;
   esac
 done
@@ -38,7 +40,11 @@ if [ -e ${PACKAGEOUTPUT} ]; then
 
     if [ "x${LATESTFILE}" == x${PACKAGEOUTPUT} ]; then
         echo "All files up to date in the ${PACKAGEOUTPUT}"
-        exit
+        if [[ "$FORCE" == true ]]; then
+            :
+        else
+            exit
+        fi
     fi
 
 fi
@@ -104,7 +110,7 @@ elif [ "x${LOGOINDEX}" == x2 ]; then
     echo ""
 fi
 
-tar czf ${PACKAGEOUTPUT} $@
+tar czf ${PACKAGEOUTPUT} *.cc *.py *.C *.h *CORE.so *.sh *CORE/*.h $@
 
 INDEX=$((1 + RANDOM % 4))
 if [ "x${INDEX}" == x1 ]; then

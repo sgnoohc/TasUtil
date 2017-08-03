@@ -838,11 +838,11 @@ std::vector<TH1*> plotmaker(
     // ~-~-~-~-~-
     // Save plots
     // ~-~-~-~-~-
-    canvas->SaveAs( getOpt( "plotOutputName" ) + ".png" );
-//    canvas->SaveAs( getOpt( "plotOutputName" ) + ".pdf" );
+    canvas->SaveAs( getOpt( "plotOutputName" ) + "_liny.png" );
+    canvas->SaveAs( getOpt( "plotOutputName" ) + "_liny.pdf" );
     pad0->SetLogy();
     canvas->SaveAs( getOpt( "plotOutputName" ) + "_logy.png" );
-//    canvas->SaveAs( getOpt( "plotOutputName" ) + "_logy.pdf" );
+    canvas->SaveAs( getOpt( "plotOutputName" ) + "_logy.pdf" );
     pad0->cd();
     pad0->SetLogy(0);
 //    pad0->SaveAs( getOpt( "plotOutputName" ) + "_noratio.pdf" );
