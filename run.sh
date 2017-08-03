@@ -48,7 +48,7 @@ while getopts ":gch" OPTION; do
 done
 
 # Setup the same root I want
-source ./root.sh ""
+source ./root.sh "" &> /dev/null
 
 # to shift away the parsed options
 shift $(($OPTIND - 1))
