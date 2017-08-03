@@ -29,7 +29,7 @@ DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 
 usage()
 {
-    echo "Usage: sh $(basename $0) [-g] [-c] scanchain output.root t nevents cms3_1,cms3_2.root"
+    echo "Usage: sh $(basename $0) [-p] [-g] [-c] scanchain output.root t nevents cms3_1,cms3_2.root"
     echo ""
     echo "  -g option runs in gdb"
     echo "  -c option forces recompilation"
@@ -38,9 +38,10 @@ usage()
 }
 
 # Command-line opts
-while getopts ":gch" OPTION; do
+while getopts ":gpch" OPTION; do
   case $OPTION in
     g) DEBUG=true;;
+    p) PERF=true;;
     c) FORCERECOMPILE="+";;
     h) usage;;
     :) usage;;
@@ -83,11 +84,22 @@ echo "==========================================================================
 
 # Run the job!
 if [ "${DEBUG}" == true ]; then
-    COMPILERFLAG=${FORCERECOMPILE}g
+    COMPILERFLAG=+g
     gdb --args root.exe -l -b -q 'run.C("'${SCANCHAINNAME}'","'${INPUTFILENAMES}'","'${INPUTTTREENAME}'","'${OUTPUTROOTNAME}'","'${NEVENTS}'", "'${COMPILERFLAG}'")'
 else
-    COMPILERFLAG=${FORCERECOMPILE}O
-    root -l -b -q 'run.C("'${SCANCHAINNAME}'","'${INPUTFILENAMES}'","'${INPUTTTREENAME}'","'${OUTPUTROOTNAME}'","'${NEVENTS}'", "'${COMPILERFLAG}'")'
+
+    if [ "${PERF}" == true ]; then
+        COMPILERFLAG=+g
+        root.exe -l -b -q 'run.C("'${SCANCHAINNAME}'","'${INPUTFILENAMES}'","'${INPUTTTREENAME}'","'${OUTPUTROOTNAME}'","'1'", "'${COMPILERFLAG}'")'
+        COMPILERFLAG=g
+        igprof -pp -d -z -o igprof.pp.gz root.exe -l -b -q 'run.C("'${SCANCHAINNAME}'","'${INPUTFILENAMES}'","'${INPUTTTREENAME}'","'${OUTPUTROOTNAME}'","'${NEVENTS}'", "'${COMPILERFLAG}'")'
+        igprof-analyse --sqlite -d -v -g igprof.pp.gz | sqlite3 igprof.pp.sql3 >& /dev/null
+        cp igprof.pp.sql3 ~/public_html/cgi-bin/data/
+        echo "http://${HOSTNAME}/~phchang/cgi-bin/igprof-navigator.py/igprof.pp/"
+    else
+        COMPILERFLAG=${FORCERECOMPILE}O
+        root -l -b -q 'run.C("'${SCANCHAINNAME}'","'${INPUTFILENAMES}'","'${INPUTTTREENAME}'","'${OUTPUTROOTNAME}'","'${NEVENTS}'", "'${COMPILERFLAG}'")'
+    fi
 fi
 
 #------------=================-----------------===============---------------==============--------
