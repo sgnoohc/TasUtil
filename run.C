@@ -1,4 +1,4 @@
-void run( TString scanchainname, TString input_path, TString treename, TString output_path, TString nevents = "-1", TString compilerflag = "" )
+void run( TString scanchainname, const char* input_path, TString treename, TString output_path, TString nevents = "-1", TString compilerflag = "" )
 {
 
     // Load all *.so files in current directory
@@ -20,7 +20,7 @@ void run( TString scanchainname, TString input_path, TString treename, TString o
         }
     }
     gROOT->ProcessLine( ".L " + scanchainname + ".C+" + compilerflag );
-    gROOT->ProcessLine( "TString input_path = \"" + input_path + "\";" );
+    gROOT->ProcessLine( Form( "TString input_path = \"%s\";", input_path ) );
     gROOT->ProcessLine( "TString output_path = \"" + output_path + "\";" );
     gROOT->ProcessLine( "TString ttreename = \"" + treename + "\";" );
     gROOT->ProcessLine( "TChain *chain = new TChain(ttreename);" );

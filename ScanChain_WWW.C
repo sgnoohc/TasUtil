@@ -48,6 +48,9 @@ void doSS( TasUtil::AutoHist& hists )
     if ( passSSMM() ) fillHistograms( hists, "SSmm_", 0 );
     if ( passSSEM() ) fillHistograms( hists, "SSem_", 1 );
     if ( passSSEE() ) fillHistograms( hists, "SSee_", 2 );
+    if ( passSSMM( 0 ) && passSSpresel() && fabs( MjjW() - 80. ) > 20. && wwwbaby.met_pt() < 40. ) fillHistograms( hists, "SSmm_LowMET_MjjSideBand_", 6 );
+    if ( passSSEM() ) fillHistograms( hists, "SSem_", 1 );
+    if ( passSSEE() ) fillHistograms( hists, "SSee_", 2 );
 }
 
 //_________________________________________________________________________________________________
@@ -61,8 +64,8 @@ void doSSAR( TasUtil::AutoHist& hists )
 //_________________________________________________________________________________________________
 void fillHistograms( TasUtil::AutoHist& hists, TString prefix, int regionid )
 {
-    hists.fill( regionid, Form( "%s_Region_counter"   , sampleCategory().Data() ), weight(), 6, 0, 6 );
-    hists.fill( regionid, Form( "%s_Region_rawcounter", sampleCategory().Data() ),        1, 6, 0, 6 );
+    hists.fill( regionid, Form( "%s_Region_counter"   , sampleCategory().Data() ), weight(), 7, 0, 7 );
+    hists.fill( regionid, Form( "%s_Region_rawcounter", sampleCategory().Data() ),        1, 7, 0, 7 );
     fillLepHistograms( hists, "SignalLepton", ""     , prefix );
     fillLepHistograms( hists, "TightLepton" , "tight", prefix );
     fillLepHistograms( hists, "LooseLepton" , "loose", prefix );
@@ -101,18 +104,19 @@ void fillJetHistograms( TasUtil::AutoHist& hists, TString categ, TString name, T
 //_________________________________________________________________________________________________
 void fillWWWHistograms( TasUtil::AutoHist& hists, TString prefix )
 {
-    hists.fill(MjjW()           , Form( "%s_%sMjjW"           , sampleCategory().Data(), prefix.Data() ) , weight() , 180 ,    0.   ,   160.     );
-    hists.fill(MjjLead()        , Form( "%s_%sMjjLead"        , sampleCategory().Data(), prefix.Data() ) , weight() , 180 ,    0.   ,   800.     );
-    hists.fill(DEtajjLead()     , Form( "%s_%sDEtajjLead"     , sampleCategory().Data(), prefix.Data() ) , weight() , 180 ,    0.   ,     9.     );
-    hists.fill(MllSS()          , Form( "%s_%sMllSS"          , sampleCategory().Data(), prefix.Data() ) , weight() , 180 ,    0.   ,   180.     );
-    hists.fill(Pt3l()           , Form( "%s_%sPt3l"           , sampleCategory().Data(), prefix.Data() ) , weight() , 180 ,    0.   ,   180.     );
-    hists.fill(DPhi3lMET()      , Form( "%s_%sDPhi3lMET"      , sampleCategory().Data(), prefix.Data() ) , weight() , 180 ,    0.   ,     3.1416 );
-    hists.fill(getMTmax()       , Form( "%s_%sgetMTmax"       , sampleCategory().Data(), prefix.Data() ) , weight() , 180 ,    0.   ,   180.     );
-    hists.fill(get0SFOSMll()    , Form( "%s_%sget0SFOSMll"    , sampleCategory().Data(), prefix.Data() ) , weight() , 180 ,    0.   ,   180.     );
-    hists.fill(get0SFOSMee()    , Form( "%s_%sget0SFOSMee"    , sampleCategory().Data(), prefix.Data() ) , weight() , 180 ,    0.   ,   180.     );
-    hists.fill(get1SFOSMll()    , Form( "%s_%sget1SFOSMll"    , sampleCategory().Data(), prefix.Data() ) , weight() , 180 ,    0.   ,   180.     );
-    hists.fill(get2SFOSMll0()   , Form( "%s_%sget2SFOSMll0"   , sampleCategory().Data(), prefix.Data() ) , weight() , 180 ,    0.   ,   180.     );
-    hists.fill(get2SFOSMll1()   , Form( "%s_%sget2SFOSMll1"   , sampleCategory().Data(), prefix.Data() ) , weight() , 180 ,    0.   ,   180.     );
+    hists.fill( wwwbaby.met_pt() , Form( "%s_%smet"          , sampleCategory().Data() , prefix.Data() ) , weight() , 180 , 0. , 250.   );
+    hists.fill( MjjW()           , Form( "%s_%sMjjW"         , sampleCategory().Data() , prefix.Data() ) , weight() , 180 , 0. , 160.   );
+    hists.fill( MjjLead()        , Form( "%s_%sMjjLead"      , sampleCategory().Data() , prefix.Data() ) , weight() , 180 , 0. , 800.   );
+    hists.fill( DEtajjLead()     , Form( "%s_%sDEtajjLead"   , sampleCategory().Data() , prefix.Data() ) , weight() , 180 , 0. , 9.     );
+    hists.fill( MllSS()          , Form( "%s_%sMllSS"        , sampleCategory().Data() , prefix.Data() ) , weight() , 180 , 0. , 180.   );
+    hists.fill( Pt3l()           , Form( "%s_%sPt3l"         , sampleCategory().Data() , prefix.Data() ) , weight() , 180 , 0. , 180.   );
+    hists.fill( DPhi3lMET()      , Form( "%s_%sDPhi3lMET"    , sampleCategory().Data() , prefix.Data() ) , weight() , 180 , 0. , 3.1416 );
+    hists.fill( getMTmax()       , Form( "%s_%sgetMTmax"     , sampleCategory().Data() , prefix.Data() ) , weight() , 180 , 0. , 180.   );
+    hists.fill( get0SFOSMll()    , Form( "%s_%sget0SFOSMll"  , sampleCategory().Data() , prefix.Data() ) , weight() , 180 , 0. , 180.   );
+    hists.fill( get0SFOSMee()    , Form( "%s_%sget0SFOSMee"  , sampleCategory().Data() , prefix.Data() ) , weight() , 180 , 0. , 180.   );
+    hists.fill( get1SFOSMll()    , Form( "%s_%sget1SFOSMll"  , sampleCategory().Data() , prefix.Data() ) , weight() , 180 , 0. , 180.   );
+    hists.fill( get2SFOSMll0()   , Form( "%s_%sget2SFOSMll0" , sampleCategory().Data() , prefix.Data() ) , weight() , 180 , 0. , 180.   );
+    hists.fill( get2SFOSMll1()   , Form( "%s_%sget2SFOSMll1" , sampleCategory().Data() , prefix.Data() ) , weight() , 180 , 0. , 180.   );
 }
 
 // eof
