@@ -1,7 +1,7 @@
 //  .
 // ..: P. Chang, philip@physics.ucsd.edu
 
-#include "ScanChain_WWW.h"
+#include "WWW_ScanChain.h"
 
 //_________________________________________________________________________________________________
 void ScanChain( TChain* chain, TString output_name, TString base_optstr, int nevents )

@@ -9,5 +9,5 @@ source root.sh ""
 
 cd $1;
 make -j 40;
-cp *CORE.so ../
+cp *core.so ../
 cd ../
