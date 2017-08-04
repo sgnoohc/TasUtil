@@ -61,7 +61,7 @@ if __name__ == "__main__":
                     ),
                 open_dataset = False,
                 flush = True,
-                files_per_output = 9,
+                files_per_output = 3,
                 output_name = "merged.root",
                 tag = job_tag,
                 cmssw_version = "CMSSW_9_2_1", # doesn't do anything

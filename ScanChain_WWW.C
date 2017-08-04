@@ -32,8 +32,8 @@ void ScanChain( TChain* chain, TString output_name, TString base_optstr, int nev
     {
         setObjectIndices();
         doSS( hists );
-        doSSMMFull( hists );
-//        doSSSideband( hists );
+//        doSSMMFull( hists );
+        doSSSideband( hists );
 //        doSSAR( hists );
     }
 
@@ -149,6 +149,8 @@ void fillWWWHistograms( TasUtil::AutoHist& hists, TString prefix )
     hists.fill( DEtajjLead()     , Form( "%s_%sDEtajjLead"   , sampleCategory().Data() , prefix.Data() ) , weight() , 180 , 0. , 9.     );
     hists.fill( MllSS()          , Form( "%s_%sMllSS"        , sampleCategory().Data() , prefix.Data() ) , weight() , 180 , 0. , 180.   );
     hists.fill( getMTmax()       , Form( "%s_%sgetMTmax"     , sampleCategory().Data() , prefix.Data() ) , weight() , 180 , 0. , 180.   );
+    hists.fill( M4()             , Form( "%s_%sm4"           , sampleCategory().Data() , prefix.Data() ) , weight() , 180 , 0. , 180.   );
+    hists.fill( M4()             , Form( "%s_%sm4wide"       , sampleCategory().Data() , prefix.Data() ) , weight() , 150 , 0. , 1500.  );
 //    hists.fill( Pt3l()           , Form( "%s_%sPt3l"         , sampleCategory().Data() , prefix.Data() ) , weight() , 180 , 0. , 180.   );
 //    hists.fill( DPhi3lMET()      , Form( "%s_%sDPhi3lMET"    , sampleCategory().Data() , prefix.Data() ) , weight() , 180 , 0. , 3.1416 );
 //    hists.fill( get0SFOSMll()    , Form( "%s_%sget0SFOSMll"  , sampleCategory().Data() , prefix.Data() ) , weight() , 180 , 0. , 180.   );

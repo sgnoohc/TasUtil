@@ -70,7 +70,8 @@ if [ -n "$4" ]; then NEVENTS=$4; fi
 if [ "x${_CONDOR_SLOT}" == "x" ]; then
     if [ -n "$5" ]; then INPUTFILENAMES=$5; fi
 else
-    :
+    # If condor jobs, touch the .so files to prevent from recompiling
+    touch *.so
 fi
 
 # echo current settings
