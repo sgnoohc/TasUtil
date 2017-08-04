@@ -11,6 +11,8 @@
 // C/C++
 #include <algorithm>
 #include <map>
+#include <string>
+#include <unordered_map>
 #include <vector>
 #include <stdarg.h>
 #include <functional>
@@ -50,6 +52,11 @@
 #include "CORE/Tools/jetcorr/JetCorrectionUncertainty.h"
 using namespace tas;
 #endif
+
+//#define MAP std::unordered_map
+//#define STRING std::string
+#define MAP std::map
+#define STRING TString
 
 ///////////////////////////////////////////////////////////////////////////////////////////////
 // LorentzVector typedef that we use very often
@@ -92,7 +99,7 @@ namespace TasUtil
 
         public:
         int resolution;
-        std::map<TString, TH1*> histdb;
+        MAP<STRING, TH1*> histdb;
 
         //////////////////////////////////////////////////////////////////////////////////////////////////
         // Functions
@@ -101,16 +108,16 @@ namespace TasUtil
         AutoHist();
         ~AutoHist();
         // user interface
-        void fill(double xval, TString name, double wgt=1);
-        void fill(double xval, TString name, double wgt, int nbin, double xmin, double xmax);
-        void fill(double xval, double yval, TString name, double wgt, int, double, double, int, double, double);
-        void fill(double xval, TString name, double wgt, int nbin, double*);
-        void fill(double xval, double yval, TString name, double wgt, int, double*, int, double*);
+        void fill(double xval, STRING name, double wgt=1);
+        void fill(double xval, STRING name, double wgt, int nbin, double xmin, double xmax);
+        void fill(double xval, double yval, STRING name, double wgt, int, double, double, int, double, double);
+        void fill(double xval, STRING name, double wgt, int nbin, double*);
+        void fill(double xval, double yval, STRING name, double wgt, int, double*, int, double*);
         void save(TString ofilename);
         // under the hood (but not private...)
         void fill(double xval, TH1*& h, double wgt=1, bool norebinning=false);
         TH1* hadd(TH1*, TH1*);
-        TH1* get(TString);
+        TH1* get(STRING);
         static int getRes(double range);
         static int getRes(TH1* h);
         static void transfer(TH1*, TH1*);
@@ -586,7 +593,8 @@ bool TasUtil::Looper<TREECLASS>::nextTree()
     else
     {
         // Announce that we are done with this chain
-        print("Done with all trees in this chain", __FUNCTION__);
+//        print("");
+//        print("Done with all trees in this chain", __FUNCTION__);
         return false;
     }
 }
@@ -653,6 +661,7 @@ bool TasUtil::Looper<TREECLASS>::nextEvent()
         // If looping over all trees, we fail to find first event that's good,
         // return false and call it quits.
         // At this point it will exit the loop without processing any events.
+        printProgressBar();
         return false;
     }
     // If tree exists, it means that we're in the middle of a loop
@@ -670,6 +679,7 @@ bool TasUtil::Looper<TREECLASS>::nextEvent()
             // You're done!
             if (allEventsInChainProcessed())
             {
+                printProgressBar();
                 return false;
             }
             // If failed because it's last in the tree then load the next tree and the event
@@ -688,6 +698,7 @@ bool TasUtil::Looper<TREECLASS>::nextEvent()
                 // If looping over all trees, we fail to find first event that's good,
                 // return false and call it quits.
                 // Again you're done!
+                printProgressBar();
                 return false;
             }
             else
@@ -721,6 +732,13 @@ void TasUtil::Looper<TREECLASS>::setNEventsToProcess()
         nEventsTotalInChain = tchain->GetEntries();
         if (nEventsToProcess < 0)
             nEventsToProcess = nEventsTotalInChain;
+        if (nEventsToProcess > (int) nEventsTotalInChain)
+        {
+            print( TString::Format(
+                        "Asked to process %d events, but there aren't that many events",
+                        nEventsToProcess ) );
+            nEventsToProcess = nEventsTotalInChain;
+        }
         print( TString::Format( "Total Events in this Chain to process = %d", nEventsToProcess ) );
     }
 }

@@ -269,11 +269,11 @@ void TasUtil::AutoHist::save(TString ofilename)
 }
 
 //__________________________________________________________________________________________________
-void TasUtil::AutoHist::fill(double xval, TString name, double wgt)
+void TasUtil::AutoHist::fill(double xval, STRING name, double wgt)
 {
     TH1* hist = 0;
-    std::pair<std::map<TString,TH1*>::iterator,bool> ret;
-    ret = histdb.insert(std::pair<TString, TH1*>(name, hist));
+    std::pair<MAP<STRING,TH1*>::iterator,bool> ret;
+    ret = histdb.insert({name, hist});
     if (ret.second == false)
     {
         fill(xval, (*ret.first).second, wgt);
@@ -286,11 +286,11 @@ void TasUtil::AutoHist::fill(double xval, TString name, double wgt)
 }
 
 //__________________________________________________________________________________________________
-void TasUtil::AutoHist::fill(double xval, TString name, double wgt, int nbin, double min, double max)
+void TasUtil::AutoHist::fill(double xval, STRING name, double wgt, int nbin, double min, double max)
 {
     TH1* hist = 0;
-    std::pair<std::map<TString,TH1*>::iterator,bool> ret;
-    ret = histdb.insert(std::pair<TString, TH1*>(name, hist));
+    std::pair<MAP<STRING,TH1*>::iterator,bool> ret;
+    ret = histdb.insert({name, hist});
     if (ret.second == false)
     {
         fill(xval, (*ret.first).second, wgt, true);
@@ -303,11 +303,11 @@ void TasUtil::AutoHist::fill(double xval, TString name, double wgt, int nbin, do
 }
 
 //__________________________________________________________________________________________________
-void TasUtil::AutoHist::fill(double xval, TString name, double wgt, int nbin, double* bins)
+void TasUtil::AutoHist::fill(double xval, STRING name, double wgt, int nbin, double* bins)
 {
     TH1* hist = 0;
-    std::pair<std::map<TString,TH1*>::iterator,bool> ret;
-    ret = histdb.insert(std::pair<TString, TH1*>(name, hist));
+    std::pair<MAP<STRING,TH1*>::iterator,bool> ret;
+    ret = histdb.insert({name, hist});
     if (ret.second == false)
     {
         fill(xval, (*ret.first).second, wgt, true);
@@ -321,14 +321,14 @@ void TasUtil::AutoHist::fill(double xval, TString name, double wgt, int nbin, do
 
 //__________________________________________________________________________________________________
 void TasUtil::AutoHist::fill(
-        double xval, double yval, TString name, double wgt,
+        double xval, double yval, STRING name, double wgt,
         int nbx, double xm, double xM,
         int nby, double ym, double yM
         )
 {
     TH1* hist = 0;
-    std::pair<std::map<TString,TH1*>::iterator,bool> ret;
-    ret = histdb.insert(std::pair<TString, TH1*>(name, hist));
+    std::pair<MAP<STRING,TH1*>::iterator,bool> ret;
+    ret = histdb.insert({name, hist});
     if (ret.second == false)
     {
         ((TH2D*) (*ret.first).second)->Fill(xval, yval, wgt);
@@ -342,13 +342,13 @@ void TasUtil::AutoHist::fill(
 
 //__________________________________________________________________________________________________
 void TasUtil::AutoHist::fill(
-        double xval, double yval, TString name, double wgt,
+        double xval, double yval, STRING name, double wgt,
         int nbx, double* bx,
         int nby, double* by)
 {
     TH1* hist = 0;
-    std::pair<std::map<TString,TH1*>::iterator,bool> ret;
-    ret = histdb.insert(std::pair<TString, TH1*>(name, hist));
+    std::pair<MAP<STRING,TH1*>::iterator,bool> ret;
+    ret = histdb.insert({name, hist});
     if (ret.second == false)
     {
         ((TH2D*) (*ret.first).second)->Fill(xval, yval, wgt);
@@ -480,7 +480,7 @@ void TasUtil::AutoHist::transfer(TH1* tohist, TH1* fromhist)
 }
 
 //__________________________________________________________________________________________________
-TH1* TasUtil::AutoHist::get(TString name)
+TH1* TasUtil::AutoHist::get(STRING name)
 {
     try
     {

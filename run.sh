@@ -98,7 +98,7 @@ else
         echo "http://${HOSTNAME}/~phchang/cgi-bin/igprof-navigator.py/igprof.pp/"
     else
         COMPILERFLAG=${FORCERECOMPILE}O
-        root -l -b -q 'run.C("'${SCANCHAINNAME}'","'${INPUTFILENAMES}'","'${INPUTTTREENAME}'","'${OUTPUTROOTNAME}'","'${NEVENTS}'", "'${COMPILERFLAG}'")'
+        time root -l -b -q 'run.C("'${SCANCHAINNAME}'","'${INPUTFILENAMES}'","'${INPUTTTREENAME}'","'${OUTPUTROOTNAME}'","'${NEVENTS}'", "'${COMPILERFLAG}'")'
     fi
 fi
 
