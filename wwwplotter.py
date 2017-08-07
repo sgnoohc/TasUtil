@@ -22,12 +22,12 @@ class WWWPlotter:
         self.proc_groups["WZ"]    = [ "wz" ]
         self.proc_groups["ZZ"]    = [ "zz" ]
         self.proc_groups["tX"]    = [ "singletop" ]
-        self.proc_groups["ttX"]   = [ "ttz", "ttw", "tth" ]
-        self.proc_groups["VVV"]   = [ "wwz_incl", "wzz_incl", "zzz_incl", "wwg_incl", "wzg_incl" ]
+        self.proc_groups["ttX"]   = [ "ttz", "ttw", "tth", "ttg" ]
+        self.proc_groups["VVV"]   = [ "wwz_incl", "wzz_incl", "zzz_incl"]#, "wwg_incl", "wzg_incl" ]
         self.proc_groups["vh"]    = [ "vh" ]
         self.proc_groups["whwww"] = [ "whwww" ]
         self.proc_groups["www"]   = [ "www" ]
-        self.proc_groups["data"]  = [ "data" ]
+        self.proc_groups["data"]  = [ "data_mm", "data_em", "data_ee" ]
 
         self.proc_colors = {}
         self.proc_colors["W"]     = 2006
@@ -88,12 +88,11 @@ class WWWPlotter:
                         histsum.SetDirectory( 0 )
             hists[key] = histsum
 
-        for key in hists:
-            if hists[key]:
-                print hists[key].GetName()
-                hists[key].Print("all")
-            else:
-                print key, "empty"
+#        for key in hists:
+#            if hists[key]:
+#                print hists[key].GetName()
+#            else:
+#                print key, "empty"
 
         v_bkg_hists = r.vector("TH1*")()
         v_sig_hists = r.vector("TH1*")()
@@ -115,13 +114,12 @@ class WWWPlotter:
                       --yTitle N leptons
                       --xTitle %s
                       --plotOutputName plots/%s
-                      --ratio_DrawOpt ep
-                      --ratio_Maximum 4
+                      --ratio_Maximum 2
                       --ratio_Minimum 0.
                       --showOverflow
                       --autoStack
                       --legend_NColumns 2
-                      --MaximumMultiplier 30
+                      --MaximumMultiplier 2
                       %s
                       """%(histname, histname, extraoptions),
                       v_data_hists, v_bkg_hists, v_sig_hists )
@@ -129,7 +127,61 @@ class WWWPlotter:
 if __name__ == "__main__":
 
     wwwplotter = WWWPlotter()
-#    wwwplotter.draw( "Region_counter" )
+
+    wwwplotter.proc_groups["data"]  = [ "data_mm", "data_em" ]
+    wwwplotter.draw( "Region_counter", "" )
+    wwwplotter.draw( "SSMM_CutThirdLepVetonisotrack" )
+#    wwwplotter.draw( "SSMM_CutSSMMLepmet", "--xNbin 20" )
+#    wwwplotter.draw( "SSMM_CutSSMMLeplep0_pt", "--xNbin 20" )
+#    wwwplotter.draw( "SSMM_CutSSMMLeplep1_pt", "--xNbin 20" )
+#    wwwplotter.draw( "SSMM_CutSSMMLepjet_size", "" )
+#    wwwplotter.draw( "SSMM_CutSSMMLepjetb_size", "" )
+#    wwwplotter.draw( "SSMM_CutSSMMLepjet3l_size", "" )
+
+#    wwwplotter.proc_groups["data"]  = [ "data_ee" ]
+#    wwwplotter.draw( "ee_met", "--xNbin 20" );
+#    wwwplotter.draw( "ee_nvtx", "" );
+#    wwwplotter.draw( "ee_dimuon_mass", "--xNbin 20" );
+#    wwwplotter.draw( "eee_met", "--xNbin 20" );
+#    wwwplotter.draw( "eee_nvtx", "" );
+#    wwwplotter.draw( "eee_dimuon_mass", "--xNbin 20" );
+#
+#    wwwplotter.proc_groups["data"]  = [ "data_mm" ]
+#    wwwplotter.draw( "mm_met", "--xNbin 10" );
+#    wwwplotter.draw( "mm_nvtx", "" );
+#    wwwplotter.draw( "mm_dimuon_mass", "--xNbin 20" );
+#    wwwplotter.draw( "mmjetb_size", "" );
+#    wwwplotter.draw( "mmjet_size", "" );
+#    wwwplotter.draw( "mmjet3l_size", "" );
+#    wwwplotter.draw( "mmm_met", "--xNbin 20" );
+#    wwwplotter.draw( "mmm_nvtx", "" );
+#    wwwplotter.draw( "mmm_dimuon_mass", "--xNbin 20" );
+#    wwwplotter.draw( "mmm_loose_met", "--xNbin 20" );
+#    wwwplotter.draw( "mmm_loose_nvtx", "" );
+#    wwwplotter.draw( "mmm_loose_dimuon_mass", "--xNbin 20" );
+#    wwwplotter.draw( "mmm_lbnt_met", "--xNbin 20" );
+#    wwwplotter.draw( "mmm_lbnt_nvtx", "" );
+#    wwwplotter.draw( "mmm_lbnt_dimuon_mass", "--xNbin 20" );
+
+
+
+
+
+#    wwwplotter.draw( "Region_counter", "--noData --printYieldsTable" )
+#    wwwplotter.draw( "Region_rawcounter", "--noData --printYieldsTable" )
+
+#    for i in xrange( 2, 13 ):
+#        if i != 4:
+#            continue
+#        wwwplotter.draw( "SSmm_Cut%02dmet" % i );
+#        wwwplotter.draw( "SSmm_Cut%02djet_size" % i );
+#        wwwplotter.draw( "SSmm_Cut%02djetb_size" % i );
+#        wwwplotter.draw( "SSmm_Cut%02dlep_size" % i );
+#        wwwplotter.draw( "SSmm_Cut%02dMllSS" % i );
+#        wwwplotter.draw( "SSmm_Cut%02dlep0_pt" % i );
+#        wwwplotter.draw( "SSmm_Cut%02dlep0_eta" % i );
+#        wwwplotter.draw( "SSmm_Cut%02dlep0_phi" % i );
+
 #    wwwplotter.draw( "SSARmm_DEtajjLead"    , "--xNbin 20" )
 #    wwwplotter.draw( "SSARmm_DPhi3lMET"     , "--xNbin 20" )
 #    wwwplotter.draw( "SSARmm_MjjLead"       , "--xNbin 20" )
@@ -292,7 +344,7 @@ if __name__ == "__main__":
 #    wwwplotter.draw( "SSmm_leptight1_eta" , "--xNbin 20" )
 #    wwwplotter.draw( "SSmm_leptight1_phi" , "--xNbin 20" )
 #    wwwplotter.draw( "SSmm_leptight1_pt"  , "--xNbin 20" )
-#
+
 #    wwwplotter.draw( "SSmm_LowMET_MjjSideBand_DEtajjLead"    , "--xNbin 20" )
 #    wwwplotter.draw( "SSmm_LowMET_MjjSideBand_DPhi3lMET"     , "--xNbin 20" )
 #    wwwplotter.draw( "SSmm_LowMET_MjjSideBand_MjjLead"       , "--xNbin 20" )
@@ -374,7 +426,6 @@ if __name__ == "__main__":
 #    wwwplotter.draw( "SSmm_LowMET_MjjSideBand_leptight1_eta" , "--xNbin 20" )
 #    wwwplotter.draw( "SSmm_LowMET_MjjSideBand_leptight1_phi" , "--xNbin 20" )
 #    wwwplotter.draw( "SSmm_LowMET_MjjSideBand_leptight1_pt"  , "--xNbin 20" )
-    wwwplotter.draw( "SSmm_LowMET_MjjSideBand_m4wide"  , "--xNbin 15" )
-    wwwplotter.draw( "SSmm_m4wide"  , "--xNbin 15" )
+#    wwwplotter.draw( "SSmm_LowMET_MjjSideBand_m4wide"  , "--xNbin 15" )
 
 #

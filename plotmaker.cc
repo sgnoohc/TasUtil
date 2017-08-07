@@ -14,6 +14,9 @@
 #include <string>
 #include <utility>
 #include <cstdlib>
+#include <sstream>
+#include <iomanip>
+#include <string>
 
 typedef std::pair<TH1*, TH1*> Hist;
 typedef std::vector<Hist> Hists;
@@ -33,6 +36,50 @@ std::vector<TH1*> new_hists;
 // global TPad property handler
 // ============================
 std::map<TPad*, bool> map_pad_drawn;
+
+//_________________________________________________________________________________________________
+/* Convert double to string with specified number of places after the decimal. */
+std::string prd( const double x, const int decDigits )
+{
+    stringstream ss;
+    ss << fixed;
+    ss.precision( decDigits ); // set # places after decimal
+    ss << x;
+    return ss.str();
+}
+
+//_________________________________________________________________________________________________
+/* Convert double to string with specified number of places after the decimal
+      and left padding. */
+std::string prd( const double x, const int decDigits, const int width )
+{
+    stringstream ss;
+    ss << fixed << right;
+    ss.fill( ' ' );      // fill space around displayed #
+    ss.width( width );   // set  width around displayed #
+    ss.precision( decDigits ); // set # places after decimal
+    ss << x;
+    return ss.str();
+}
+
+//_________________________________________________________________________________________________
+/*! Center-aligns string within a field of width w. Pads with blank spaces
+      to enforce alignment. */
+std::string center( const string s, const int w )
+{
+    stringstream ss, spaces;
+    int padding = w - s.size();                 // count excess room to pad
+    
+    for ( int i = 0; i < padding / 2; ++i )
+        spaces << " ";
+        
+    ss << spaces.str() << s << spaces.str();    // format with padding
+    
+    if ( padding > 0 && padding % 2 != 0 )      // if odd #, add 1 space
+        ss << " ";
+        
+    return ss.str();
+}
 
 //_________________________________________________________________________________________________
 //Parse Parameters from options input string
@@ -145,6 +192,8 @@ TString getOpt( TString key )
     else if ( key.EqualTo( "ratioPaneAtBottom" )  ) return getDefaultOpt( key, ""                 ) ;
     else if ( key.EqualTo( "divideByBinWidth"  )  ) return getDefaultOpt( key, ""                 ) ;
     else if ( key.EqualTo( "scaleByLumi"       )  ) return getDefaultOpt( key, ""                 ) ;
+    else if ( key.EqualTo( "printYieldsTable"  )  ) return getDefaultOpt( key, ""                 ) ;
+    else if ( key.EqualTo( "noData"            )  ) return getDefaultOpt( key, ""                 ) ;
 
     else
     {
@@ -295,6 +344,7 @@ TH1* getTotalBkgHists( std::vector<TH1*> hists )
         exit(-1);
     }
     TH1* sum_hist = getSumHists( hists );
+    sum_hist->SetName("Total Bkg.");
     if ( !gROOT->GetColor( 9999 ) )
         new TColor( 9999, 0.1, 0.2, 0.3, "", 0. ); // alpha = 0.5
     sum_hist->SetMarkerStyle( 1 );
@@ -633,6 +683,59 @@ void clearGlobalSettings()
 }
 
 //_________________________________________________________________________________________________
+void printYields( TH1* hist, int ibinmin, int ibinmax )
+{
+    std::cout << center( hist->GetName(), 20 ) << " , ";
+    for ( unsigned int ibin = ibinmin; ibin <= ibinmax; ++ibin )
+    {
+        std::cout << prd( hist->GetBinContent( ibin ), 3, 9 );
+        std::cout << " +- ";
+        std::cout << prd( hist->GetBinError( ibin ), 3, 7 );
+        if ( ibin < ibinmax )
+            std::cout << " , ";
+        else if ( ibin == ibinmax )
+            std::cout << "\n";
+    }
+}
+
+//_________________________________________________________________________________________________
+void printYieldsTable(
+        std::vector<TH1*>& data_hists,
+        std::vector<TH1*>& bkg_hists,
+        std::vector<TH1*>& sig_hists )
+{
+    if ( data_hists.size() == 0 && bkg_hists.size() == 0 && sig_hists.size() == 0 )
+        return;
+
+    TH1* hist;
+    if ( data_hists.size() != 0 ) hist = data_hists[0];
+    if ( bkg_hists.size()  != 0 ) hist = bkg_hists[0];
+    if ( sig_hists.size()  != 0 ) hist = sig_hists[0];
+
+    unsigned int ibinmin = 1;
+    unsigned int ibinmax = hist->GetNbinsX();
+    if ( !getOpt( "showUnderflow" ) ) ibinmin = 0;
+    if ( !getOpt( "showOverflow" ) ) ibinmax ++;
+
+    std::cout << center( "name", 20 ) << " , ";;
+
+    // Putting column header
+    for ( unsigned int ibin = ibinmin; ibin <= ibinmax; ++ibin )
+    {
+        std::cout << center( Form( "bin%d", ibin ), 20 );
+        if ( ibin < ibinmax )
+            std::cout << " , ";
+        else if ( ibin == ibinmax )
+            std::cout << "\n";
+    }
+
+    for ( auto& bkg_hist  : bkg_hists )  printYields( bkg_hist , ibinmin, ibinmax );
+    if ( bkg_hists.size() ) printYields( getTotalBkgHists( bkg_hists ), ibinmin, ibinmax );
+    if ( getOpt( "noData" ).IsNull() ) for ( auto& data_hist : data_hists ) printYields( data_hist, ibinmin, ibinmax );
+    for ( auto& sig_hist  : sig_hists )  printYields( sig_hist , ibinmin, ibinmax );
+}
+
+//_________________________________________________________________________________________________
 std::vector<TH1*> plotmaker(
     std::string options_string,
     Hists datas_pair_in,
@@ -804,13 +907,21 @@ std::vector<TH1*> plotmaker(
     // ~-~-~-~-~
     // Draw data
     // ~-~-~-~-~
-    if ( data_hists.size() )
+    if ( data_hists.size() && getOpt( "noData" ).IsNull() )
     {
         if ( !getOpt( "sumDataHists" ).IsNull() )
             replaceWithSummedHist( data_hists );
 
         for ( auto& data_hist : data_hists )
             drawData( data_hist, getOpt( "data_DrawOpt" ), pad0 );
+    }
+
+    // ~-~-~-~-~-~-~-~-~-
+    // Print yields table
+    // ~-~-~-~-~-~-~-~-~-
+    if ( !getOpt( "printYieldsTable" ).IsNull() )
+    {
+        printYieldsTable( data_hists, bkg_hists, sig_hists );
     }
     
     // ~-~-~-~-~-~

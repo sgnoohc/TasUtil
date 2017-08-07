@@ -26,7 +26,7 @@ try:
     exec_path = "run.sh"
     tar_path = "condor.tgz"
     hadoop_path = "test/wwwlooper/%s"%job_tag
-    args = "ScanChain_WWW output.root t -1"
+    args = "WWW_ScanChain output.root t -1"
 except:
     usage("error: check your arguments.")
 
@@ -61,7 +61,7 @@ if __name__ == "__main__":
                     ),
                 open_dataset = False,
                 flush = True,
-                files_per_output = 3,
+                files_per_output = 6,
                 output_name = "merged.root",
                 tag = job_tag,
                 cmssw_version = "CMSSW_9_2_1", # doesn't do anything

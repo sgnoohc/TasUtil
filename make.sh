@@ -1,13 +1,14 @@
 usage() {
     echo "usage: $0 CORENAME"
     echo "error: check your arguments."
+    exit
 }
 
 if [ -z $1 ]; then usage; fi
 
-source root.sh ""
+source ./root.sh ""
 
 cd $1;
 make -j 40;
-cp *core.so ../
+cp *CORE.so ../
 cd ../
