@@ -65,9 +65,9 @@ class WWWPlotter:
 
         self.hists = {}
 
-        for key in self.tfile.GetListOfKeys():
-            histname = key.GetName()
-            self.hists[histname] = self.tfile.Get( histname )
+#        for key in self.tfile.GetListOfKeys():
+#            histname = key.GetName()
+#            self.hists[histname] = self.tfile.Get( histname )
 
     def draw( self, histname, extraoptions="" ):
 
@@ -79,6 +79,8 @@ class WWWPlotter:
                 try :
                     hist = self.hists[proc + "_" + histname]
                 except:
+                    self.hists[proc + "_" + histname] = self.tfile.Get( proc + "_" + histname )
+                    hist = self.hists[proc + "_" + histname]
                     pass
                 if hist:
                     if histsum:
@@ -129,8 +131,8 @@ if __name__ == "__main__":
     wwwplotter = WWWPlotter()
 
     wwwplotter.proc_groups["data"]  = [ "data_mm", "data_em" ]
-    wwwplotter.draw( "Region_counter", "" )
-    wwwplotter.draw( "SSMM_CutThirdLepVetonisotrack" )
+    wwwplotter.draw( "Region_counter", "--printYieldsTable --printYieldsMinBin 1 --printYieldsMaxBin 8" )
+#    wwwplotter.draw( "SSMM_CutThirdLepVetonisotrack" )
 #    wwwplotter.draw( "SSMM_CutSSMMLepmet", "--xNbin 20" )
 #    wwwplotter.draw( "SSMM_CutSSMMLeplep0_pt", "--xNbin 20" )
 #    wwwplotter.draw( "SSMM_CutSSMMLeplep1_pt", "--xNbin 20" )

@@ -146,7 +146,7 @@ TString getOpt( TString key )
     else if ( key.EqualTo( "xTitleFont"        )  ) return getDefaultOpt( key, gFont              ) ;
     else if ( key.EqualTo( "xLabelFont"        )  ) return getDefaultOpt( key, gFont              ) ;
     else if ( key.EqualTo( "xNdivisions"       )  ) return getDefaultOpt( key, gNdiv              ) ;
-    else if ( key.EqualTo( "xNbin"            )  ) return getDefaultOpt( key, ""                 ) ;
+    else if ( key.EqualTo( "xNbin"             )  ) return getDefaultOpt( key, ""                 ) ;
 
     else if ( key.EqualTo( "yTitle"            )  ) return getDefaultOpt( key, "YVar"             ) ;
     else if ( key.EqualTo( "yTickLength"       )  ) return getDefaultOpt( key, gTickLength        ) ;
@@ -193,6 +193,8 @@ TString getOpt( TString key )
     else if ( key.EqualTo( "divideByBinWidth"  )  ) return getDefaultOpt( key, ""                 ) ;
     else if ( key.EqualTo( "scaleByLumi"       )  ) return getDefaultOpt( key, ""                 ) ;
     else if ( key.EqualTo( "printYieldsTable"  )  ) return getDefaultOpt( key, ""                 ) ;
+    else if ( key.EqualTo( "printYieldsMinBin" )  ) return getDefaultOpt( key, ""                 ) ;
+    else if ( key.EqualTo( "printYieldsMaxBin" )  ) return getDefaultOpt( key, ""                 ) ;
     else if ( key.EqualTo( "noData"            )  ) return getDefaultOpt( key, ""                 ) ;
 
     else
@@ -563,7 +565,7 @@ std::vector<TH1*> getRatioHists( std::vector<TH1*> data_hists, std::vector<TH1*>
     
     for ( unsigned int ihist = 0; ihist < data_hists.size(); ++ihist )
     {
-        TH1D* ratio = ( TH1D* ) data_hists[ihist]->Clone( data_hists[ihist]->GetName() );
+        TH1D* ratio = ( TH1D* ) data_hists[ihist]->Clone( Form( "ratio%d", ihist ) );
         
         if ( !ratio->GetSumw2N() )
             ratio->Sumw2();
@@ -688,9 +690,9 @@ void printYields( TH1* hist, int ibinmin, int ibinmax )
     std::cout << center( hist->GetName(), 20 ) << " , ";
     for ( unsigned int ibin = ibinmin; ibin <= ibinmax; ++ibin )
     {
-        std::cout << prd( hist->GetBinContent( ibin ), 3, 9 );
+        std::cout << prd( hist->GetBinContent( ibin ), 2, 9 );
         std::cout << " +- ";
-        std::cout << prd( hist->GetBinError( ibin ), 3, 7 );
+        std::cout << prd( hist->GetBinError( ibin ), 2, 7 );
         if ( ibin < ibinmax )
             std::cout << " , ";
         else if ( ibin == ibinmax )
@@ -702,7 +704,8 @@ void printYields( TH1* hist, int ibinmin, int ibinmax )
 void printYieldsTable(
         std::vector<TH1*>& data_hists,
         std::vector<TH1*>& bkg_hists,
-        std::vector<TH1*>& sig_hists )
+        std::vector<TH1*>& sig_hists,
+        std::vector<TH1*>& ratio_hists )
 {
     if ( data_hists.size() == 0 && bkg_hists.size() == 0 && sig_hists.size() == 0 )
         return;
@@ -714,8 +717,13 @@ void printYieldsTable(
 
     unsigned int ibinmin = 1;
     unsigned int ibinmax = hist->GetNbinsX();
-    if ( !getOpt( "showUnderflow" ) ) ibinmin = 0;
-    if ( !getOpt( "showOverflow" ) ) ibinmax ++;
+    if ( !getOpt( "showUnderflow" ).IsNull() ) ibinmin = 0;
+    if ( !getOpt( "showOverflow" ).IsNull() ) ibinmax ++;
+
+    if ( !getOpt( "printYieldsMinBin" ).IsNull() )
+        ibinmin = getOpt( "printYieldsMinBin" ).Atoi();
+    if ( !getOpt( "printYieldsMaxBin" ).IsNull() )
+        ibinmax = getOpt( "printYieldsMaxBin" ).Atoi();
 
     std::cout << center( "name", 20 ) << " , ";;
 
@@ -732,6 +740,7 @@ void printYieldsTable(
     for ( auto& bkg_hist  : bkg_hists )  printYields( bkg_hist , ibinmin, ibinmax );
     if ( bkg_hists.size() ) printYields( getTotalBkgHists( bkg_hists ), ibinmin, ibinmax );
     if ( getOpt( "noData" ).IsNull() ) for ( auto& data_hist : data_hists ) printYields( data_hist, ibinmin, ibinmax );
+    for ( auto& ratio_hist  : ratio_hists )  printYields( ratio_hist , ibinmin, ibinmax );
     for ( auto& sig_hist  : sig_hists )  printYields( sig_hist , ibinmin, ibinmax );
 }
 
@@ -916,14 +925,6 @@ std::vector<TH1*> plotmaker(
             drawData( data_hist, getOpt( "data_DrawOpt" ), pad0 );
     }
 
-    // ~-~-~-~-~-~-~-~-~-
-    // Print yields table
-    // ~-~-~-~-~-~-~-~-~-
-    if ( !getOpt( "printYieldsTable" ).IsNull() )
-    {
-        printYieldsTable( data_hists, bkg_hists, sig_hists );
-    }
-    
     // ~-~-~-~-~-~
     // Draw legend
     // ~-~-~-~-~-~
@@ -946,6 +947,14 @@ std::vector<TH1*> plotmaker(
             drawRatio( ratio_hist, getOpt( "ratio_DrawOpt" ), pad2 );
     }
 
+    // ~-~-~-~-~-~-~-~-~-
+    // Print yields table
+    // ~-~-~-~-~-~-~-~-~-
+    if ( !getOpt( "printYieldsTable" ).IsNull() )
+    {
+        printYieldsTable( data_hists, bkg_hists, sig_hists, ratio_hists );
+    }
+    
     // ~-~-~-~-~-
     // Save plots
     // ~-~-~-~-~-

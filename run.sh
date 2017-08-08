@@ -14,6 +14,12 @@ else
     IFILE=$4
     CMSSWVERSION=$5
     SCRAMARCH=$6
+    echo "OUTPUTDIR     : $1"
+    echo "OUTPUTNAME    : $2"
+    echo "INPUTFILENAMES: $3"
+    echo "IFILE         : $4"
+    echo "CMSSWVERSION  : $5"
+    echo "SCRAMARCH     : $6"
     shift 6
     tar xvzf package.tar.gz
 fi
@@ -118,17 +124,25 @@ fi
 if [ "x${_CONDOR_SLOT}" == "x" ]; then
     :
 else
-    echo 'ls -l'
-    ls -l
-    echo 'gfal-copy'
-    INFILE=${OUTPUTROOTNAME}
-    echo gfal-copy -p -f -t 4200 --verbose file://`pwd`/${INFILE} gsiftp://gftp.t2.ucsd.edu/${OUTPUTDIR}/${OUTPUTNAME}_${IFILE}.root --checksum ADLER32
-    hostname
-    uname -a
-    date
-    whoami
-    pwd
-    gfal-copy -p -f -t 4200 --verbose file://`pwd`/${INFILE} gsiftp://gftp.t2.ucsd.edu/${OUTPUTDIR}/${OUTPUTNAME}_${IFILE}.root --checksum ADLER32
+    if [[ ${OUTPUTDIR} == *"home/users/"* ]]; then
+        mkdir -p ${OUTPUTDIR}
+        INFILE=${OUTPUTROOTNAME}
+        cp ${INFILE} ${OUTPUTDIR}/${OUTPUTNAME}_${IFILE}.root
+    else
+        echo 'ls -l'
+        ls -l
+        echo 'gfal-copy'
+        INFILE=${OUTPUTROOTNAME}
+        echo gfal-copy -p -f -t 4200 --verbose file://`pwd`/${INFILE} gsiftp://gftp.t2.ucsd.edu/${OUTPUTDIR}/${OUTPUTNAME}_${IFILE}.root --checksum ADLER32
+        hostname
+        uname -a
+        date
+        whoami
+        pwd
+        echo "ls'ing hadoop"
+        ls -lh /hadoop/cms/store/user/phchang/
+        gfal-copy -p -f -t 4200 --verbose file://`pwd`/${INFILE} gsiftp://gftp.t2.ucsd.edu/${OUTPUTDIR}/${OUTPUTNAME}_${IFILE}.root --checksum ADLER32
+    fi
     if [ $? -eq 0 ]; then
         echo "Job Success"
     else

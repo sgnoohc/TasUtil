@@ -254,6 +254,7 @@ TasUtil::AutoHist::~AutoHist()
 void TasUtil::AutoHist::save(TString ofilename)
 {
     TFile* ofile = new TFile(ofilename, "recreate");
+    TasUtil::print("AutoHist::save() saving histograms to " + ofilename);
     ofile->cd();
     for (auto& pair_tstr_th1 : histdb)
     {
