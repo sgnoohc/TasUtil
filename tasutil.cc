@@ -251,10 +251,28 @@ TasUtil::AutoHist::~AutoHist()
 }
 
 //__________________________________________________________________________________________________
-void TasUtil::AutoHist::save(TString ofilename)
+void TasUtil::AutoHist::save(TString ofilename, TString option)
 {
-    TFile* ofile = new TFile(ofilename, "recreate");
+    TFile* ofile = new TFile(ofilename, option);
     TasUtil::print("AutoHist::save() saving histograms to " + ofilename);
+    ofile->cd();
+    for (auto& pair_tstr_th1 : histdb)
+    {
+        TString name = pair_tstr_th1.first;
+        TH1* hist = pair_tstr_th1.second;
+        if (hist)
+        {
+            hist->Write();
+            delete hist;
+        }
+    }
+    histdb.clear();
+}
+
+//__________________________________________________________________________________________________
+void TasUtil::AutoHist::save(TFile* ofile)
+{
+    TasUtil::print(Form("AutoHist::save() saving histograms to %s", ofile->GetName()));
     ofile->cd();
     for (auto& pair_tstr_th1 : histdb)
     {
@@ -852,11 +870,21 @@ void TasUtil::TTreeX::clear()
     for (auto& pair : mapInt_t  ) pair.second = -999;
     for (auto& pair : mapBool_t ) pair.second = 0;
     for (auto& pair : mapFloat_t) pair.second = -999;
+    for (auto& pair : mapTString) pair.second = "";
     for (auto& pair : mapLV     ) pair.second.SetXYZT(0, 0, 0, 0 ) ;
     for (auto& pair : mapVecInt_t  ) pair.second.clear();
     for (auto& pair : mapVecBool_t ) pair.second.clear();
     for (auto& pair : mapVecFloat_t) pair.second.clear();
+    for (auto& pair : mapVecTString) pair.second.clear();
     for (auto& pair : mapVecLV     ) pair.second.clear();
+}
+
+//__________________________________________________________________________________________________
+void TasUtil::TTreeX::save(TFile* ofile)
+{
+    TasUtil::print(Form("TTreeX::save() saving tree to %s", ofile->GetName()));
+    ofile->cd();
+    this->Write();
 }
 
 //__________________________________________________________________________________________________

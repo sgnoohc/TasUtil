@@ -113,7 +113,8 @@ namespace TasUtil
         void fill(double xval, double yval, STRING name, double wgt, int, double, double, int, double, double);
         void fill(double xval, STRING name, double wgt, int nbin, double*);
         void fill(double xval, double yval, STRING name, double wgt, int, double*, int, double*);
-        void save(TString ofilename);
+        void save(TString ofilename, TString option="recreate");
+        void save(TFile* ofile);
         // under the hood (but not private...)
         void fill(double xval, TH1*& h, double wgt=1, bool norebinning=false);
         TH1* hadd(TH1*, TH1*);
@@ -290,6 +291,11 @@ namespace TasUtil
         TStopwatch my_timer;
         int bar_id;
         int print_rate;
+        bool doskim;
+        TString skimfilename;
+        TFile* skimfile;
+        TTree* skimtree;
+        unsigned int nEventsSkimmed;
         public:
         // Functions
         Looper(TChain* chain=0, TREECLASS* treeclass=0, int nEventsToProcess=-1);
@@ -302,6 +308,9 @@ namespace TasUtil
         bool nextEvent();
         TTree* getTree() { return ttree; }
         unsigned int getNEventsProcessed() { return nEventsProcessed; }
+        void setSkim(TString ofilename);
+        void fillSkim();
+        void saveSkim();
         private:
         void setFileList();
         void setNEventsToProcess();
@@ -309,6 +318,8 @@ namespace TasUtil
         bool nextEventInTree();
         void initProgressBar();
         void printProgressBar();
+        void createSkimTree();
+        void copyAddressesToSkimTree();
     };
 
     class TTreeX : public TTree
@@ -320,11 +331,13 @@ namespace TasUtil
             kInt_t      =  1,
             kBool_t     =  2,
             kFloat_t    =  3,
-            kLV         =  4,
+            kTString    =  4,
+            kLV         =  5,
             kVecInt_t   = 11,
             kVecBool_t  = 12,
             kVecFloat_t = 13,
-            kVecLV      = 14
+            kVecTString = 14,
+            kVecLV      = 15
         };
         typedef vector<LV>::const_iterator lviter;
 
@@ -332,6 +345,7 @@ namespace TasUtil
         std::map<TString, Int_t  > mapInt_t;
         std::map<TString, Bool_t > mapBool_t;
         std::map<TString, Float_t> mapFloat_t;
+        std::map<TString, TString> mapTString;
         std::map<TString, LV     > mapLV;
         std::map<TString, TBits  > mapTBits;
         std::map<TString, std::vector<Int_t  > > mapVecInt_t;
@@ -366,12 +380,14 @@ namespace TasUtil
         };
 
         void clear();
+        void save(TFile*);
     };
 
     //_________________________________________________________________________________________________
     template <> void TTreeX::setBranch<Int_t               >(TString bn, Int_t                val) { mapInt_t     [bn] = val; }
     template <> void TTreeX::setBranch<Bool_t              >(TString bn, Bool_t               val) { mapBool_t    [bn] = val; }
     template <> void TTreeX::setBranch<Float_t             >(TString bn, Float_t              val) { mapFloat_t   [bn] = val; }
+    template <> void TTreeX::setBranch<TString             >(TString bn, TString              val) { mapTString   [bn] = val; }
     template <> void TTreeX::setBranch<LV                  >(TString bn, LV                   val) { mapLV        [bn] = val; }
     template <> void TTreeX::setBranch<TBits               >(TString bn, TBits                val) { mapTBits     [bn] = val; }
     template <> void TTreeX::setBranch<std::vector<Int_t  >>(TString bn, std::vector<Int_t  > val) { mapVecInt_t  [bn] = val; }
@@ -389,6 +405,7 @@ namespace TasUtil
     template <> void TTreeX::createBranch<Int_t               >(TString bn) { Branch(bn, &(mapInt_t      [bn])); }
     template <> void TTreeX::createBranch<Bool_t              >(TString bn) { Branch(bn, &(mapBool_t     [bn])); }
     template <> void TTreeX::createBranch<Float_t             >(TString bn) { Branch(bn, &(mapFloat_t    [bn])); }
+    template <> void TTreeX::createBranch<TString             >(TString bn) { Branch(bn, &(mapTString    [bn])); }
     template <> void TTreeX::createBranch<LV                  >(TString bn) { Branch(bn, &(mapLV         [bn])); }
     template <> void TTreeX::createBranch<TBits               >(TString bn) { Branch(bn, &(mapTBits      [bn])); }
     template <> void TTreeX::createBranch<std::vector<Int_t  >>(TString bn) { Branch(bn, &(mapVecInt_t   [bn])); }
@@ -492,7 +509,12 @@ TasUtil::Looper<TREECLASS>::Looper(TChain* c, TREECLASS* t, int nevtToProc) :
     fastmode(false),
     treeclass(0),
     bar_id(0),
-    print_rate(432)
+    print_rate(432),
+    doskim(false),
+    skimfilename(""),
+    skimfile(0),
+    skimtree(0),
+    nEventsSkimmed(0)
 {
     initProgressBar();
     print("Start EventLooping");
@@ -565,6 +587,11 @@ bool TasUtil::Looper<TREECLASS>::nextTree()
     TChainElement* chainelement = (TChainElement*) fileIter->Next();
     if (chainelement)
     {
+        // If doskim is true and if this is the very first file being opened in the TChain,
+        // flag it to create a tfile and ttree where the skimmed events will go to.
+        bool createskimtree = false;
+        if (!ttree && doskim)
+            createskimtree = true;
         // If there is already a TFile opened from previous iteration, close it.
         if (tfile) tfile->Close();
         // Open up a new file
@@ -587,6 +614,12 @@ bool TasUtil::Looper<TREECLASS>::nextTree()
         indexOfEventInTTree = 0;
         // Set the ttree to the TREECLASS
         treeclass->Init(ttree);
+        // If skimming create the skim tree after the treeclass inits it.
+        // This is to make sure the branch addresses are correct.
+        if (createskimtree)
+            createSkimTree();
+        else if (doskim)
+            copyAddressesToSkimTree();
         // Return that I got a good one
         return true;
     }
@@ -645,6 +678,10 @@ bool TasUtil::Looper<TREECLASS>::nextEventInTree()
 template <class TREECLASS>
 bool TasUtil::Looper<TREECLASS>::nextEvent()
 {
+    // If we're going to skim the event we need to load all branches
+    // (even before copying tree) to turn on all the branches.
+    if (doskim)
+        treeclass->LoadAllBranches();
     // If no tree it means this is the beginning of the loop.
     if (!ttree)
     {
@@ -845,6 +882,48 @@ void TasUtil::Looper<TREECLASS>::printProgressBar()
     }
 
     my_timer.Start(kFALSE);
+}
+
+//_________________________________________________________________________________________________
+template <class TREECLASS>
+void TasUtil::Looper<TREECLASS>::setSkim(TString ofilename)
+{
+    skimfilename = ofilename;
+    doskim = true;
+}
+
+//_________________________________________________________________________________________________
+template <class TREECLASS>
+void TasUtil::Looper<TREECLASS>::createSkimTree()
+{
+    skimfile = new TFile(skimfilename, "recreate");
+    skimtree = ttree->CopyTree("", "", 0);
+}
+
+//_________________________________________________________________________________________________
+template <class TREECLASS>
+void TasUtil::Looper<TREECLASS>::copyAddressesToSkimTree()
+{
+    skimtree->CopyAddresses(ttree);
+}
+
+//_________________________________________________________________________________________________
+template <class TREECLASS>
+void TasUtil::Looper<TREECLASS>::fillSkim()
+{
+    skimtree->Fill();
+    nEventsSkimmed++;
+}
+
+//_________________________________________________________________________________________________
+template <class TREECLASS>
+void TasUtil::Looper<TREECLASS>::saveSkim()
+{
+    double frac_skimmed = (double) nEventsSkimmed / (double) nEventsProcessed * 100;
+    TasUtil::print(Form("Skimmed events %d out of %d. [%f%%]", nEventsSkimmed, nEventsProcessed, frac_skimmed));
+    skimfile->cd();
+    skimtree->Write();
+    skimfile->Close();
 }
 
 //_________________________________________________________________________________________________

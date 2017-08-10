@@ -1,10 +1,10 @@
 import time
 import json
 
-from Sample import DirectorySample
-from CondorTask import CondorTask
+from metis.Sample import DirectorySample
+from metis.CondorTask import CondorTask
 
-from StatsParser import StatsParser
+from metis.StatsParser import StatsParser
 
 import sys
 import os
@@ -24,9 +24,9 @@ try:
     if len( sys.argv ) == 2:
         baby_version = default_babyver
     exec_path = "run.sh"
-    tar_path = "condor.tgz"
+    tar_path = "package.tar.gz"
     hadoop_path = "test/wwwlooper/%s"%job_tag
-    hadoop_path = "../../../../../home/users/phchang/public_html/tasutil/outputs/%s"%job_tag
+#    hadoop_path = "../../../../../home/users/phchang/public_html/tasutil/outputs/%s"%job_tag
     args = "WWW_ScanChain output.root t -1"
 except:
     usage("error: check your arguments.")
@@ -62,14 +62,16 @@ if __name__ == "__main__":
                     ),
                 open_dataset = False,
                 flush = True,
-                files_per_output = 6,
+                files_per_output = 19,
                 output_name = "merged.root",
                 tag = job_tag,
                 #cmssw_version = "CMSSW_9_2_1", # doesn't do anything
                 arguments = args,
                 executable = exec_path,
                 tarfile = tar_path,
-                special_dir = hadoop_path
+                special_dir = hadoop_path,
+                condor_submit_params = {"universe" : "local"}
+                #condor_submit_params = {"sites" : "UAF"}
                 )
 
         task.process()
@@ -77,36 +79,42 @@ if __name__ == "__main__":
         # save some information for the dashboard
         total_summary["WWW_v0_1_%s_%s"%(baby_version, job_tag)] = task.get_task_summary()
 
-        taskhadoop = CondorTask(
-                sample = DirectorySample(
-                    dataset="/WWW_v0_1_%s_hadoop"%(baby_version),
-                    location="/hadoop/cms/store/user/bhashemi/AutoTwopler_babies/merged/VVV/WWW_v0.1.%s/skim/"%baby_version,
-                    globber="*.root"
-                    ),
-                open_dataset = False,
-                flush = True,
-                files_per_output = 6,
-                output_name = "merged.root",
-                tag = job_tag,
-                #cmssw_version = "CMSSW_9_2_1", # doesn't do anything
-                arguments = args,
-                executable = exec_path,
-                tarfile = tar_path,
-                special_dir = hadoop_path
-                )
-
-        taskhadoop.process()
-
-        # save some information for the dashboard
-        total_summary["WWW_v0_1_%s_hadoop_%s"%(baby_version, job_tag)] = taskhadoop.get_task_summary()
-
         # parse the total summary and write out the dashboard
-        StatsParser( data=total_summary, web_summary_fname="www_web_summary.json", webdir="~/public_html/tasutil/Metis_WWW/" ).do()
+        StatsParser( data=total_summary, webdir="~/public_html/tasutil/Metis_WWW/" ).do()
 
-        if task.complete() and taskhadoop.complete():
+        if task.complete():
             print ""
             print "Job=%s finished"%job_tag
             print ""
             break
 
-        time.sleep(2*60)
+        time.sleep(30)
+
+
+#eof
+
+#        taskhadoop = CondorTask(
+#                sample = DirectorySample(
+#                    dataset="/WWW_v0_1_%s_hadoop"%(baby_version),
+#                    location="/hadoop/cms/store/user/bhashemi/AutoTwopler_babies/merged/VVV/WWW_v0.1.%s/skim/"%baby_version,
+#                    globber="*.root"
+#                    ),
+#                open_dataset = False,
+#                flush = True,
+#                files_per_output = 6,
+#                output_name = "merged.root",
+#                tag = job_tag,
+#                #cmssw_version = "CMSSW_9_2_1", # doesn't do anything
+#                arguments = args,
+#                executable = exec_path,
+#                tarfile = tar_path,
+#                special_dir = hadoop_path
+#                )
+#
+#        taskhadoop.process()
+#
+#        # save some information for the dashboard
+#        total_summary["WWW_v0_1_%s_hadoop_%s"%(baby_version, job_tag)] = taskhadoop.get_task_summary()
+
+# and taskhadoop.complete():
+

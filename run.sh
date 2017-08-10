@@ -5,7 +5,13 @@ PACKAGE=package.tar.gz
 ###################################################################################################
 # ProjectMetis/CondorTask specific (Setting up some common environment)
 ###################################################################################################
-if [ "x${_CONDOR_SLOT}" == "x" ]; then
+#echo "To check whether it's on condor universe Vanilla or Local. The following variables are used."
+#echo "If _CONDOR_SLOT is set, it's on Vanilla"
+#echo "If X509_USER_PROXY is set, it's either on Vanilla or Local."
+#echo "_CONDOR_SLOT" ${_CONDOR_SLOT}
+#echo "X509_USER_PROXY" ${X509_USER_PROXY}
+# if 
+if [ "x${X509_USER_PROXY}" == "x" ]; then
     :
 else
     OUTPUTDIR=$1
@@ -14,6 +20,18 @@ else
     IFILE=$4
     CMSSWVERSION=$5
     SCRAMARCH=$6
+    if [ "x${_CONDOR_SLOT}" == "x" ]; then
+        WORKDIR=/tmp/phchang_condor_local_${OUTPUTDIR//\//_}_${OUTPUTNAME}_${IFILE}
+        mkdir -p ${WORKDIR}
+        ls
+        cp package.tar.gz ${WORKDIR}
+        cd ${WORKDIR}
+        ls
+        echo "This is in Condor session with Universe=Local."
+        echo "WORKDIR=${WORKDIR}"
+        echo "pwd"
+        pwd
+    fi
     echo "OUTPUTDIR     : $1"
     echo "OUTPUTNAME    : $2"
     echo "INPUTFILENAMES: $3"
@@ -22,6 +40,13 @@ else
     echo "SCRAMARCH     : $6"
     shift 6
     tar xvzf package.tar.gz
+    if [ $? -eq 0 ]; then
+        echo "Successfully untarred package."
+        :
+    else
+        echo "Failed to untar package."
+        exit
+    fi
 fi
 ###################################################################################################
 
@@ -73,7 +98,7 @@ INPUTTTREENAME=$3
 if [ -n "$4" ]; then NEVENTS=$4; fi
 
 # Parse the input file names differently depending on whether it's condor job or local job.
-if [ "x${_CONDOR_SLOT}" == "x" ]; then
+if [ "x${X509_USER_PROXY}" == "x" ]; then
     if [ -n "$5" ]; then INPUTFILENAMES=$5; fi
 else
     # If condor jobs, touch the .so files to prevent from recompiling
@@ -81,6 +106,8 @@ else
 fi
 
 # echo current settings
+echo "==============================================================================="
+echo "$(basename $0) $*"
 echo "==============================================================================="
 echo "SCANCHAINNAME  = $SCANCHAINNAME"
 echo "OUTPUTROOTNAME = $OUTPUTROOTNAME"
@@ -121,7 +148,7 @@ fi
 ###################################################################################################
 # ProjectMetis/CondorTask specific (Copying files over to hadoop)
 ###################################################################################################
-if [ "x${_CONDOR_SLOT}" == "x" ]; then
+if [ "x${X509_USER_PROXY}" == "x" ]; then
     :
 else
     if [[ ${OUTPUTDIR} == *"home/users/"* ]]; then

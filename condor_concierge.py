@@ -9,7 +9,7 @@ sys.path.append('/tmp/condor_concierge')
 try:
     import Utils
 except:
-    os.system('wget https://raw.githubusercontent.com/fgolf/ProjectMetis/master/Utils.py -O /tmp/condor_concierge/Utils.py &> /dev/null')
+    os.system('wget https://raw.githubusercontent.com/aminnj/ProjectMetis/master/metis/Utils.py -O /tmp/condor_concierge/Utils.py &> /dev/null')
     import Utils
 
 def check_argument(arg):

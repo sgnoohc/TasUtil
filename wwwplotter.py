@@ -61,44 +61,100 @@ class WWWPlotter:
         self.proc_categs["www"]   = "sig"
         self.proc_categs["data"]  = "data"
 
+        self.bkg_groups = {}
+        self.bkg_groups["trueSS"]      = [ "trueSS" ]
+        self.bkg_groups["chargeflips"] = [ "chargeflips" ]
+        self.bkg_groups["SSLL"]        = [ "SSLL" ]
+        self.bkg_groups["photon"]      = [ "photonfakes", "photondoublefakes", "photontriplefakes", "fakesphotonfakes", "otherphotonfakes" ]
+        self.bkg_groups["fakes"]       = [ "fakes", "doublefakes" ]
+        self.bkg_groups["others"]      = [ "others" ]
+        self.bkg_groups["data"]        = [ "data" ]
+        self.bkg_groups["www"]         = [ "www" ]
+        self.bkg_groups["whwww"]       = [ "whwww" ]
+
+        self.bkg_colors = {}
+        self.bkg_colors["trueSS"]      = 2001
+        self.bkg_colors["chargeflips"] = 2007
+        self.bkg_colors["SSLL"]        = 2003
+        self.bkg_colors["photon"]      = 2011
+        self.bkg_colors["fakes"]       = 2005
+        self.bkg_colors["others"]      = 616
+        self.bkg_colors["data"]        = 1
+        self.bkg_colors["www"]         = 2
+        self.bkg_colors["whwww"]       = 4
+
+        self.bkg_categs = {}
+        self.bkg_categs["trueSS"]      = "bkg"
+        self.bkg_categs["chargeflips"] = "bkg"
+        self.bkg_categs["SSLL"]        = "bkg"
+        self.bkg_categs["photon"]      = "bkg"
+        self.bkg_categs["fakes"]       = "bkg"
+        self.bkg_categs["others"]      = "bkg"
+        self.bkg_categs["data"]        = "data"
+        self.bkg_categs["www"]         = "sig"
+        self.bkg_categs["whwww"]       = "sig"
+
         self.tfile = r.TFile( "output.root" )
 
         self.hists = {}
 
-#        for key in self.tfile.GetListOfKeys():
-#            histname = key.GetName()
-#            self.hists[histname] = self.tfile.Get( histname )
+        #for key in self.tfile.GetListOfKeys():
+        #    histname = key.GetName()
+        #    if histname.find("counter") != -1:
+        #        print histname
+        #    #self.hists[histname] = self.tfile.Get( histname )
 
-    def draw( self, histname, extraoptions="" ):
+    def drawbyproc( self, histname, extraoptions="" ):
 
+        # Declare a map to hold the histograms that I access for this round of plotting
         hists = {}
+
+        # Looping over MC sample process (e.g. W, ttbar, WZ, etc.)
         for key in self.proc_groups:
+
+            # the total background for this category is saved (e.g. W, ttbar, WZ, etc.)
             histsum = None
+
+            # Loop over the individual that makes up the grouping.
             for proc in self.proc_groups[key]:
+
+                # place holder
                 hist = None
+
+                # Form the name of the histogram
+                histkey = proc + "__" + histname
+
+                # Try to access it
                 try :
-                    hist = self.hists[proc + "_" + histname]
+                    hist = self.hists[histkey]
+                # If not get it from the tfile
                 except:
-                    self.hists[proc + "_" + histname] = self.tfile.Get( proc + "_" + histname )
-                    hist = self.hists[proc + "_" + histname]
-                    pass
+                    # Open it and save it to the self.hists which persists as long as this object persists.
+                    self.hists[histkey] = self.tfile.Get( histkey )
+
+                    # Get the pointer
+                    hist = self.hists[histkey]
+
+                # If successfully retrieved
                 if hist:
+
+                    # If already a clone was created copy the content over
                     if histsum:
                         histsum.Add( hist )
+                    # If a clone has not been created yet, create one
                     else:
                         histsum = hist.Clone( key )
                         histsum.SetDirectory( 0 )
+
+            # Once done looping over the grouping, set the histogram
             hists[key] = histsum
 
-#        for key in hists:
-#            if hists[key]:
-#                print hists[key].GetName()
-#            else:
-#                print key, "empty"
-
+        # Now, we put them in std::vector<TH1*> so that we can pass it on to plotmaker.cc
         v_bkg_hists = r.vector("TH1*")()
         v_sig_hists = r.vector("TH1*")()
         v_data_hists = r.vector("TH1*")()
+
+        # For the histograms we have stylize a bit
         for key in self.proc_categs:
             if self.proc_categs[key] == "bkg"  and hists[key]:
                 hists[key].SetLineColor( self.proc_colors[key] )
@@ -112,6 +168,7 @@ class WWWPlotter:
                 hists[key].SetLineColor( 1 )
                 v_data_hists.push_back( hists[key] )
 
+        # Then plot
         return r.plotmaker( """
                       --yTitle N leptons
                       --xTitle %s
@@ -126,14 +183,147 @@ class WWWPlotter:
                       """%(histname, histname, extraoptions),
                       v_data_hists, v_bkg_hists, v_sig_hists )
 
+    def drawbytype( self, histname, extraoptions="" ):
+
+        # Declare a map to hold the histograms that I access for this round of plotting
+        hists = {}
+
+        # Looping over based on background categorization
+        for bkgtype in self.bkg_groups:
+
+            # the total background for this category is saved (e.g. trueSS, LL, fakes, etc.)
+            histsum = None
+
+            # Looping over MC sample process (e.g. W, ttbar, WZ, etc.)
+            for key in self.proc_groups:
+
+                # Loop over the individual bkg type
+                for bkg in self.bkg_groups[bkgtype]:
+
+                    # Loop over the individual that makes up the grouping.
+                    for proc in self.proc_groups[key]:
+
+                        # place holder
+                        hist = None
+
+                        # Form the name of the histogram
+                        histkey = proc + "_" + bkg + "_" + histname
+
+                        # Try to access it
+                        try :
+                            hist = self.hists[histkey]
+                        # If not get it from the tfile
+                        except:
+                            # Open it and save it to the self.hists which persists as long as this object persists.
+                            self.hists[histkey] = self.tfile.Get( histkey )
+
+                            # Get the pointer
+                            hist = self.hists[histkey]
+
+                        # If successfully retrieved
+                        if hist:
+
+                            # If already a clone was created copy the content over
+                            if histsum:
+                                histsum.Add( hist )
+                            # If a clone has not been created yet, create one
+                            else:
+                                histsum = hist.Clone( bkgtype )
+                                histsum.SetDirectory( 0 )
+
+            # Once done looping over the grouping, set the histogram
+            hists[bkgtype] = histsum
+
+        # Now, we put them in std::vector<TH1*> so that we can pass it on to plotmaker.cc
+        v_bkg_hists = r.vector("TH1*")()
+        v_sig_hists = r.vector("TH1*")()
+        v_data_hists = r.vector("TH1*")()
+
+        # For the histograms we have stylize a bit
+        for key in self.bkg_groups:
+            if self.bkg_categs[key] == "bkg"  and hists[key]:
+                hists[key].SetLineColor( self.bkg_colors[key] )
+                hists[key].SetFillColor( self.bkg_colors[key] )
+                v_bkg_hists .push_back( hists[key] )
+            if self.bkg_categs[key] == "sig"  and hists[key]:
+                hists[key].SetLineColor( self.bkg_colors[key] )
+                hists[key].SetLineWidth( 2 )
+                v_sig_hists .push_back( hists[key] )
+            if self.bkg_categs[key] == "data" and hists[key]:
+                hists[key].SetLineColor( 1 )
+                v_data_hists.push_back( hists[key] )
+
+        # Then plot
+        return r.plotmaker( """
+                      --yTitle N leptons
+                      --xTitle %s
+                      --plotOutputName plots/%s_bytype
+                      --ratio_Maximum 2
+                      --ratio_Minimum 0.
+                      --showOverflow
+                      --autoStack
+                      --legend_NColumns 1
+                      --MaximumMultiplier 2
+                      %s
+                      """%(histname, histname, extraoptions),
+                      v_data_hists, v_bkg_hists, v_sig_hists )
+
 if __name__ == "__main__":
 
     wwwplotter = WWWPlotter()
 
-    wwwplotter.proc_groups["data"]  = [ "data_mm", "data_em" ]
-    wwwplotter.draw( "Region_counter", "--printYieldsTable --printYieldsMinBin 1 --printYieldsMaxBin 8" )
+    wwwplotter.proc_groups["data"]  = [ "data_mm", "data_em", "data_ee" ]
+    wwwplotter.drawbyproc( "Region_counter", "--printYieldsTable --printYieldsMinBin 1 --printYieldsMaxBin 8" )
+    wwwplotter.drawbytype( "Region_counter", "--printYieldsTable --printYieldsMinBin 1 --printYieldsMaxBin 8" )
+
+#    wwwplotter.draw( "SSMM_CutSSMMLepMllSS", "--xNbin 20" )
+#    wwwplotter.draw( "SSMM_CutSSMMLeplep0_pt", "--xNbin 20" )
+#    wwwplotter.draw( "SSMM_CutSSMMLeplep1_pt", "--xNbin 20" )
+#    wwwplotter.draw( "SSMM_CutSSMMLeplep0_eta", "--xNbin 20" )
+#    wwwplotter.draw( "SSMM_CutSSMMLeplep1_eta", "--xNbin 20" )
+#    wwwplotter.draw( "SSMM_CutSSMMLeplep0_phi", "--xNbin 20" )
+#    wwwplotter.draw( "SSMM_CutSSMMLeplep1_phi", "--xNbin 20" )
+#    wwwplotter.draw( "SSMM_CutSSMMLeplep0_pid", "--xNbin 20" )
+#    wwwplotter.draw( "SSMM_CutSSMMLeplep1_pid", "--xNbin 20" )
+#    wwwplotter.draw( "SSMM_CutSSMMLeplep0_iso", "--xNbin 20" )
+#    wwwplotter.draw( "SSMM_CutSSMMLeplep1_iso", "--xNbin 20" )
+#    wwwplotter.draw( "SSMM_CutSSMMLeplep0_ip3", "--xNbin 20" )
+#    wwwplotter.draw( "SSMM_CutSSMMLeplep1_ip3", "--xNbin 20" )
+#
+#    wwwplotter.draw( "SSEM_CutSSEMLepMllSS", "--xNbin 20" )
+#    wwwplotter.draw( "SSEM_CutSSEMLeplep0_pt", "--xNbin 20" )
+#    wwwplotter.draw( "SSEM_CutSSEMLeplep1_pt", "--xNbin 20" )
+#    wwwplotter.draw( "SSEM_CutSSEMLeplep0_eta", "--xNbin 20" )
+#    wwwplotter.draw( "SSEM_CutSSEMLeplep1_eta", "--xNbin 20" )
+#    wwwplotter.draw( "SSEM_CutSSEMLeplep0_phi", "--xNbin 20" )
+#    wwwplotter.draw( "SSEM_CutSSEMLeplep1_phi", "--xNbin 20" )
+#    wwwplotter.draw( "SSEM_CutSSEMLeplep0_pid", "--xNbin 20" )
+#    wwwplotter.draw( "SSEM_CutSSEMLeplep1_pid", "--xNbin 20" )
+#    wwwplotter.draw( "SSEM_CutSSEMLeplep0_iso", "--xNbin 20" )
+#    wwwplotter.draw( "SSEM_CutSSEMLeplep1_iso", "--xNbin 20" )
+#    wwwplotter.draw( "SSEM_CutSSEMLeplep0_ip3", "--xNbin 20" )
+#    wwwplotter.draw( "SSEM_CutSSEMLeplep1_ip3", "--xNbin 20" )
+#    wwwplotter.draw( "SSEM_CutSSEMLepjet_size", "" )
+#    wwwplotter.draw( "SSEM_CutSSEMLepjetb_size", "" )
+#    wwwplotter.draw( "SSEM_CutSSEMLepmet", "--xNbin 20" )
+#    wwwplotter.draw( "SSEM_CutSSEMLepnisotrack", "" )
+#    wwwplotter.draw( "SSEM_CutSSEMLepleploose_size", "" )
+#
+#    wwwplotter.draw( "SSEE_CutSSZVetoMllSS", "--xNbin 20" )
+#    wwwplotter.draw( "SSEE_CutSSZVetolep0_pt", "--xNbin 20" )
+#    wwwplotter.draw( "SSEE_CutSSZVetolep1_pt", "--xNbin 20" )
+#    wwwplotter.draw( "SSEE_CutSSZVetolep0_eta", "--xNbin 20" )
+#    wwwplotter.draw( "SSEE_CutSSZVetolep1_eta", "--xNbin 20" )
+#    wwwplotter.draw( "SSEE_CutSSZVetolep0_phi", "--xNbin 20" )
+#    wwwplotter.draw( "SSEE_CutSSZVetolep1_phi", "--xNbin 20" )
+#    wwwplotter.draw( "SSEE_CutSSZVetolep0_pid", "--xNbin 20" )
+#    wwwplotter.draw( "SSEE_CutSSZVetolep1_pid", "--xNbin 20" )
+#    wwwplotter.draw( "SSEE_CutSSZVetolep0_iso", "--xNbin 20" )
+#    wwwplotter.draw( "SSEE_CutSSZVetolep1_iso", "--xNbin 20" )
+#    wwwplotter.draw( "SSEE_CutSSZVetolep0_ip3", "--xNbin 20" )
+#    wwwplotter.draw( "SSEE_CutSSZVetolep1_ip3", "--xNbin 20" )
+
 #    wwwplotter.draw( "SSMM_CutThirdLepVetonisotrack" )
-#    wwwplotter.draw( "SSMM_CutSSMMLepmet", "--xNbin 20" )
 #    wwwplotter.draw( "SSMM_CutSSMMLeplep0_pt", "--xNbin 20" )
 #    wwwplotter.draw( "SSMM_CutSSMMLeplep1_pt", "--xNbin 20" )
 #    wwwplotter.draw( "SSMM_CutSSMMLepjet_size", "" )

@@ -12,7 +12,7 @@ usage()
   echo "Options with arguments:"
   echo "  -h    Help                   (Display this message)"
   echo "  -f    Force                  (Display this message)"
-  echo "  -o    package output path    (e.g. -o /path/to/condor.tgz)"
+  echo "  -o    package output path    (e.g. -o /path/to/package.tar.gz)"
   echo
   exit
 }
@@ -27,7 +27,7 @@ while getopts ":o:fh" OPTION; do
   esac
 done
 
-if [ -z ${PACKAGEOUTPUT} ]; then PACKAGEOUTPUT=condor.tgz; fi
+if [ -z ${PACKAGEOUTPUT} ]; then PACKAGEOUTPUT=package.tar.gz; fi
 
 # to shift away the parsed options
 shift $(($OPTIND - 1))
