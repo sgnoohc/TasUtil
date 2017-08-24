@@ -6,6 +6,8 @@
 #include "WWW_CORE/WWWTree.h"
 #include "WWW_CORE/WWWTools.h"
 
+#include "CORE/Tools/dorky/dorky.h"
+
 using namespace std;
 
 #define MAXOBJ 3
@@ -14,6 +16,7 @@ void ScanChain( TChain* chain, TString output_name, TString optstr, int nevents 
 
 void doAnalysis( TasUtil::AutoHist& );
 bool passpresel( int& idx );
+void doSSAnalysis( TasUtil::AutoHist& hists, int cutidx );
 
 void fillHistograms( TasUtil::AutoHist&, TString, int regionid );
 void fillHistogramsFull( TasUtil::AutoHist&, TString, TString, TString, int regionid );

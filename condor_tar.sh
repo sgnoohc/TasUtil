@@ -110,7 +110,7 @@ elif [ "x${LOGOINDEX}" == x2 ]; then
     echo ""
 fi
 
-tar czf ${PACKAGEOUTPUT} *.cc *.py *.C *.h *CORE.so *.sh *CORE/*.h $@
+tar czf ${PACKAGEOUTPUT} *.cc *.py *.C *.h *CORE.so *.sh *CORE/*.h CORE/Tools/dorky/dorky.h $@
 
 INDEX=$((1 + RANDOM % 4))
 if [ "x${INDEX}" == x1 ]; then

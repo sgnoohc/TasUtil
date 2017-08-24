@@ -272,56 +272,6 @@ namespace TasUtil
     // 1. "Init(TTree*)"
     // 2. "GetEntry(uint)"
     // 3. "progress(nevtProc'ed, total)"
-    template <class TREECLASS>
-    class Looper
-    {
-        // Members
-        TChain* tchain;
-        TObjArray *listOfFiles;
-        TObjArrayIter* fileIter;
-        TFile* tfile;
-        TTree* ttree;
-        unsigned int nEventsTotalInChain;
-        unsigned int nEventsTotalInTree;
-        int nEventsToProcess;
-        unsigned int nEventsProcessed;
-        unsigned int indexOfEventInTTree;
-        bool fastmode;
-        TREECLASS* treeclass;
-        TStopwatch my_timer;
-        int bar_id;
-        int print_rate;
-        bool doskim;
-        TString skimfilename;
-        TFile* skimfile;
-        TTree* skimtree;
-        unsigned int nEventsSkimmed;
-        public:
-        // Functions
-        Looper(TChain* chain=0, TREECLASS* treeclass=0, int nEventsToProcess=-1);
-        ~Looper();
-        void setTChain(TChain* c);
-        void setTreeClass(TREECLASS* t);
-        void printCurrentEventIndex();
-        bool allEventsInTreeProcessed();
-        bool allEventsInChainProcessed();
-        bool nextEvent();
-        TTree* getTree() { return ttree; }
-        unsigned int getNEventsProcessed() { return nEventsProcessed; }
-        void setSkim(TString ofilename);
-        void fillSkim();
-        void saveSkim();
-        private:
-        void setFileList();
-        void setNEventsToProcess();
-        bool nextTree();
-        bool nextEventInTree();
-        void initProgressBar();
-        void printProgressBar();
-        void createSkimTree();
-        void copyAddressesToSkimTree();
-    };
-
     class TTreeX : public TTree
     {
 
@@ -381,6 +331,69 @@ namespace TasUtil
 
         void clear();
         void save(TFile*);
+    };
+
+    ///////////////////////////////////////////////////////////////////////////////////////////////
+    // Looper class
+    ///////////////////////////////////////////////////////////////////////////////////////////////
+    // NOTE: This class assumes accessing TTree in the SNT style which uses the following,
+    // https://github.com/cmstas/Software/blob/master/makeCMS3ClassFiles/makeCMS3ClassFiles.C
+    // It is assumed that the "template" class passed to this class will have
+    // 1. "Init(TTree*)"
+    // 2. "GetEntry(uint)"
+    // 3. "progress(nevtProc'ed, total)"
+    template <class TREECLASS>
+    class Looper
+    {
+        // Members
+        TChain* tchain;
+        TObjArray *listOfFiles;
+        TObjArrayIter* fileIter;
+        TFile* tfile;
+        TTree* ttree;
+        unsigned int nEventsTotalInChain;
+        unsigned int nEventsTotalInTree;
+        int nEventsToProcess;
+        unsigned int nEventsProcessed;
+        unsigned int indexOfEventInTTree;
+        bool fastmode;
+        TREECLASS* treeclass;
+        TStopwatch my_timer;
+        int bar_id;
+        int print_rate;
+        bool doskim;
+        TString skimfilename;
+        TFile* skimfile;
+        TTree* skimtree;
+        unsigned int nEventsSkimmed;
+        std::vector<TString> skimbrfiltpttn;
+        public:
+        // Functions
+        Looper(TChain* chain=0, TREECLASS* treeclass=0, int nEventsToProcess=-1);
+        ~Looper();
+        void setTChain(TChain* c);
+        void setTreeClass(TREECLASS* t);
+        void printCurrentEventIndex();
+        bool allEventsInTreeProcessed();
+        bool allEventsInChainProcessed();
+        bool nextEvent();
+        TTree* getTree() { return ttree; }
+        unsigned int getNEventsProcessed() { return nEventsProcessed; }
+        void setSkim(TString ofilename);
+        void setSkimBranchFilterPattern(std::vector<TString> x) { skimbrfiltpttn = x; }
+        void fillSkim();
+        void saveSkim();
+        TTree* getSkimTree() { return skimtree; }
+        void setSkimMaxSize(Long64_t maxsize) { skimtree->SetMaxTreeSize( maxsize ); }
+        private:
+        void setFileList();
+        void setNEventsToProcess();
+        bool nextTree();
+        bool nextEventInTree();
+        void initProgressBar();
+        void printProgressBar();
+        void createSkimTree();
+        void copyAddressesToSkimTree();
     };
 
     //_________________________________________________________________________________________________
@@ -657,11 +670,6 @@ bool TasUtil::Looper<TREECLASS>::nextEventInTree()
     if (!ttree) error("current ttree not set!", __FUNCTION__);
     if (!tfile) error("current tfile not set!", __FUNCTION__);
     if (!fileIter) error("fileIter not set!", __FUNCTION__);
-    // Increment the counter for this ttree
-    ++indexOfEventInTTree;
-    // Increment the counter for the entire tchain
-    ++nEventsProcessed;
-    // If all fine return true
     // Check whether I processed everything
     if (allEventsInTreeProcessed()) return false;
     if (allEventsInChainProcessed()) return false;
@@ -669,8 +677,13 @@ bool TasUtil::Looper<TREECLASS>::nextEventInTree()
     if (fastmode) ttree->LoadTree(indexOfEventInTTree);
     // Set the event index in TREECLASS
     treeclass->GetEntry(indexOfEventInTTree);
+    // Increment the counter for this ttree
+    ++indexOfEventInTTree;
+    // Increment the counter for the entire tchain
+    ++nEventsProcessed;
     // Print progress
     printProgressBar();
+    // If all fine return true
     return true;
 }
 
@@ -678,19 +691,19 @@ bool TasUtil::Looper<TREECLASS>::nextEventInTree()
 template <class TREECLASS>
 bool TasUtil::Looper<TREECLASS>::nextEvent()
 {
-    // If we're going to skim the event we need to load all branches
-    // (even before copying tree) to turn on all the branches.
-    if (doskim)
-        treeclass->LoadAllBranches();
     // If no tree it means this is the beginning of the loop.
     if (!ttree)
     {
+//        std::cout << " I think this is the first tree " << std::endl;
         // Load the next tree if it returns true, then proceed to next event in tree.
         while (nextTree())
         {
             // If the next event in tree was successfully loaded return true, that it's good.
             if (nextEventInTree())
+            {
+//                std::cout << " I think this is the first event in first tree" << std::endl;
                 return true;
+            }
             // If the first event in this tree was not good, continue to the next tree
             else
                 continue;
@@ -716,7 +729,7 @@ bool TasUtil::Looper<TREECLASS>::nextEvent()
             // You're done!
             if (allEventsInChainProcessed())
             {
-                printProgressBar();
+//                printProgressBar();
                 return false;
             }
             // If failed because it's last in the tree then load the next tree and the event
@@ -735,7 +748,7 @@ bool TasUtil::Looper<TREECLASS>::nextEvent()
                 // If looping over all trees, we fail to find first event that's good,
                 // return false and call it quits.
                 // Again you're done!
-                printProgressBar();
+//                printProgressBar();
                 return false;
             }
             else
@@ -897,20 +910,38 @@ template <class TREECLASS>
 void TasUtil::Looper<TREECLASS>::createSkimTree()
 {
     skimfile = new TFile(skimfilename, "recreate");
-    skimtree = ttree->CopyTree("", "", 0);
+    TObjArray* toa = ttree->GetListOfBranches();
+    if (skimbrfiltpttn.size() > 0 )
+    {
+        ttree->SetBranchStatus( "*", 0 );
+        for (auto& pttn : skimbrfiltpttn)
+        {
+            for (const auto& brobj : *toa)
+            {
+                TString brname = brobj->GetName();
+                if ( brname.Contains(pttn) )
+                {
+//                    std::cout << brname << std::endl;
+                    ttree->SetBranchStatus( brname + "*", 1 );
+                }
+            }
+        }
+    }
+    skimtree = ttree->CloneTree(0);
 }
 
 //_________________________________________________________________________________________________
 template <class TREECLASS>
 void TasUtil::Looper<TREECLASS>::copyAddressesToSkimTree()
 {
-    skimtree->CopyAddresses(ttree);
+    ttree->CopyAddresses(skimtree);
 }
 
 //_________________________________________________________________________________________________
 template <class TREECLASS>
 void TasUtil::Looper<TREECLASS>::fillSkim()
 {
+    treeclass->LoadAllBranches();
     skimtree->Fill();
     nEventsSkimmed++;
 }
@@ -921,9 +952,9 @@ void TasUtil::Looper<TREECLASS>::saveSkim()
 {
     double frac_skimmed = (double) nEventsSkimmed / (double) nEventsProcessed * 100;
     TasUtil::print(Form("Skimmed events %d out of %d. [%f%%]", nEventsSkimmed, nEventsProcessed, frac_skimmed));
-    skimfile->cd();
+//    skimfile->cd();
     skimtree->Write();
-    skimfile->Close();
+//    skimfile->Close();
 }
 
 //_________________________________________________________________________________________________

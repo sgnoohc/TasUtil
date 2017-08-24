@@ -9,7 +9,7 @@ sys.path.append('/tmp/condor_concierge')
 try:
     import Utils
 except:
-    os.system('wget https://raw.githubusercontent.com/aminnj/ProjectMetis/master/metis/Utils.py -O /tmp/condor_concierge/Utils.py &> /dev/null')
+    os.system('wget http://raw.githubusercontent.com/aminnj/ProjectMetis/master/metis/Utils.py -O /tmp/condor_concierge/Utils.py &> /dev/null')
     import Utils
 
 def check_argument(arg):
@@ -180,6 +180,7 @@ if args.action == 'submit':
             package=args.package.split(','),
             logdir=args.logdirpath,
             selection_pairs=[["taskname",args.taskname],["jobnum",args.jobindex]],
+            sites="UAF,T2_US_UCSD",
             fake=False)
 
     ###########################################################################################
@@ -218,6 +219,7 @@ if args.action == 'submit':
                     inputfiles=args.package.split(','),
                     logdir=args.logdirpath,
                     selection_pairs=[["taskname",taskname],["jobnum",index]],
+                    sites="UAF,T2_US_UCSD",
                     fake=False)
 
 #eof

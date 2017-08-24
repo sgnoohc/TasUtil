@@ -57,12 +57,13 @@ if __name__ == "__main__":
         task = CondorTask(
                 sample = DirectorySample(
                     dataset="/WWW_v0_1_%s"%(baby_version),
-                    location="/nfs-7/userdata/bhashemi/WWW_babies/WWW_v0.1.%s/skim/"%baby_version,
-                    globber="*.root"
+                    #location="/nfs-7/userdata/bhashemi/WWW_babies/WWW_v0.1.%s/skim/"%baby_version,
+                    location="/home/users/phchang/public_html/tasutil/babies/www",
+                    globber="*v0.1.%s*.root"%baby_version
                     ),
                 open_dataset = False,
                 flush = True,
-                files_per_output = 19,
+                files_per_output = 1,
                 output_name = "merged.root",
                 tag = job_tag,
                 #cmssw_version = "CMSSW_9_2_1", # doesn't do anything

@@ -170,6 +170,7 @@ TString getOpt( TString key )
     else if ( key.EqualTo( "ratio_yTitle"      )  ) return getDefaultOpt( key, getOpt( "reverseRatio" ).IsNull() ? "Data / MC" : "MC / Data" ) ;
     else if ( key.EqualTo( "ratio_Minimum"     )  ) return getDefaultOpt( key, "0.7"              ) ;
     else if ( key.EqualTo( "ratio_Maximum"     )  ) return getDefaultOpt( key, "1.3"              ) ;
+    else if ( key.EqualTo( "ratio_yNdivisions" )  ) return getDefaultOpt( key, gNdiv              ) ;
     else if ( key.EqualTo( "ratio_DrawOpt"     )  ) return getDefaultOpt( key, "ex0p"             ) ;
 
     else if ( key.EqualTo( "data_DrawOpt"      )  ) return getDefaultOpt( key, "ex0p"             ) ;
@@ -196,6 +197,7 @@ TString getOpt( TString key )
     else if ( key.EqualTo( "printYieldsMinBin" )  ) return getDefaultOpt( key, ""                 ) ;
     else if ( key.EqualTo( "printYieldsMaxBin" )  ) return getDefaultOpt( key, ""                 ) ;
     else if ( key.EqualTo( "noData"            )  ) return getDefaultOpt( key, ""                 ) ;
+    else if ( key.EqualTo( "systByDiff"        )  ) return getDefaultOpt( key, ""                 ) ;
 
     else
     {
@@ -292,6 +294,8 @@ TH1* histWithFullError( TH1* nominal, TH1* error )
         double content = nominal->GetBinContent( ibin );
         double nominal_hist_error = nominal->GetBinError( ibin );
         double additional_error = error ? error->GetBinContent( ibin ) : 0;
+        if ( !getOpt( "systByDiff" ).IsNull() )
+            additional_error = fabs( additional_error - content );
         double all_error = error ? sqrt( pow( nominal_hist_error, 2 ) + pow( additional_error, 2 ) )
                            : nominal_hist_error;
         nominal_with_full_error->SetBinContent( ibin, content );
@@ -451,7 +455,7 @@ void stylizeRatioAxes( TH1* h, TPad* pad )
     h->GetXaxis( ) ->SetTitleOffset( getOpt( "xTitleOffset" ).Atof() ) ;
     h->GetXaxis( ) ->SetTitleFont( getOpt( "xLabelFont" ).Atoi( ) );
     h->GetXaxis( ) ->SetTitle( getOpt( "ratio_xTitle" ) );
-    h->GetYaxis( ) ->SetNdivisions( getOpt( "yNdivisions" ).Atoi( ) );
+    h->GetYaxis( ) ->SetNdivisions( getOpt( "ratio_yNdivisions" ).Atoi( ) );
     h->GetYaxis( ) ->SetLabelFont( getOpt( "yLabelFont" ).Atoi( ) );
     h->GetYaxis( ) ->SetLabelOffset( getOpt( "yLabelOffset" ).Atof( ) );
     h->GetYaxis( ) ->SetLabelSize( getOpt( "yLabelSize" ).Atof() * sf ) ;
@@ -606,8 +610,11 @@ void drawLegend( std::vector<TH1*> data_hists, std::vector<TH1*> bkg_hists, std:
     leg->SetEntrySeparation( 0.065 );
     leg->SetTextSize( 0.062 * 6. / 4. );
     
-    for ( auto& data_hist : data_hists )
-        addToLegend( data_hist, leg, "ep" );
+    if ( getOpt( "noData" ).IsNull() )
+    {
+        for ( auto& data_hist : data_hists )
+            addToLegend( data_hist, leg, "ep" );
+    }
         
     std::reverse( std::begin( bkg_hists ), std::end( bkg_hists ) );
     for ( auto& bkg_hist : bkg_hists )
@@ -740,7 +747,7 @@ void printYieldsTable(
     for ( auto& bkg_hist  : bkg_hists )  printYields( bkg_hist , ibinmin, ibinmax );
     if ( bkg_hists.size() ) printYields( getTotalBkgHists( bkg_hists ), ibinmin, ibinmax );
     if ( getOpt( "noData" ).IsNull() ) for ( auto& data_hist : data_hists ) printYields( data_hist, ibinmin, ibinmax );
-    for ( auto& ratio_hist  : ratio_hists )  printYields( ratio_hist , ibinmin, ibinmax );
+    if ( getOpt( "noData" ).IsNull() ) for ( auto& ratio_hist  : ratio_hists )  printYields( ratio_hist , ibinmin, ibinmax );
     for ( auto& sig_hist  : sig_hists )  printYields( sig_hist , ibinmin, ibinmax );
 }
 
@@ -835,7 +842,7 @@ std::vector<TH1*> plotmaker(
     pad2->SetLeftMargin( 150. / 600. );
     pad2->SetRightMargin( 50. / 600. );
     pad2->SetBottomMargin( 0.4 );
-    pad2->SetTopMargin( 0.01 );
+    pad2->SetTopMargin( 0.05 );
     pad2->SetFrameBorderMode( 0 );
     pad2->SetFrameBorderSize( 0 );
     pad2->SetFrameBorderMode( 0 );
@@ -939,7 +946,7 @@ std::vector<TH1*> plotmaker(
     // Draw Ratio plot
     // ~-~-~-~-~-~-~-~
     std::vector<TH1*> ratio_hists;
-    if ( data_hists.size() != 0 && bkg_hists.size() != 0 )
+    if ( data_hists.size() != 0 && bkg_hists.size() != 0 && getOpt( "noData").IsNull() )
     {
         ratio_hists = getRatioHists( data_hists, getTotalBkgHists( bkg_hists ) );
 
@@ -1059,6 +1066,36 @@ std::vector<TH1*> plotmaker(
     
     for ( auto& sig_hist : sig_hists )
         sigs_pair_in.push_back( std::pair<TH1*, TH1*>( sig_hist, 0 ) );
+        
+    return plotmaker( options_string, datas_pair_in, bkgs_pair_in, sigs_pair_in );
+}
+
+//_________________________________________________________________________________________________
+std::vector<TH1*> plotmaker(
+    std::string options_string,
+    std::vector<TH1*> data_hists,
+    std::vector<TH1*> bkg_hists,
+    std::vector<TH1*> sig_hists,
+    std::vector<TH1*> data_hists_syst,
+    std::vector<TH1*> bkg_hists_syst,
+    std::vector<TH1*> sig_hists_syst
+)
+{
+
+    Hists datas_pair_in;
+    
+    for ( unsigned int idata = 0; idata < data_hists.size(); ++idata )
+        datas_pair_in.push_back( std::pair<TH1*, TH1*>( data_hists[idata], data_hists_syst[idata] ) );
+        
+    Hists bkgs_pair_in;
+    
+    for ( unsigned int ibkg = 0; ibkg < bkg_hists.size(); ++ibkg )
+        bkgs_pair_in.push_back( std::pair<TH1*, TH1*>( bkg_hists[ibkg], bkg_hists_syst[ibkg] ) );
+        
+    Hists sigs_pair_in;
+    
+    for ( unsigned int isig = 0; isig < sig_hists.size(); ++isig )
+        sigs_pair_in.push_back( std::pair<TH1*, TH1*>( sig_hists[isig], sig_hists_syst[isig] ) );
         
     return plotmaker( options_string, datas_pair_in, bkgs_pair_in, sigs_pair_in );
 }

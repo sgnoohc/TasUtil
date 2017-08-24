@@ -68,7 +68,7 @@ class WWWPlotter:
         self.bkg_groups["photon"]      = [ "photonfakes", "photondoublefakes", "photontriplefakes", "fakesphotonfakes", "otherphotonfakes" ]
         self.bkg_groups["fakes"]       = [ "fakes", "doublefakes" ]
         self.bkg_groups["others"]      = [ "others" ]
-        self.bkg_groups["data"]        = [ "data" ]
+        self.bkg_groups["data"]        = [ "data_mm", "data_em", "data_ee" ]
         self.bkg_groups["www"]         = [ "www" ]
         self.bkg_groups["whwww"]       = [ "whwww" ]
 
@@ -178,7 +178,7 @@ class WWWPlotter:
                       --showOverflow
                       --autoStack
                       --legend_NColumns 2
-                      --MaximumMultiplier 2
+                      --MaximumMultiplier 1.2
                       %s
                       """%(histname, histname, extraoptions),
                       v_data_hists, v_bkg_hists, v_sig_hists )
@@ -194,42 +194,36 @@ class WWWPlotter:
             # the total background for this category is saved (e.g. trueSS, LL, fakes, etc.)
             histsum = None
 
-            # Looping over MC sample process (e.g. W, ttbar, WZ, etc.)
-            for key in self.proc_groups:
+            # Loop over the individual bkg type
+            for bkg in self.bkg_groups[bkgtype]:
 
-                # Loop over the individual bkg type
-                for bkg in self.bkg_groups[bkgtype]:
+                # place holder
+                hist = None
 
-                    # Loop over the individual that makes up the grouping.
-                    for proc in self.proc_groups[key]:
+                # Form the name of the histogram
+                histkey = "_" + bkg + "_" + histname
 
-                        # place holder
-                        hist = None
+                # Try to access it
+                try :
+                    hist = self.hists[histkey]
+                # If not get it from the tfile
+                except:
+                    # Open it and save it to the self.hists which persists as long as this object persists.
+                    self.hists[histkey] = self.tfile.Get( histkey )
 
-                        # Form the name of the histogram
-                        histkey = proc + "_" + bkg + "_" + histname
+                    # Get the pointer
+                    hist = self.hists[histkey]
 
-                        # Try to access it
-                        try :
-                            hist = self.hists[histkey]
-                        # If not get it from the tfile
-                        except:
-                            # Open it and save it to the self.hists which persists as long as this object persists.
-                            self.hists[histkey] = self.tfile.Get( histkey )
+                # If successfully retrieved
+                if hist:
 
-                            # Get the pointer
-                            hist = self.hists[histkey]
-
-                        # If successfully retrieved
-                        if hist:
-
-                            # If already a clone was created copy the content over
-                            if histsum:
-                                histsum.Add( hist )
-                            # If a clone has not been created yet, create one
-                            else:
-                                histsum = hist.Clone( bkgtype )
-                                histsum.SetDirectory( 0 )
+                    # If already a clone was created copy the content over
+                    if histsum:
+                        histsum.Add( hist )
+                    # If a clone has not been created yet, create one
+                    else:
+                        histsum = hist.Clone( bkgtype )
+                        histsum.SetDirectory( 0 )
 
             # Once done looping over the grouping, set the histogram
             hists[bkgtype] = histsum
@@ -263,8 +257,8 @@ class WWWPlotter:
                       --showOverflow
                       --autoStack
                       --legend_NColumns 1
-                      --MaximumMultiplier 2
                       %s
+                      --MaximumMultiplier 1.2
                       """%(histname, histname, extraoptions),
                       v_data_hists, v_bkg_hists, v_sig_hists )
 
@@ -273,351 +267,35 @@ if __name__ == "__main__":
     wwwplotter = WWWPlotter()
 
     wwwplotter.proc_groups["data"]  = [ "data_mm", "data_em", "data_ee" ]
-    wwwplotter.drawbyproc( "Region_counter", "--printYieldsTable --printYieldsMinBin 1 --printYieldsMaxBin 8" )
-    wwwplotter.drawbytype( "Region_counter", "--printYieldsTable --printYieldsMinBin 1 --printYieldsMaxBin 8" )
+#    wwwplotter.drawbyproc( "SSSignalRegion_counter", "--printYieldsTable --Minimum 0.1 --ratio_Maximum 4" )
+    wwwplotter.drawbytype( "SSSignalRegion_counter", " --noData true --ratio_Minimum 0 --printYieldsTable true " )
+#    wwwplotter.drawbyproc( "Region_counter", "--printYieldsTable --Minimum 0.1 --ratio_Maximum 4" )
+#    wwwplotter.drawbyproc( "Region_rawcounter", "--printYieldsTable " )
+#    wwwplotter.drawbytype( "Region_counter", "--printYieldsTable " )
+#    wwwplotter.drawbytype( "Region_rawcounter", "--printYieldsTable " )
 
-#    wwwplotter.draw( "SSMM_CutSSMMLepMllSS", "--xNbin 20" )
-#    wwwplotter.draw( "SSMM_CutSSMMLeplep0_pt", "--xNbin 20" )
-#    wwwplotter.draw( "SSMM_CutSSMMLeplep1_pt", "--xNbin 20" )
-#    wwwplotter.draw( "SSMM_CutSSMMLeplep0_eta", "--xNbin 20" )
-#    wwwplotter.draw( "SSMM_CutSSMMLeplep1_eta", "--xNbin 20" )
-#    wwwplotter.draw( "SSMM_CutSSMMLeplep0_phi", "--xNbin 20" )
-#    wwwplotter.draw( "SSMM_CutSSMMLeplep1_phi", "--xNbin 20" )
-#    wwwplotter.draw( "SSMM_CutSSMMLeplep0_pid", "--xNbin 20" )
-#    wwwplotter.draw( "SSMM_CutSSMMLeplep1_pid", "--xNbin 20" )
-#    wwwplotter.draw( "SSMM_CutSSMMLeplep0_iso", "--xNbin 20" )
-#    wwwplotter.draw( "SSMM_CutSSMMLeplep1_iso", "--xNbin 20" )
-#    wwwplotter.draw( "SSMM_CutSSMMLeplep0_ip3", "--xNbin 20" )
-#    wwwplotter.draw( "SSMM_CutSSMMLeplep1_ip3", "--xNbin 20" )
-#
-#    wwwplotter.draw( "SSEM_CutSSEMLepMllSS", "--xNbin 20" )
-#    wwwplotter.draw( "SSEM_CutSSEMLeplep0_pt", "--xNbin 20" )
-#    wwwplotter.draw( "SSEM_CutSSEMLeplep1_pt", "--xNbin 20" )
-#    wwwplotter.draw( "SSEM_CutSSEMLeplep0_eta", "--xNbin 20" )
-#    wwwplotter.draw( "SSEM_CutSSEMLeplep1_eta", "--xNbin 20" )
-#    wwwplotter.draw( "SSEM_CutSSEMLeplep0_phi", "--xNbin 20" )
-#    wwwplotter.draw( "SSEM_CutSSEMLeplep1_phi", "--xNbin 20" )
-#    wwwplotter.draw( "SSEM_CutSSEMLeplep0_pid", "--xNbin 20" )
-#    wwwplotter.draw( "SSEM_CutSSEMLeplep1_pid", "--xNbin 20" )
-#    wwwplotter.draw( "SSEM_CutSSEMLeplep0_iso", "--xNbin 20" )
-#    wwwplotter.draw( "SSEM_CutSSEMLeplep1_iso", "--xNbin 20" )
-#    wwwplotter.draw( "SSEM_CutSSEMLeplep0_ip3", "--xNbin 20" )
-#    wwwplotter.draw( "SSEM_CutSSEMLeplep1_ip3", "--xNbin 20" )
-#    wwwplotter.draw( "SSEM_CutSSEMLepjet_size", "" )
-#    wwwplotter.draw( "SSEM_CutSSEMLepjetb_size", "" )
-#    wwwplotter.draw( "SSEM_CutSSEMLepmet", "--xNbin 20" )
-#    wwwplotter.draw( "SSEM_CutSSEMLepnisotrack", "" )
-#    wwwplotter.draw( "SSEM_CutSSEMLepleploose_size", "" )
-#
-#    wwwplotter.draw( "SSEE_CutSSZVetoMllSS", "--xNbin 20" )
-#    wwwplotter.draw( "SSEE_CutSSZVetolep0_pt", "--xNbin 20" )
-#    wwwplotter.draw( "SSEE_CutSSZVetolep1_pt", "--xNbin 20" )
-#    wwwplotter.draw( "SSEE_CutSSZVetolep0_eta", "--xNbin 20" )
-#    wwwplotter.draw( "SSEE_CutSSZVetolep1_eta", "--xNbin 20" )
-#    wwwplotter.draw( "SSEE_CutSSZVetolep0_phi", "--xNbin 20" )
-#    wwwplotter.draw( "SSEE_CutSSZVetolep1_phi", "--xNbin 20" )
-#    wwwplotter.draw( "SSEE_CutSSZVetolep0_pid", "--xNbin 20" )
-#    wwwplotter.draw( "SSEE_CutSSZVetolep1_pid", "--xNbin 20" )
-#    wwwplotter.draw( "SSEE_CutSSZVetolep0_iso", "--xNbin 20" )
-#    wwwplotter.draw( "SSEE_CutSSZVetolep1_iso", "--xNbin 20" )
-#    wwwplotter.draw( "SSEE_CutSSZVetolep0_ip3", "--xNbin 20" )
-#    wwwplotter.draw( "SSEE_CutSSZVetolep1_ip3", "--xNbin 20" )
+    sys.exit()
 
-#    wwwplotter.draw( "SSMM_CutThirdLepVetonisotrack" )
-#    wwwplotter.draw( "SSMM_CutSSMMLeplep0_pt", "--xNbin 20" )
-#    wwwplotter.draw( "SSMM_CutSSMMLeplep1_pt", "--xNbin 20" )
-#    wwwplotter.draw( "SSMM_CutSSMMLepjet_size", "" )
-#    wwwplotter.draw( "SSMM_CutSSMMLepjetb_size", "" )
-#    wwwplotter.draw( "SSMM_CutSSMMLepjet3l_size", "" )
+#    cuts = [ "SSMM_CutSSMMLep", "SSMM_CutNTwoJet", "SSMM_CutThirdLepVeto", "SSMM_CutIsoTrackVeto", "SSMM_CutBVeto", "SSMM_CutWMjj", "SSMM_CutLowMjj", "SSMM_CutLowDEtajj" ]
+#    bins = [ 20               , 20               , 20                    , 20                    , 10             , 10            , 10              , 10                  ]
 
-#    wwwplotter.proc_groups["data"]  = [ "data_ee" ]
-#    wwwplotter.draw( "ee_met", "--xNbin 20" );
-#    wwwplotter.draw( "ee_nvtx", "" );
-#    wwwplotter.draw( "ee_dimuon_mass", "--xNbin 20" );
-#    wwwplotter.draw( "eee_met", "--xNbin 20" );
-#    wwwplotter.draw( "eee_nvtx", "" );
-#    wwwplotter.draw( "eee_dimuon_mass", "--xNbin 20" );
-#
-#    wwwplotter.proc_groups["data"]  = [ "data_mm" ]
-#    wwwplotter.draw( "mm_met", "--xNbin 10" );
-#    wwwplotter.draw( "mm_nvtx", "" );
-#    wwwplotter.draw( "mm_dimuon_mass", "--xNbin 20" );
-#    wwwplotter.draw( "mmjetb_size", "" );
-#    wwwplotter.draw( "mmjet_size", "" );
-#    wwwplotter.draw( "mmjet3l_size", "" );
-#    wwwplotter.draw( "mmm_met", "--xNbin 20" );
-#    wwwplotter.draw( "mmm_nvtx", "" );
-#    wwwplotter.draw( "mmm_dimuon_mass", "--xNbin 20" );
-#    wwwplotter.draw( "mmm_loose_met", "--xNbin 20" );
-#    wwwplotter.draw( "mmm_loose_nvtx", "" );
-#    wwwplotter.draw( "mmm_loose_dimuon_mass", "--xNbin 20" );
-#    wwwplotter.draw( "mmm_lbnt_met", "--xNbin 20" );
-#    wwwplotter.draw( "mmm_lbnt_nvtx", "" );
-#    wwwplotter.draw( "mmm_lbnt_dimuon_mass", "--xNbin 20" );
+    cuts = [  "SSMM_CutIsoTrackVeto", "SSMM_CutBVeto" ]
+    bins = [  20                    , 20              ]
 
-
-
-
-
-#    wwwplotter.draw( "Region_counter", "--noData --printYieldsTable" )
-#    wwwplotter.draw( "Region_rawcounter", "--noData --printYieldsTable" )
-
-#    for i in xrange( 2, 13 ):
-#        if i != 4:
-#            continue
-#        wwwplotter.draw( "SSmm_Cut%02dmet" % i );
-#        wwwplotter.draw( "SSmm_Cut%02djet_size" % i );
-#        wwwplotter.draw( "SSmm_Cut%02djetb_size" % i );
-#        wwwplotter.draw( "SSmm_Cut%02dlep_size" % i );
-#        wwwplotter.draw( "SSmm_Cut%02dMllSS" % i );
-#        wwwplotter.draw( "SSmm_Cut%02dlep0_pt" % i );
-#        wwwplotter.draw( "SSmm_Cut%02dlep0_eta" % i );
-#        wwwplotter.draw( "SSmm_Cut%02dlep0_phi" % i );
-
-#    wwwplotter.draw( "SSARmm_DEtajjLead"    , "--xNbin 20" )
-#    wwwplotter.draw( "SSARmm_DPhi3lMET"     , "--xNbin 20" )
-#    wwwplotter.draw( "SSARmm_MjjLead"       , "--xNbin 20" )
-#    wwwplotter.draw( "SSARmm_MjjW"          , "--xNbin 20" )
-#    wwwplotter.draw( "SSARmm_MllSS"         , "--xNbin 20" )
-#    wwwplotter.draw( "SSARmm_Pt3l"          , "--xNbin 20" )
-#    wwwplotter.draw( "SSARmm_get0SFOSMee"   , "--xNbin 20" )
-#    wwwplotter.draw( "SSARmm_get0SFOSMll"   , "--xNbin 20" )
-#    wwwplotter.draw( "SSARmm_get1SFOSMll"   , "--xNbin 20" )
-#    wwwplotter.draw( "SSARmm_get2SFOSMll0"  , "--xNbin 20" )
-#    wwwplotter.draw( "SSARmm_get2SFOSMll1"  , "--xNbin 20" )
-#    wwwplotter.draw( "SSARmm_getMTmax"      , "--xNbin 20" )
-#    wwwplotter.draw( "SSARmm_jet0_E"        , "--xNbin 20" )
-#    wwwplotter.draw( "SSARmm_jet0_eta"      , "--xNbin 20" )
-#    wwwplotter.draw( "SSARmm_jet0_phi"      , "--xNbin 20" )
-#    wwwplotter.draw( "SSARmm_jet0_pt"       , "--xNbin 20" )
-#    wwwplotter.draw( "SSARmm_jet1_E"        , "--xNbin 20" )
-#    wwwplotter.draw( "SSARmm_jet1_eta"      , "--xNbin 20" )
-#    wwwplotter.draw( "SSARmm_jet1_phi"      , "--xNbin 20" )
-#    wwwplotter.draw( "SSARmm_jet1_pt"       , "--xNbin 20" )
-#    wwwplotter.draw( "SSARmm_jet2_E"        , "--xNbin 20" )
-#    wwwplotter.draw( "SSARmm_jet2_eta"      , "--xNbin 20" )
-#    wwwplotter.draw( "SSARmm_jet2_phi"      , "--xNbin 20" )
-#    wwwplotter.draw( "SSARmm_jet2_pt"       , "--xNbin 20" )
-#    wwwplotter.draw( "SSARmm_jet3_E"        , "--xNbin 20" )
-#    wwwplotter.draw( "SSARmm_jet3_eta"      , "--xNbin 20" )
-#    wwwplotter.draw( "SSARmm_jet3_phi"      , "--xNbin 20" )
-#    wwwplotter.draw( "SSARmm_jet3_pt"       , "--xNbin 20" )
-#    wwwplotter.draw( "SSARmm_jet4_E"        , "--xNbin 20" )
-#    wwwplotter.draw( "SSARmm_jet4_eta"      , "--xNbin 20" )
-#    wwwplotter.draw( "SSARmm_jet4_phi"      , "--xNbin 20" )
-#    wwwplotter.draw( "SSARmm_jet4_pt"       , "--xNbin 20" )
-#    wwwplotter.draw( "SSARmm_jet5_E"        , "--xNbin 20" )
-#    wwwplotter.draw( "SSARmm_jet5_eta"      , "--xNbin 20" )
-#    wwwplotter.draw( "SSARmm_jet5_phi"      , "--xNbin 20" )
-#    wwwplotter.draw( "SSARmm_jet5_pt"       , "--xNbin 20" )
-#    wwwplotter.draw( "SSARmm_jet6_E"        , "--xNbin 20" )
-#    wwwplotter.draw( "SSARmm_jet6_eta"      , "--xNbin 20" )
-#    wwwplotter.draw( "SSARmm_jet6_phi"      , "--xNbin 20" )
-#    wwwplotter.draw( "SSARmm_jet6_pt"       , "--xNbin 20" )
-#    wwwplotter.draw( "SSARmm_jetwtag0_E"    , "--xNbin 20" )
-#    wwwplotter.draw( "SSARmm_jetwtag0_eta"  , "--xNbin 20" )
-#    wwwplotter.draw( "SSARmm_jetwtag0_phi"  , "--xNbin 20" )
-#    wwwplotter.draw( "SSARmm_jetwtag0_pt"   , "--xNbin 20" )
-#    wwwplotter.draw( "SSARmm_jetwtag1_E"    , "--xNbin 20" )
-#    wwwplotter.draw( "SSARmm_jetwtag1_eta"  , "--xNbin 20" )
-#    wwwplotter.draw( "SSARmm_jetwtag1_phi"  , "--xNbin 20" )
-#    wwwplotter.draw( "SSARmm_jetwtag1_pt"   , "--xNbin 20" )
-#    wwwplotter.draw( "SSARmm_lep0_E"        , "--xNbin 20" )
-#    wwwplotter.draw( "SSARmm_lep0_eta"      , "--xNbin 20" )
-#    wwwplotter.draw( "SSARmm_lep0_phi"      , "--xNbin 20" )
-#    wwwplotter.draw( "SSARmm_lep0_pt"       , "--xNbin 20" )
-#    wwwplotter.draw( "SSARmm_lep1_E"        , "--xNbin 20" )
-#    wwwplotter.draw( "SSARmm_lep1_eta"      , "--xNbin 20" )
-#    wwwplotter.draw( "SSARmm_lep1_phi"      , "--xNbin 20" )
-#    wwwplotter.draw( "SSARmm_lep1_pt"       , "--xNbin 20" )
-#    wwwplotter.draw( "SSARmm_leplbnt0_E"    , "--xNbin 20" )
-#    wwwplotter.draw( "SSARmm_leplbnt0_eta"  , "--xNbin 20" )
-#    wwwplotter.draw( "SSARmm_leplbnt0_phi"  , "--xNbin 20" )
-#    wwwplotter.draw( "SSARmm_leplbnt0_pt"   , "--xNbin 20" )
-#    wwwplotter.draw( "SSARmm_leploose0_E"   , "--xNbin 20" )
-#    wwwplotter.draw( "SSARmm_leploose0_eta" , "--xNbin 20" )
-#    wwwplotter.draw( "SSARmm_leploose0_phi" , "--xNbin 20" )
-#    wwwplotter.draw( "SSARmm_leploose0_pt"  , "--xNbin 20" )
-#    wwwplotter.draw( "SSARmm_leploose1_E"   , "--xNbin 20" )
-#    wwwplotter.draw( "SSARmm_leploose1_eta" , "--xNbin 20" )
-#    wwwplotter.draw( "SSARmm_leploose1_phi" , "--xNbin 20" )
-#    wwwplotter.draw( "SSARmm_leploose1_pt"  , "--xNbin 20" )
-#    wwwplotter.draw( "SSARmm_leploose2_E"   , "--xNbin 20" )
-#    wwwplotter.draw( "SSARmm_leploose2_eta" , "--xNbin 20" )
-#    wwwplotter.draw( "SSARmm_leploose2_phi" , "--xNbin 20" )
-#    wwwplotter.draw( "SSARmm_leploose2_pt"  , "--xNbin 20" )
-#    wwwplotter.draw( "SSARmm_leptight0_E"   , "--xNbin 20" )
-#    wwwplotter.draw( "SSARmm_leptight0_eta" , "--xNbin 20" )
-#    wwwplotter.draw( "SSARmm_leptight0_phi" , "--xNbin 20" )
-#    wwwplotter.draw( "SSARmm_leptight0_pt"  , "--xNbin 20" )
-#    wwwplotter.draw( "SSARmm_leptight1_E"   , "--xNbin 20" )
-#    wwwplotter.draw( "SSARmm_leptight1_eta" , "--xNbin 20" )
-#    wwwplotter.draw( "SSARmm_leptight1_phi" , "--xNbin 20" )
-#    wwwplotter.draw( "SSARmm_leptight1_pt"  , "--xNbin 20" )
-#
-#    wwwplotter.draw( "SSmm_DEtajjLead"    , "--xNbin 20" )
-#    wwwplotter.draw( "SSmm_DPhi3lMET"     , "--xNbin 20" )
-#    wwwplotter.draw( "SSmm_MjjLead"       , "--xNbin 20" )
-#    wwwplotter.draw( "SSmm_MjjW"          , "--xNbin 20" )
-#    wwwplotter.draw( "SSmm_MllSS"         , "--xNbin 20" )
-#    wwwplotter.draw( "SSmm_Pt3l"          , "--xNbin 20" )
-#    wwwplotter.draw( "SSmm_met"           , "--xNbin 20" )
-#    wwwplotter.draw( "SSmm_get0SFOSMee"   , "--xNbin 20" )
-#    wwwplotter.draw( "SSmm_get0SFOSMll"   , "--xNbin 20" )
-#    wwwplotter.draw( "SSmm_get1SFOSMll"   , "--xNbin 20" )
-#    wwwplotter.draw( "SSmm_get2SFOSMll0"  , "--xNbin 20" )
-#    wwwplotter.draw( "SSmm_get2SFOSMll1"  , "--xNbin 20" )
-#    wwwplotter.draw( "SSmm_getMTmax"      , "--xNbin 20" )
-#    wwwplotter.draw( "SSmm_jet0_E"        , "--xNbin 20" )
-#    wwwplotter.draw( "SSmm_jet0_eta"      , "--xNbin 20" )
-#    wwwplotter.draw( "SSmm_jet0_phi"      , "--xNbin 20" )
-#    wwwplotter.draw( "SSmm_jet0_pt"       , "--xNbin 20" )
-#    wwwplotter.draw( "SSmm_jet1_E"        , "--xNbin 20" )
-#    wwwplotter.draw( "SSmm_jet1_eta"      , "--xNbin 20" )
-#    wwwplotter.draw( "SSmm_jet1_phi"      , "--xNbin 20" )
-#    wwwplotter.draw( "SSmm_jet1_pt"       , "--xNbin 20" )
-#    wwwplotter.draw( "SSmm_jet2_E"        , "--xNbin 20" )
-#    wwwplotter.draw( "SSmm_jet2_eta"      , "--xNbin 20" )
-#    wwwplotter.draw( "SSmm_jet2_phi"      , "--xNbin 20" )
-#    wwwplotter.draw( "SSmm_jet2_pt"       , "--xNbin 20" )
-#    wwwplotter.draw( "SSmm_jet3_E"        , "--xNbin 20" )
-#    wwwplotter.draw( "SSmm_jet3_eta"      , "--xNbin 20" )
-#    wwwplotter.draw( "SSmm_jet3_phi"      , "--xNbin 20" )
-#    wwwplotter.draw( "SSmm_jet3_pt"       , "--xNbin 20" )
-#    wwwplotter.draw( "SSmm_jet4_E"        , "--xNbin 20" )
-#    wwwplotter.draw( "SSmm_jet4_eta"      , "--xNbin 20" )
-#    wwwplotter.draw( "SSmm_jet4_phi"      , "--xNbin 20" )
-#    wwwplotter.draw( "SSmm_jet4_pt"       , "--xNbin 20" )
-#    wwwplotter.draw( "SSmm_jet5_E"        , "--xNbin 20" )
-#    wwwplotter.draw( "SSmm_jet5_eta"      , "--xNbin 20" )
-#    wwwplotter.draw( "SSmm_jet5_phi"      , "--xNbin 20" )
-#    wwwplotter.draw( "SSmm_jet5_pt"       , "--xNbin 20" )
-#    wwwplotter.draw( "SSmm_jet6_E"        , "--xNbin 20" )
-#    wwwplotter.draw( "SSmm_jet6_eta"      , "--xNbin 20" )
-#    wwwplotter.draw( "SSmm_jet6_phi"      , "--xNbin 20" )
-#    wwwplotter.draw( "SSmm_jet6_pt"       , "--xNbin 20" )
-#    wwwplotter.draw( "SSmm_jetwtag0_E"    , "--xNbin 20" )
-#    wwwplotter.draw( "SSmm_jetwtag0_eta"  , "--xNbin 20" )
-#    wwwplotter.draw( "SSmm_jetwtag0_phi"  , "--xNbin 20" )
-#    wwwplotter.draw( "SSmm_jetwtag0_pt"   , "--xNbin 20" )
-#    wwwplotter.draw( "SSmm_jetwtag1_E"    , "--xNbin 20" )
-#    wwwplotter.draw( "SSmm_jetwtag1_eta"  , "--xNbin 20" )
-#    wwwplotter.draw( "SSmm_jetwtag1_phi"  , "--xNbin 20" )
-#    wwwplotter.draw( "SSmm_jetwtag1_pt"   , "--xNbin 20" )
-#    wwwplotter.draw( "SSmm_lep0_E"        , "--xNbin 20" )
-#    wwwplotter.draw( "SSmm_lep0_eta"      , "--xNbin 20" )
-#    wwwplotter.draw( "SSmm_lep0_phi"      , "--xNbin 20" )
-#    wwwplotter.draw( "SSmm_lep0_pt"       , "--xNbin 20" )
-#    wwwplotter.draw( "SSmm_lep1_E"        , "--xNbin 20" )
-#    wwwplotter.draw( "SSmm_lep1_eta"      , "--xNbin 20" )
-#    wwwplotter.draw( "SSmm_lep1_phi"      , "--xNbin 20" )
-#    wwwplotter.draw( "SSmm_lep1_pt"       , "--xNbin 20" )
-#    wwwplotter.draw( "SSmm_leplbnt0_E"    , "--xNbin 20" )
-#    wwwplotter.draw( "SSmm_leplbnt0_eta"  , "--xNbin 20" )
-#    wwwplotter.draw( "SSmm_leplbnt0_phi"  , "--xNbin 20" )
-#    wwwplotter.draw( "SSmm_leplbnt0_pt"   , "--xNbin 20" )
-#    wwwplotter.draw( "SSmm_leploose0_E"   , "--xNbin 20" )
-#    wwwplotter.draw( "SSmm_leploose0_eta" , "--xNbin 20" )
-#    wwwplotter.draw( "SSmm_leploose0_phi" , "--xNbin 20" )
-#    wwwplotter.draw( "SSmm_leploose0_pt"  , "--xNbin 20" )
-#    wwwplotter.draw( "SSmm_leploose1_E"   , "--xNbin 20" )
-#    wwwplotter.draw( "SSmm_leploose1_eta" , "--xNbin 20" )
-#    wwwplotter.draw( "SSmm_leploose1_phi" , "--xNbin 20" )
-#    wwwplotter.draw( "SSmm_leploose1_pt"  , "--xNbin 20" )
-#    wwwplotter.draw( "SSmm_leploose2_E"   , "--xNbin 20" )
-#    wwwplotter.draw( "SSmm_leploose2_eta" , "--xNbin 20" )
-#    wwwplotter.draw( "SSmm_leploose2_phi" , "--xNbin 20" )
-#    wwwplotter.draw( "SSmm_leploose2_pt"  , "--xNbin 20" )
-#    wwwplotter.draw( "SSmm_leptight0_E"   , "--xNbin 20" )
-#    wwwplotter.draw( "SSmm_leptight0_eta" , "--xNbin 20" )
-#    wwwplotter.draw( "SSmm_leptight0_phi" , "--xNbin 20" )
-#    wwwplotter.draw( "SSmm_leptight0_pt"  , "--xNbin 20" )
-#    wwwplotter.draw( "SSmm_leptight1_E"   , "--xNbin 20" )
-#    wwwplotter.draw( "SSmm_leptight1_eta" , "--xNbin 20" )
-#    wwwplotter.draw( "SSmm_leptight1_phi" , "--xNbin 20" )
-#    wwwplotter.draw( "SSmm_leptight1_pt"  , "--xNbin 20" )
-
-#    wwwplotter.draw( "SSmm_LowMET_MjjSideBand_DEtajjLead"    , "--xNbin 20" )
-#    wwwplotter.draw( "SSmm_LowMET_MjjSideBand_DPhi3lMET"     , "--xNbin 20" )
-#    wwwplotter.draw( "SSmm_LowMET_MjjSideBand_MjjLead"       , "--xNbin 20" )
-#    wwwplotter.draw( "SSmm_LowMET_MjjSideBand_MjjW"          , "--xNbin 20" )
-#    wwwplotter.draw( "SSmm_LowMET_MjjSideBand_MllSS"         , "--xNbin 20" )
-#    wwwplotter.draw( "SSmm_LowMET_MjjSideBand_Pt3l"          , "--xNbin 20" )
-#    wwwplotter.draw( "SSmm_LowMET_MjjSideBand_met"           , "--xNbin 20" )
-#    wwwplotter.draw( "SSmm_LowMET_MjjSideBand_get0SFOSMee"   , "--xNbin 20" )
-#    wwwplotter.draw( "SSmm_LowMET_MjjSideBand_get0SFOSMll"   , "--xNbin 20" )
-#    wwwplotter.draw( "SSmm_LowMET_MjjSideBand_get1SFOSMll"   , "--xNbin 20" )
-#    wwwplotter.draw( "SSmm_LowMET_MjjSideBand_get2SFOSMll0"  , "--xNbin 20" )
-#    wwwplotter.draw( "SSmm_LowMET_MjjSideBand_get2SFOSMll1"  , "--xNbin 20" )
-#    wwwplotter.draw( "SSmm_LowMET_MjjSideBand_getMTmax"      , "--xNbin 20" )
-#    wwwplotter.draw( "SSmm_LowMET_MjjSideBand_jet0_E"        , "--xNbin 20" )
-#    wwwplotter.draw( "SSmm_LowMET_MjjSideBand_jet0_eta"      , "--xNbin 20" )
-#    wwwplotter.draw( "SSmm_LowMET_MjjSideBand_jet0_phi"      , "--xNbin 20" )
-#    wwwplotter.draw( "SSmm_LowMET_MjjSideBand_jet0_pt"       , "--xNbin 20" )
-#    wwwplotter.draw( "SSmm_LowMET_MjjSideBand_jet1_E"        , "--xNbin 20" )
-#    wwwplotter.draw( "SSmm_LowMET_MjjSideBand_jet1_eta"      , "--xNbin 20" )
-#    wwwplotter.draw( "SSmm_LowMET_MjjSideBand_jet1_phi"      , "--xNbin 20" )
-#    wwwplotter.draw( "SSmm_LowMET_MjjSideBand_jet1_pt"       , "--xNbin 20" )
-#    wwwplotter.draw( "SSmm_LowMET_MjjSideBand_jet2_E"        , "--xNbin 20" )
-#    wwwplotter.draw( "SSmm_LowMET_MjjSideBand_jet2_eta"      , "--xNbin 20" )
-#    wwwplotter.draw( "SSmm_LowMET_MjjSideBand_jet2_phi"      , "--xNbin 20" )
-#    wwwplotter.draw( "SSmm_LowMET_MjjSideBand_jet2_pt"       , "--xNbin 20" )
-#    wwwplotter.draw( "SSmm_LowMET_MjjSideBand_jet3_E"        , "--xNbin 20" )
-#    wwwplotter.draw( "SSmm_LowMET_MjjSideBand_jet3_eta"      , "--xNbin 20" )
-#    wwwplotter.draw( "SSmm_LowMET_MjjSideBand_jet3_phi"      , "--xNbin 20" )
-#    wwwplotter.draw( "SSmm_LowMET_MjjSideBand_jet3_pt"       , "--xNbin 20" )
-#    wwwplotter.draw( "SSmm_LowMET_MjjSideBand_jet4_E"        , "--xNbin 20" )
-#    wwwplotter.draw( "SSmm_LowMET_MjjSideBand_jet4_eta"      , "--xNbin 20" )
-#    wwwplotter.draw( "SSmm_LowMET_MjjSideBand_jet4_phi"      , "--xNbin 20" )
-#    wwwplotter.draw( "SSmm_LowMET_MjjSideBand_jet4_pt"       , "--xNbin 20" )
-#    wwwplotter.draw( "SSmm_LowMET_MjjSideBand_jet5_E"        , "--xNbin 20" )
-#    wwwplotter.draw( "SSmm_LowMET_MjjSideBand_jet5_eta"      , "--xNbin 20" )
-#    wwwplotter.draw( "SSmm_LowMET_MjjSideBand_jet5_phi"      , "--xNbin 20" )
-#    wwwplotter.draw( "SSmm_LowMET_MjjSideBand_jet5_pt"       , "--xNbin 20" )
-#    wwwplotter.draw( "SSmm_LowMET_MjjSideBand_jet6_E"        , "--xNbin 20" )
-#    wwwplotter.draw( "SSmm_LowMET_MjjSideBand_jet6_eta"      , "--xNbin 20" )
-#    wwwplotter.draw( "SSmm_LowMET_MjjSideBand_jet6_phi"      , "--xNbin 20" )
-#    wwwplotter.draw( "SSmm_LowMET_MjjSideBand_jet6_pt"       , "--xNbin 20" )
-#    wwwplotter.draw( "SSmm_LowMET_MjjSideBand_jetwtag0_E"    , "--xNbin 20" )
-#    wwwplotter.draw( "SSmm_LowMET_MjjSideBand_jetwtag0_eta"  , "--xNbin 20" )
-#    wwwplotter.draw( "SSmm_LowMET_MjjSideBand_jetwtag0_phi"  , "--xNbin 20" )
-#    wwwplotter.draw( "SSmm_LowMET_MjjSideBand_jetwtag0_pt"   , "--xNbin 20" )
-#    wwwplotter.draw( "SSmm_LowMET_MjjSideBand_jetwtag1_E"    , "--xNbin 20" )
-#    wwwplotter.draw( "SSmm_LowMET_MjjSideBand_jetwtag1_eta"  , "--xNbin 20" )
-#    wwwplotter.draw( "SSmm_LowMET_MjjSideBand_jetwtag1_phi"  , "--xNbin 20" )
-#    wwwplotter.draw( "SSmm_LowMET_MjjSideBand_jetwtag1_pt"   , "--xNbin 20" )
-#    wwwplotter.draw( "SSmm_LowMET_MjjSideBand_lep0_E"        , "--xNbin 20" )
-#    wwwplotter.draw( "SSmm_LowMET_MjjSideBand_lep0_eta"      , "--xNbin 20" )
-#    wwwplotter.draw( "SSmm_LowMET_MjjSideBand_lep0_phi"      , "--xNbin 20" )
-#    wwwplotter.draw( "SSmm_LowMET_MjjSideBand_lep0_pt"       , "--xNbin 20" )
-#    wwwplotter.draw( "SSmm_LowMET_MjjSideBand_lep1_E"        , "--xNbin 20" )
-#    wwwplotter.draw( "SSmm_LowMET_MjjSideBand_lep1_eta"      , "--xNbin 20" )
-#    wwwplotter.draw( "SSmm_LowMET_MjjSideBand_lep1_phi"      , "--xNbin 20" )
-#    wwwplotter.draw( "SSmm_LowMET_MjjSideBand_lep1_pt"       , "--xNbin 20" )
-#    wwwplotter.draw( "SSmm_LowMET_MjjSideBand_leplbnt0_E"    , "--xNbin 20" )
-#    wwwplotter.draw( "SSmm_LowMET_MjjSideBand_leplbnt0_eta"  , "--xNbin 20" )
-#    wwwplotter.draw( "SSmm_LowMET_MjjSideBand_leplbnt0_phi"  , "--xNbin 20" )
-#    wwwplotter.draw( "SSmm_LowMET_MjjSideBand_leplbnt0_pt"   , "--xNbin 20" )
-#    wwwplotter.draw( "SSmm_LowMET_MjjSideBand_leploose0_E"   , "--xNbin 20" )
-#    wwwplotter.draw( "SSmm_LowMET_MjjSideBand_leploose0_eta" , "--xNbin 20" )
-#    wwwplotter.draw( "SSmm_LowMET_MjjSideBand_leploose0_phi" , "--xNbin 20" )
-#    wwwplotter.draw( "SSmm_LowMET_MjjSideBand_leploose0_pt"  , "--xNbin 20" )
-#    wwwplotter.draw( "SSmm_LowMET_MjjSideBand_leploose1_E"   , "--xNbin 20" )
-#    wwwplotter.draw( "SSmm_LowMET_MjjSideBand_leploose1_eta" , "--xNbin 20" )
-#    wwwplotter.draw( "SSmm_LowMET_MjjSideBand_leploose1_phi" , "--xNbin 20" )
-#    wwwplotter.draw( "SSmm_LowMET_MjjSideBand_leploose1_pt"  , "--xNbin 20" )
-#    wwwplotter.draw( "SSmm_LowMET_MjjSideBand_leploose2_E"   , "--xNbin 20" )
-#    wwwplotter.draw( "SSmm_LowMET_MjjSideBand_leploose2_eta" , "--xNbin 20" )
-#    wwwplotter.draw( "SSmm_LowMET_MjjSideBand_leploose2_phi" , "--xNbin 20" )
-#    wwwplotter.draw( "SSmm_LowMET_MjjSideBand_leploose2_pt"  , "--xNbin 20" )
-#    wwwplotter.draw( "SSmm_LowMET_MjjSideBand_leptight0_E"   , "--xNbin 20" )
-#    wwwplotter.draw( "SSmm_LowMET_MjjSideBand_leptight0_eta" , "--xNbin 20" )
-#    wwwplotter.draw( "SSmm_LowMET_MjjSideBand_leptight0_phi" , "--xNbin 20" )
-#    wwwplotter.draw( "SSmm_LowMET_MjjSideBand_leptight0_pt"  , "--xNbin 20" )
-#    wwwplotter.draw( "SSmm_LowMET_MjjSideBand_leptight1_E"   , "--xNbin 20" )
-#    wwwplotter.draw( "SSmm_LowMET_MjjSideBand_leptight1_eta" , "--xNbin 20" )
-#    wwwplotter.draw( "SSmm_LowMET_MjjSideBand_leptight1_phi" , "--xNbin 20" )
-#    wwwplotter.draw( "SSmm_LowMET_MjjSideBand_leptight1_pt"  , "--xNbin 20" )
-#    wwwplotter.draw( "SSmm_LowMET_MjjSideBand_m4wide"  , "--xNbin 15" )
+    for cut, nbin in zip(cuts, bins):
+        wwwplotter.drawbyproc( "%s_Mll"    % cut , "--xNbin %d" % nbin )
+        wwwplotter.drawbyproc( "%s_Mll250" % cut , "--xNbin %d" % nbin )
+        wwwplotter.drawbyproc( "%s_Mll500" % cut , "--xNbin %d" % nbin )
+        wwwplotter.drawbyproc( "%s_jetb_size" % cut , "" )
+        wwwplotter.drawbyproc( "%s_jet_size" % cut , "" )
+        wwwplotter.drawbyproc( "%s_jet3l_size" % cut , "" )
+        wwwplotter.drawbyproc( "%s_jet0_csv" % cut , "--xNbin %d" % nbin )
+        wwwplotter.drawbyproc( "%s_jet1_csv" % cut , "--xNbin %d" % nbin )
+        wwwplotter.drawbyproc( "%s_lep0_iso" % cut , "--xNbin %d" % nbin )
+        wwwplotter.drawbyproc( "%s_lep1_iso" % cut , "--xNbin %d" % nbin )
+        wwwplotter.drawbyproc( "%s_lep0_ip3" % cut , "--xNbin %d" % nbin )
+        wwwplotter.drawbyproc( "%s_lep1_ip3" % cut , "--xNbin %d" % nbin )
+        wwwplotter.drawbyproc( "%s_DPhill" % cut , "--xNbin %d" % nbin )
+        wwwplotter.drawbyproc( "%s_DEtall" % cut , "--xNbin %d" % nbin )
 
 #

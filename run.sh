@@ -159,16 +159,18 @@ else
         echo 'ls -l'
         ls -l
         echo 'gfal-copy'
-        INFILE=${OUTPUTROOTNAME}
-        echo gfal-copy -p -f -t 4200 --verbose file://`pwd`/${INFILE} gsiftp://gftp.t2.ucsd.edu/${OUTPUTDIR}/${OUTPUTNAME}_${IFILE}.root --checksum ADLER32
-        hostname
-        uname -a
-        date
-        whoami
-        pwd
-        echo "ls'ing hadoop"
-        ls -lh /hadoop/cms/store/user/phchang/
-        gfal-copy -p -f -t 4200 --verbose file://`pwd`/${INFILE} gsiftp://gftp.t2.ucsd.edu/${OUTPUTDIR}/${OUTPUTNAME}_${IFILE}.root --checksum ADLER32
+        INFILE=${OUTPUTROOTNAME//.root/}
+        for OUTPUTFILE in $(ls ${INFILE}*.root); do
+            echo gfal-copy -p -f -t 4200 --verbose file://`pwd`/${OUTPUTFILE} gsiftp://gftp.t2.ucsd.edu/${OUTPUTDIR}/${OUTPUTNAME}_${IFILE}.root --checksum ADLER32
+            hostname
+            uname -a
+            date
+            whoami
+            pwd
+            echo "ls'ing hadoop"
+            ls -lh /hadoop/cms/store/user/phchang/
+            gfal-copy -p -f -t 4200 --verbose file://`pwd`/${OUTPUTFILE} gsiftp://gftp.t2.ucsd.edu/${OUTPUTDIR}/${OUTPUTNAME}_${IFILE}.root --checksum ADLER32
+        done
     fi
     if [ $? -eq 0 ]; then
         echo "Job Success"
