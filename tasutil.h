@@ -46,6 +46,7 @@
 #include "CORE/JetSelections.h"
 #include "CORE/MetSelections.h"
 #include "CORE/IsolationTools.h"
+#include "CORE/MCSelections.h"
 #include "CORE/Tools/goodrun.h"
 #include "CORE/Tools/JetCorrector.h"
 #include "CORE/Tools/jetcorr/FactorizedJetCorrector.h"
@@ -711,7 +712,7 @@ bool TasUtil::Looper<TREECLASS>::nextEvent()
         // If looping over all trees, we fail to find first event that's good,
         // return false and call it quits.
         // At this point it will exit the loop without processing any events.
-        printProgressBar();
+//        printProgressBar();
         return false;
     }
     // If tree exists, it means that we're in the middle of a loop

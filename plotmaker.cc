@@ -4,6 +4,8 @@
 #include "TH1D.h"
 #include "TH1F.h"
 #include "THStack.h"
+#include "TList.h"
+#include "TCollection.h"
 #include "TString.h"
 #include "TLegend.h"
 #include "TLegendEntry.h"
@@ -185,6 +187,7 @@ TString getOpt( TString key )
     else if ( key.EqualTo( "showOverflow"      )  ) return getDefaultOpt( key, ""                 ) ;
     else if ( key.EqualTo( "showUnderflow"     )  ) return getDefaultOpt( key, ""                 ) ;
     else if ( key.EqualTo( "printRatio"        )  ) return getDefaultOpt( key, ""                 ) ;
+    else if ( key.EqualTo( "printBkg"          )  ) return getDefaultOpt( key, ""                 ) ;
     else if ( key.EqualTo( "printTotalBkg"     )  ) return getDefaultOpt( key, ""                 ) ;
     else if ( key.EqualTo( "printData"         )  ) return getDefaultOpt( key, ""                 ) ;
     else if ( key.EqualTo( "sumDataHists"      )  ) return getDefaultOpt( key, ""                 ) ;
@@ -198,6 +201,15 @@ TString getOpt( TString key )
     else if ( key.EqualTo( "printYieldsMaxBin" )  ) return getDefaultOpt( key, ""                 ) ;
     else if ( key.EqualTo( "noData"            )  ) return getDefaultOpt( key, ""                 ) ;
     else if ( key.EqualTo( "systByDiff"        )  ) return getDefaultOpt( key, ""                 ) ;
+    else if ( key.EqualTo( "onlyLog"           )  ) return getDefaultOpt( key, ""                 ) ;
+    else if ( key.EqualTo( "onlyLin"           )  ) return getDefaultOpt( key, ""                 ) ;
+    else if ( key.EqualTo( "noSyst"            )  ) return getDefaultOpt( key, ""                 ) ;
+    else if ( key.EqualTo( "legendOnMainPad"   )  ) return getDefaultOpt( key, ""                 ) ;
+    else if ( key.EqualTo( "saveMainPad"       )  ) return getDefaultOpt( key, ""                 ) ;
+    else if ( key.EqualTo( "MaxDigits"         )  ) return getDefaultOpt( key, ""                 ) ;
+    else if ( key.EqualTo( "getMaxFromData"    )  ) return getDefaultOpt( key, ""                 ) ;
+    else if ( key.EqualTo( "publogo"           )  ) return getDefaultOpt( key, "Supplementary"    ) ;
+    else if ( key.EqualTo( "userhack0"         )  ) return getDefaultOpt( key, ""                 ) ;
 
     else
     {
@@ -279,6 +291,19 @@ void divideByBinWidth( TH1* hist )
 }
 
 //_________________________________________________________________________________________________
+TH1* cloneHist( TH1* obj )
+{
+    TH1* rtn = ( TH1* ) obj->Clone( obj->GetName() );
+    rtn->SetTitle( "" );
+
+    if ( !rtn->GetSumw2N() )
+        rtn->Sumw2();
+
+    rtn->SetDirectory( 0 );
+    return rtn;
+}
+
+//_________________________________________________________________________________________________
 TH1* histWithFullError( TH1* nominal, TH1* error )
 {
     TH1D* nominal_with_full_error = ( TH1D* ) nominal->Clone( nominal->GetName() );
@@ -295,7 +320,7 @@ TH1* histWithFullError( TH1* nominal, TH1* error )
         double nominal_hist_error = nominal->GetBinError( ibin );
         double additional_error = error ? error->GetBinContent( ibin ) : 0;
         if ( !getOpt( "systByDiff" ).IsNull() )
-            additional_error = fabs( additional_error - content );
+            additional_error = error ? fabs( additional_error - content ) : 0;
         double all_error = error ? sqrt( pow( nominal_hist_error, 2 ) + pow( additional_error, 2 ) )
                            : nominal_hist_error;
         nominal_with_full_error->SetBinContent( ibin, content );
@@ -305,6 +330,36 @@ TH1* histWithFullError( TH1* nominal, TH1* error )
     correctOverUnderflow( nominal_with_full_error );
     rebin( nominal_with_full_error );
     divideByBinWidth( nominal_with_full_error );
+    
+    return nominal_with_full_error;
+}
+
+//_________________________________________________________________________________________________
+TH1* hist2DWithFullError( TH1* nominal, TH1* error )
+{
+    TH2D* nominal_with_full_error = ( TH2D* ) nominal->Clone( nominal->GetName() );
+    nominal_with_full_error->SetTitle("");
+    
+    if ( !nominal_with_full_error->GetSumw2N() )
+        nominal_with_full_error->Sumw2();
+        
+    nominal_with_full_error->SetDirectory( 0 );
+    
+    for ( unsigned int ibin = 0; ibin <= nominal->GetNbinsX() + 1; ibin++ )
+    {
+        for ( unsigned int jbin = 0; jbin <= nominal->GetNbinsY() + 1; jbin++ )
+        {
+            double content = nominal->GetBinContent( ibin, jbin );
+            double nominal_hist_error = nominal->GetBinError( ibin, jbin );
+            double additional_error = error ? error->GetBinContent( ibin, jbin ) : 0;
+            if ( !getOpt( "systByDiff" ).IsNull() )
+                additional_error = error ? fabs( additional_error - content ) : 0;
+            double all_error = error ? sqrt( pow( nominal_hist_error, 2 ) + pow( additional_error, 2 ) )
+                : nominal_hist_error;
+            nominal_with_full_error->SetBinContent( ibin, jbin, content );
+            nominal_with_full_error->SetBinError( ibin, jbin, all_error );
+        }
+    }
     
     return nominal_with_full_error;
 }
@@ -324,6 +379,61 @@ std::vector<TH1*> histsWithFullError( Hists& hist_pairs )
         hists.push_back( histWithFullError( hist_pair ) );
     }
     return hists;
+}
+
+//_________________________________________________________________________________________________
+TH1* getSystByMaxDiff( TH1* nominal, std::vector<TH1*> systs )
+{
+    TH1D* totalsyst = ( TH1D* ) cloneHist( nominal );
+    TH1D* diff = ( TH1D* ) cloneHist( nominal );
+    diff->Reset();
+
+    for ( unsigned int isyst = 0; isyst < systs.size(); ++isyst )
+    {
+        TH1* thissyst = systs[isyst];
+        for ( int ibin = 1; ibin <= thissyst->GetNbinsX(); ++ibin )
+        {
+            double systcontent = thissyst->GetBinContent( ibin );
+            double nomicontent = nominal->GetBinContent( ibin );
+            double thisdiff = fabs( systcontent - nomicontent );
+            double currmaxdiff = diff->GetBinContent( ibin );
+            if ( currmaxdiff < thisdiff )
+            {
+                diff->SetBinContent( ibin, thisdiff );
+                totalsyst->SetBinContent( ibin, nomicontent + thisdiff );
+            }
+        }
+    }
+    return totalsyst;
+}
+
+//_________________________________________________________________________________________________
+TH1* getSyst2DByMaxDiff( TH1* nominal, std::vector<TH1*> systs )
+{
+    TH2D* totalsyst = ( TH2D* ) cloneHist( nominal );
+    TH2D* diff = ( TH2D* ) cloneHist( nominal );
+    diff->Reset();
+
+    for ( unsigned int isyst = 0; isyst < systs.size(); ++isyst )
+    {
+        TH1* thissyst = systs[isyst];
+        for ( int ibin = 1; ibin <= thissyst->GetNbinsX(); ++ibin )
+        {
+            for ( int jbin = 1; jbin <= thissyst->GetNbinsY(); ++jbin )
+            {
+                double systcontent = thissyst->GetBinContent( ibin, jbin );
+                double nomicontent = nominal->GetBinContent( ibin, jbin );
+                double thisdiff = fabs( systcontent - nomicontent );
+                double currmaxdiff = diff->GetBinContent( ibin, jbin );
+                if ( currmaxdiff < thisdiff )
+                {
+                    diff->SetBinContent( ibin, jbin, thisdiff );
+                    totalsyst->SetBinContent( ibin, jbin, nomicontent + thisdiff );
+                }
+            }
+        }
+    }
+    return totalsyst;
 }
 
 //_________________________________________________________________________________________________
@@ -378,14 +488,18 @@ THStack* getStack( std::vector<TH1*> hists )
     stack->SetTitle( "" );
 
     for ( auto& hist : hists )
+    {
         stack->Add( hist, "" );
+        if ( !getOpt( "printBkg" ).IsNull() )
+            hist->Print( "all" );
+    }
 
     //
     // Stupid ROOT THStack not reflecting maximum and minimum of pointer TH1* from "GetHistogram()" 
     // So I have to add this here instead of "stylizeAxes"
     //
     if ( !getOpt( "MaximumMultiplier" ).IsNull() )
-        stack->SetMaximum( stack->GetMaximum() * getOpt( "MaximumMultiplier" ).Atof() );
+        stack->SetMaximum( stack->GetMaximum() * getOpt( "MaximumMultiplier" ).Atof() * 1.176 );
     if ( !getOpt( "Minimum" ).IsNull() ) stack->SetMinimum( getOpt( "Minimum" ).Atof() );
     if ( !getOpt( "Maximum" ).IsNull() ) stack->SetMaximum( getOpt( "Maximum" ).Atof() );
 
@@ -599,7 +713,11 @@ std::vector<TH1*> getRatioHists( std::vector<TH1*> data_hists, TH1* bkg_hist )
 //_________________________________________________________________________________________________
 void drawLegend( std::vector<TH1*> data_hists, std::vector<TH1*> bkg_hists, std::vector<TH1*> sig_hists, TPad* pad )
 {
-    TLegend* leg = new TLegend( 0, 0, 1, 0.65, NULL, "brNDC" );
+    float xmin = getOpt( "legendOnMainPad" ).IsNull() ? 0    : 0.72;
+    float xmax = getOpt( "legendOnMainPad" ).IsNull() ? 1    : 1.0 ;
+    float ymin = getOpt( "legendOnMainPad" ).IsNull() ? 0    : 0.75;
+    float ymax = getOpt( "legendOnMainPad" ).IsNull() ? 0.65 : 0.90;
+    TLegend* leg = new TLegend( xmin, ymin, xmax, ymax, NULL, "brNDC" );
     leg->SetBorderSize( 0 );
     leg->SetLineColor( 0 );
     leg->SetLineStyle( 1 );
@@ -608,7 +726,11 @@ void drawLegend( std::vector<TH1*> data_hists, std::vector<TH1*> bkg_hists, std:
     leg->SetFillStyle( 0 );
     leg->SetMargin( 0.13 );
     leg->SetEntrySeparation( 0.065 );
+    if ( !getOpt( "legendOnMainPad" ).IsNull() )
+        leg->SetEntrySeparation( 0.033 );
     leg->SetTextSize( 0.062 * 6. / 4. );
+    if ( !getOpt( "legendOnMainPad" ).IsNull() )
+        leg->SetTextSize( 0.040 );
     
     if ( getOpt( "noData" ).IsNull() )
     {
@@ -626,21 +748,50 @@ void drawLegend( std::vector<TH1*> data_hists, std::vector<TH1*> bkg_hists, std:
     leg->SetNColumns( getOpt( "legend_NColumns" ).Atoi() );
         
     int entries = leg->GetNRows();
-    leg->SetY1( 0.65 - leg->GetEntrySeparation() * entries );
+    if ( getOpt( "legendOnMainPad" ).IsNull() )
+        leg->SetY1( 0.65 - leg->GetEntrySeparation() * entries );
+    else
+        leg->SetY1( 0.75 - leg->GetEntrySeparation() * entries );
     pad->cd();
+
+    if ( !getOpt( "userhack0" ).IsNull() )
+    {
+        TList* list = leg->GetListOfPrimitives();
+        TLegendEntry* entry = 0;
+        TIter next( list );
+        for ( Int_t i = 0; i < list->GetSize(); i++ )
+            entry = ( TLegendEntry * ) next();
+
+        ((TH1D*) entry->GetObject())->SetFillStyle( 3245 );
+        ((TH1D*) entry->GetObject())->SetFillColor( 1 );
+    }
+
     leg->Draw();
+
 }
 
 //_________________________________________________________________________________________________
 void drawLogos( TPad* pad )
 {
     pad->cd();
-    TLatex* tex = new TLatex( 0.5, 0.93, "35.9 fb^{-1} (13 TeV)" );
+    TLatex* tex = new TLatex( 0.28, 0.78, "35.9 fb^{-1} (13 TeV)" );
     tex->SetNDC();
     tex->SetTextFont( 42 );
-    tex->SetTextSize( 0.062 );
+    tex->SetTextSize( 0.049 );
     tex->SetLineWidth( 2 );
     tex->Draw();
+    TLatex* texcms = new TLatex( 0.28, 0.85, "CMS" );
+    texcms->SetNDC();
+    texcms->SetTextFont( 62 );
+    texcms->SetTextSize( 0.058 );
+    texcms->SetLineWidth( 2 );
+    texcms->Draw();
+    TLatex* texpub = new TLatex( 0.40, 0.85, getOpt( "publogo" ) );
+    texpub->SetNDC();
+    texpub->SetTextFont( 52 );
+    texpub->SetTextSize( 0.049 );
+    texpub->SetLineWidth( 2 );
+    texpub->Draw();
     pad->Modified();
 }
 
@@ -697,9 +848,9 @@ void printYields( TH1* hist, int ibinmin, int ibinmax )
     std::cout << center( hist->GetName(), 20 ) << " , ";
     for ( unsigned int ibin = ibinmin; ibin <= ibinmax; ++ibin )
     {
-        std::cout << prd( hist->GetBinContent( ibin ), 2, 9 );
+        std::cout << prd( hist->GetBinContent( ibin ), 4, 9 );
         std::cout << " +- ";
-        std::cout << prd( hist->GetBinError( ibin ), 2, 7 );
+        std::cout << prd( hist->GetBinError( ibin ), 4, 7 );
         if ( ibin < ibinmax )
             std::cout << " , ";
         else if ( ibin == ibinmax )
@@ -764,23 +915,26 @@ std::vector<TH1*> plotmaker(
     // ~-~-~-~-~-~-~-~-~-~-~
     clearGlobalSettings();
 
-    // ~-~-~-~-~-~-~-~
-    // gStyle settings
-    // ~-~-~-~-~-~-~-~
-    gStyle->SetOptStat( 0 );
-
     // ~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~
     // Parse options in to a global variable
     // ~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~
     parseOptions( options_string );
     
     // ~-~-~-~-~-~-~-~
+    // gStyle settings
+    // ~-~-~-~-~-~-~-~
+    gStyle->SetOptStat( 0 );
+    if ( !getOpt( "MaxDigits" ).IsNull() )
+        TGaxis::SetMaxDigits( getOpt( "MaxDigits" ).Atoi() );
+
+    // ~-~-~-~-~-~-~-~
     // The main canvas
     // ~-~-~-~-~-~-~-~
     // For some reason, even though I ask 800x824, it outputs 796x796 pdf or png files.
     // In x-direction 4 pixels are added
     // In y-direction 28 pixels are added
-    TCanvas* canvas = new TCanvas( "canvas", "canvas", 0, 0, 1004, 828 );
+    double canvas_width = !getOpt( "legendOnMainPad" ).IsNull() ? 604 : 1004;
+    TCanvas* canvas = new TCanvas( "canvas", "canvas", 0, 0, canvas_width, 828 );
     canvas->SetHighLightColor( 2 );
     canvas->Range( 0, 0, 1, 1 );
     canvas->SetFillColor( -1 );
@@ -793,11 +947,12 @@ std::vector<TH1*> plotmaker(
     // The main TPad
     // ~-~-~-~-~-~-~
     // The bottom main pain with 70% height in y-axis
+    double legendPadOffset = !getOpt( "legendOnMainPad" ).IsNull() ? 0 : 0.4;
     TPad* pad0 = 0;
     if ( !getOpt( "ratioPaneAtBottom" ).IsNull() )
-        pad0 = new TPad( "pad0", "pad0", 0, 0.3, 1 - 0.4, 1.0 );
+        pad0 = new TPad( "pad0", "pad0", 0, 0.3, 1 - legendPadOffset, 1.0 );
     else
-        pad0 = new TPad( "pad0", "pad0", 0, 0, 1 - 0.4, 0.7 );
+        pad0 = new TPad( "pad0", "pad0", 0, 0, 1 - legendPadOffset, 0.7 );
     pad0->Draw();
     pad0->cd();
     pad0->Range( -80, -25953.19, 320, 103812.8 );
@@ -820,7 +975,8 @@ std::vector<TH1*> plotmaker(
     // TPad for the TLegend
     canvas->cd();
     TPad* pad1 = new TPad( "pad1", "pad1", 1 - 0.40, 0, 1, 1 );
-    pad1->Draw();
+    if ( getOpt( "legendOnMainPad" ).IsNull() )
+        pad1->Draw();
     
     // ~-~-~-~-~-~-~-~
     // The Ratio TPad
@@ -828,9 +984,9 @@ std::vector<TH1*> plotmaker(
     canvas->cd();
     TPad* pad2 = 0;
     if ( !getOpt( "ratioPaneAtBottom" ).IsNull() )
-        pad2 = new TPad( "pad2", "pad2", 0, 0.125, 0.6, 0.425 );
+        pad2 = new TPad( "pad2", "pad2", 0, 0.125, 1 - legendPadOffset, 0.425 );
     else
-        pad2 = new TPad( "pad2", "pad2", 0, 0.7, 0.6, 1 );
+        pad2 = new TPad( "pad2", "pad2", 0, 0.7, 1 - legendPadOffset, 1 );
     pad2->Draw();
     pad2->cd();
     pad2->Range( -80, -0.82, 320, 1.98 );
@@ -935,7 +1091,7 @@ std::vector<TH1*> plotmaker(
     // ~-~-~-~-~-~
     // Draw legend
     // ~-~-~-~-~-~
-    drawLegend( data_hists, bkg_hists, sig_hists, pad1 );
+    drawLegend( data_hists, bkg_hists, sig_hists, !getOpt( "legendOnMainPad" ).IsNull() ? pad0 : pad1 );
     
     // ~-~-~-~-~-~-~-~-~-~-~-
     // Draw CMS/Lumi/COM logo
@@ -965,16 +1121,36 @@ std::vector<TH1*> plotmaker(
     // ~-~-~-~-~-
     // Save plots
     // ~-~-~-~-~-
-    canvas->SaveAs( getOpt( "plotOutputName" ) + "_liny.png" );
-    canvas->SaveAs( getOpt( "plotOutputName" ) + "_liny.pdf" );
-    pad0->SetLogy();
-    canvas->SaveAs( getOpt( "plotOutputName" ) + "_logy.png" );
-    canvas->SaveAs( getOpt( "plotOutputName" ) + "_logy.pdf" );
-    pad0->cd();
-    pad0->SetLogy(0);
-//    pad0->SaveAs( getOpt( "plotOutputName" ) + "_noratio.pdf" );
-    pad0->SetLogy();
-//    pad0->SaveAs( getOpt( "plotOutputName" ) + "_noratio_logy.pdf" );
+    if ( !getOpt( "onlyLin" ).IsNull() )
+    {
+        canvas->SaveAs( getOpt( "plotOutputName" ) + "_liny.png" );
+        canvas->SaveAs( getOpt( "plotOutputName" ) + "_liny.pdf" );
+    }
+    else if ( !getOpt( "onlyLog" ).IsNull() )
+    {
+        pad0->SetLogy();
+        canvas->SaveAs( getOpt( "plotOutputName" ) + "_logy.png" );
+        canvas->SaveAs( getOpt( "plotOutputName" ) + "_logy.pdf" );
+    }
+    else
+    {
+        canvas->SaveAs( getOpt( "plotOutputName" ) + "_liny.png" );
+        canvas->SaveAs( getOpt( "plotOutputName" ) + "_liny.pdf" );
+        pad0->SetLogy();
+        canvas->SaveAs( getOpt( "plotOutputName" ) + "_logy.png" );
+        canvas->SaveAs( getOpt( "plotOutputName" ) + "_logy.pdf" );
+    }
+
+    // ~-~-~-~-~-~-~-~-~-
+    // Save partial plots
+    // ~-~-~-~-~-~-~-~-~-
+    if ( !getOpt( "saveMainPad" ).IsNull() )
+    {
+        pad0->SetLogy(0);
+        pad0->SaveAs( getOpt( "plotOutputName" ) + "_main_liny.pdf" );
+        pad0->SetLogy(1);
+        pad0->SaveAs( getOpt( "plotOutputName" ) + "_main_logy.pdf" );
+    }
 
     delete canvas;
 

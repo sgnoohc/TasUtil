@@ -1249,7 +1249,7 @@ void TasUtil::CORE2016::createLeptonBranches(TTreeX* ttree, std::vector<std::pai
 //_________________________________________________________________________________________________
 void TasUtil::CORE2016::setLeptonBranches(TTreeX* ttree)
 {
-    setelectronbranches(ttree);
+    setElectronBranches(ttree);
     setMuonBranches(ttree);
 
     // Sorting leptons

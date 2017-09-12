@@ -15,6 +15,7 @@ class WWWPlotter:
 
         self.proc_groups = {}
         self.proc_groups["W"]     = [ "wj" ]
+        #self.proc_groups["W"]     = [ ]
         self.proc_groups["Z"]     = [ "dy" ]
         self.proc_groups["tt1l"]  = [ "tt1l" ]
         self.proc_groups["tt2l"]  = [ "tt2l" ]
@@ -112,6 +113,8 @@ class WWWPlotter:
         # Looping over MC sample process (e.g. W, ttbar, WZ, etc.)
         for key in self.proc_groups:
 
+#            if key != "W": continue
+
             # the total background for this category is saved (e.g. W, ttbar, WZ, etc.)
             histsum = None
 
@@ -156,6 +159,7 @@ class WWWPlotter:
 
         # For the histograms we have stylize a bit
         for key in self.proc_categs:
+#            if key != "W": continue
             if self.proc_categs[key] == "bkg"  and hists[key]:
                 hists[key].SetLineColor( self.proc_colors[key] )
                 hists[key].SetFillColor( self.proc_colors[key] )
@@ -175,8 +179,8 @@ class WWWPlotter:
                       --plotOutputName plots/%s
                       --ratio_Maximum 2
                       --ratio_Minimum 0.
-                      --showOverflow
                       --autoStack
+                      --showOverflow
                       --legend_NColumns 2
                       --MaximumMultiplier 1.2
                       %s
@@ -254,8 +258,8 @@ class WWWPlotter:
                       --plotOutputName plots/%s_bytype
                       --ratio_Maximum 2
                       --ratio_Minimum 0.
-                      --showOverflow
                       --autoStack
+                      --showOverflow
                       --legend_NColumns 1
                       %s
                       --MaximumMultiplier 1.2
@@ -267,35 +271,75 @@ if __name__ == "__main__":
     wwwplotter = WWWPlotter()
 
     wwwplotter.proc_groups["data"]  = [ "data_mm", "data_em", "data_ee" ]
-#    wwwplotter.drawbyproc( "SSSignalRegion_counter", "--printYieldsTable --Minimum 0.1 --ratio_Maximum 4" )
-    wwwplotter.drawbytype( "SSSignalRegion_counter", " --noData true --ratio_Minimum 0 --printYieldsTable true " )
+#    wwwplotter.drawbytype( "Region_counter", " --ratio_Minimum 0 --printYieldsTable true " )
+#    wwwplotter.drawbyproc( "Region_rawcounter", " --ratio_Minimum 0 --printYieldsTable true " )
+    wwwplotter.drawbyproc( "SignalRegion_counter", "--printYieldsTable --Minimum 0.1 --ratio_Maximum 4" )
+#    wwwplotter.drawbytype( "SignalRegion_counter", " --noData true --ratio_Minimum 0 --printYieldsTable true " )
 #    wwwplotter.drawbyproc( "Region_counter", "--printYieldsTable --Minimum 0.1 --ratio_Maximum 4" )
 #    wwwplotter.drawbyproc( "Region_rawcounter", "--printYieldsTable " )
 #    wwwplotter.drawbytype( "Region_counter", "--printYieldsTable " )
 #    wwwplotter.drawbytype( "Region_rawcounter", "--printYieldsTable " )
 
-    sys.exit()
-
 #    cuts = [ "SSMM_CutSSMMLep", "SSMM_CutNTwoJet", "SSMM_CutThirdLepVeto", "SSMM_CutIsoTrackVeto", "SSMM_CutBVeto", "SSMM_CutWMjj", "SSMM_CutLowMjj", "SSMM_CutLowDEtajj" ]
 #    bins = [ 20               , 20               , 20                    , 20                    , 10             , 10            , 10              , 10                  ]
 
-    cuts = [  "SSMM_CutIsoTrackVeto", "SSMM_CutBVeto" ]
-    bins = [  20                    , 20              ]
+#    cuts = [  "SSMM_CutSSMMLep", "SSEM_CutSSEMLep", "SSEE_CutSSEELep", "SSMM_CutNjet" ]
+#    bins = [  20               , 20               , 20               , 20             ]
+
+    cuts = [  "SSMM" ]
+    bins = [  20     ]
+
+    funcs = [ wwwplotter.drawbyproc, wwwplotter.drawbytype ]
 
     for cut, nbin in zip(cuts, bins):
-        wwwplotter.drawbyproc( "%s_Mll"    % cut , "--xNbin %d" % nbin )
-        wwwplotter.drawbyproc( "%s_Mll250" % cut , "--xNbin %d" % nbin )
-        wwwplotter.drawbyproc( "%s_Mll500" % cut , "--xNbin %d" % nbin )
-        wwwplotter.drawbyproc( "%s_jetb_size" % cut , "" )
-        wwwplotter.drawbyproc( "%s_jet_size" % cut , "" )
-        wwwplotter.drawbyproc( "%s_jet3l_size" % cut , "" )
-        wwwplotter.drawbyproc( "%s_jet0_csv" % cut , "--xNbin %d" % nbin )
-        wwwplotter.drawbyproc( "%s_jet1_csv" % cut , "--xNbin %d" % nbin )
-        wwwplotter.drawbyproc( "%s_lep0_iso" % cut , "--xNbin %d" % nbin )
-        wwwplotter.drawbyproc( "%s_lep1_iso" % cut , "--xNbin %d" % nbin )
-        wwwplotter.drawbyproc( "%s_lep0_ip3" % cut , "--xNbin %d" % nbin )
-        wwwplotter.drawbyproc( "%s_lep1_ip3" % cut , "--xNbin %d" % nbin )
-        wwwplotter.drawbyproc( "%s_DPhill" % cut , "--xNbin %d" % nbin )
-        wwwplotter.drawbyproc( "%s_DEtall" % cut , "--xNbin %d" % nbin )
+        for func in funcs:
+            func( "%s_met"    % cut , "--xNbin %d" % nbin )
+            func( "%s_nvtx"    % cut , "--xNbin %d" % 70 )
+            func( "%s_Mll"    % cut , "--xNbin %d" % nbin )
+            func( "%s_Mll250" % cut , "--xNbin %d" % nbin )
+            func( "%s_Mll500" % cut , "--xNbin %d" % nbin )
+            func( "%s_jetb_size" % cut , "" )
+            func( "%s_jet_size" % cut , "" )
+            func( "%s_jet3l_size" % cut , "" )
+            func( "%s_jet0_csv" % cut , "--xNbin %d" % nbin )
+            func( "%s_jet1_csv" % cut , "--xNbin %d" % nbin )
+            func( "%s_lep0_pid" % cut , "--xNbin %d" % nbin )
+            func( "%s_lep1_pid" % cut , "--xNbin %d" % nbin )
+            func( "%s_leplbnt0_pid" % cut , "--xNbin %d" % nbin )
+            func( "%s_lep0_pt" % cut , "--xNbin %d" % nbin )
+            func( "%s_lep1_pt" % cut , "--xNbin %d" % nbin )
+            func( "%s_leptight0_pt" % cut , "--xNbin %d" % nbin )
+            func( "%s_leplbnt0_pt" % cut , "--xNbin %d" % nbin )
+            func( "%s_lep0_eta" % cut , "--xNbin %d" % nbin )
+            func( "%s_lep1_eta" % cut , "--xNbin %d" % nbin )
+            func( "%s_leptight0_eta" % cut , "--xNbin %d" % nbin )
+            func( "%s_leplbnt0_eta" % cut , "--xNbin %d" % nbin )
+            func( "%s_lep0_phi" % cut , "--xNbin %d" % nbin )
+            func( "%s_lep1_phi" % cut , "--xNbin %d" % nbin )
+            func( "%s_leptight0_phi" % cut , "--xNbin %d" % nbin )
+            func( "%s_leplbnt0_phi" % cut , "--xNbin %d" % nbin )
+            func( "%s_lep0_iso" % cut , "--xNbin %d" % nbin )
+            func( "%s_lep1_iso" % cut , "--xNbin %d" % nbin )
+            func( "%s_leptight0_iso" % cut , "--xNbin %d" % nbin )
+            func( "%s_leplbnt0_iso" % cut , "--xNbin %d" % nbin )
+            func( "%s_lep0_ip3" % cut , "--xNbin %d" % 36 )
+            func( "%s_lep1_ip3" % cut , "--xNbin %d" % 36 )
+            func( "%s_leptight0_ip3" % cut , "--xNbin %d" % nbin )
+            func( "%s_leplbnt0_ip3" % cut , "--xNbin %d" % nbin )
+            func( "%s_leplbnt0_ip3_wide" % cut , "--xNbin %d" % 60 )
+            func( "%s_leplbnt0_ip3_widepp" % cut , "--xNbin %d" % 60 )
+            func( "%s_leplbnt0_ip3err" % cut , "--xNbin %d" % 60 )
+            func( "%s_leplbnt0_dxy" % cut , "--xNbin %d" % 60 )
+            func( "%s_leplbnt0_dz" % cut , "--xNbin %d" % 60 )
+            func( "%s_leptight0_ip3_wide" % cut , "--xNbin %d" % 60 )
+            func( "%s_leptight0_ip3err" % cut , "--xNbin %d" % 60 )
+            func( "%s_leptight0_dxy" % cut , "--xNbin %d" % 60 )
+            func( "%s_leptight0_dz" % cut , "--xNbin %d" % 60 )
+            func( "%s_DPhill" % cut , "--xNbin %d" % nbin )
+            func( "%s_DEtall" % cut , "--xNbin %d" % nbin )
+            func( "%s_met"    % cut , "--xNbin %d" % nbin )
+
+    import os
+    os.system( "chmod 755 plots/*pdf plots/*png" )
 
 #

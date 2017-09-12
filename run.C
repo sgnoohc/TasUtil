@@ -29,7 +29,8 @@ void run( TString scanchainname, const char* input_path, TString treename, TStri
     gROOT->ProcessLine( "TString CMSxVersion = TString(gSystem->BaseName(gSystem->DirName(chain->GetListOfFiles()->At(0)->GetTitle())));");//.ReplaceAll(\"/\",\"_\").ReplaceAll(\"-\",\"_\");" );
     gROOT->ProcessLine( "TString sample_name = TString(gSystem->BaseName(gSystem->DirName(gSystem->DirName(chain->GetListOfFiles()->At(0)->GetTitle()))));");//.ReplaceAll(\"/\",\"_\").ReplaceAll(\"-\",\"_\");" );
     gROOT->ProcessLine( "TString file_name   = TString(gSystem->BaseName(gSystem->BaseName(chain->GetListOfFiles()->At(0)->GetTitle())));");//.ReplaceAll(\"/\",\"_\").ReplaceAll(\"-\",\"_\");" );
-    gROOT->ProcessLine( "TString sample_name_based_opt_string = sample_name + \"_\" + CMSxVersion + \"_\" + file_name;");//.ReplaceAll(\"/\",\"_\").ReplaceAll(\"-\",\"_\");" );
+//    gROOT->ProcessLine( "TString sample_name_based_opt_string = sample_name + \"_\" + CMSxVersion + \"_\" + file_name;");//.ReplaceAll(\"/\",\"_\").ReplaceAll(\"-\",\"_\");" );
+    gROOT->ProcessLine( "TString sample_name_based_opt_string = input_path" );
     gROOT->ProcessLine( "std::cout << \"base_optstr = \" << sample_name_based_opt_string << std::endl;" );
     gROOT->ProcessLine( "std::cout << std::endl;" );
     gROOT->ProcessLine( "std::cout << std::endl;" );

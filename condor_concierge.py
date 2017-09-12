@@ -50,6 +50,7 @@ parser.add_argument('action', action='store', help=
     [--logdirpath, -l]
     [--taskname, -t]
     [--jobindex, -i]
+    [--force, -f]
 
     e.g. $> condor_concierge.py submit \\
             --executable exec.sh \\
@@ -66,6 +67,7 @@ parser.add_argument('action', action='store', help=
     [--logdirpath, -l]
     [--excludepattern, -x]
     [--requirepattern, -q]
+    [--force, -f]
     
     e.g. $> condor_concierge.py submit_batch \\
             --executable exec.sh \\
@@ -146,6 +148,12 @@ Job index for this task
 
 """)
 
+parser.add_argument('--force', '-f', action='store_true', default=False, dest='force', help=
+"""
+To force the submission and not check condor_logs path
+
+""")
+
 # Option 
 args = parser.parse_args()
 
@@ -162,12 +170,13 @@ if args.action == 'submit':
     if not args.package : check_argument("--package")
 
     # If no logdirpath provided check whether something already exists
-    if os.path.isdir(args.logdirpath):
-        print "condor_concierge.py: error in the `--logdirpath="+args.logdirpath+"` option."
-        print "A directory called "+args.logdirpath+" already exists. Please delete the directory before proceeding. (e.g. $> rm -r "+args.logdirpath+")"
-        print "Try 'condor_concierge.py -h' for more information."
-        print "Cowardly exiting..."
-        sys.exit(-1)
+    if not args.force:
+        if os.path.isdir(args.logdirpath):
+            print "condor_concierge.py: error in the `--logdirpath="+args.logdirpath+"` option."
+            print "A directory called "+args.logdirpath+" already exists. Please delete the directory before proceeding. (e.g. $> rm -r "+args.logdirpath+")"
+            print "Try 'condor_concierge.py -h' for more information."
+            print "Cowardly exiting..."
+            sys.exit(-1)
 
     ###########################################################################################
     # If --joblist string is empty it means, we're submitting single job
