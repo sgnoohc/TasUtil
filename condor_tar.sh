@@ -110,8 +110,6 @@ elif [ "x${LOGOINDEX}" == x2 ]; then
     echo ""
 fi
 
-tar cvzf ${PACKAGEOUTPUT} *.cc *.py *.C *.h *CORE.so *.sh *CORE/*.h CORE/Tools/dorky/dorky.h CORE/Tools/*.h CORE/Tools/*/*.h CORE/data configs/ $@
-
 INDEX=$((1 + RANDOM % 4))
 if [ "x${INDEX}" == x1 ]; then
     echo "Everything I touch is food for my hunger!"
@@ -127,4 +125,6 @@ elif [ "x${INDEX}" == x4 ]; then
     echo "Autobots, roll out!"
     echo "                        - Optimus Prime"
 fi
+
+tar cvzf ${PACKAGEOUTPUT} *.cc *.py *.C *.h *CORE.so *.sh *CORE/*.h CORE/Tools/dorky/dorky.h CORE/Tools/*.h CORE/Tools/*/*.h CORE/data configs/ $@
 

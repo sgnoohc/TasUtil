@@ -14,7 +14,7 @@ using namespace std;
 
 void ScanChain( TChain* chain, TString output_name, TString optstr, int nevents = -1 ); // the default nevents=-1 option means loop over all events.
 
-void doAnalysis( TasUtil::AutoHist& );
+void doAnalysis( TasUtil::AutoHist&, TasUtil::EventList& );
 //bool passpresel( int& idx );
 void doTmpAnalysis( TasUtil::AutoHist& hists );
 //void doSSAnalysis( TasUtil::AutoHist& hists, int cutidx );

@@ -180,7 +180,6 @@ class WWWPlotter:
                       --ratio_Maximum 2
                       --ratio_Minimum 0.
                       --autoStack
-                      --showOverflow
                       --legend_NColumns 2
                       --MaximumMultiplier 1.2
                       %s
@@ -271,14 +270,14 @@ if __name__ == "__main__":
     wwwplotter = WWWPlotter()
 
     wwwplotter.proc_groups["data"]  = [ "data_mm", "data_em", "data_ee" ]
-#    wwwplotter.drawbytype( "Region_counter", " --ratio_Minimum 0 --printYieldsTable true " )
-#    wwwplotter.drawbyproc( "Region_rawcounter", " --ratio_Minimum 0 --printYieldsTable true " )
     wwwplotter.drawbyproc( "SignalRegion_counter", "--printYieldsTable --Minimum 0.1 --ratio_Maximum 4" )
-#    wwwplotter.drawbytype( "SignalRegion_counter", " --noData true --ratio_Minimum 0 --printYieldsTable true " )
-#    wwwplotter.drawbyproc( "Region_counter", "--printYieldsTable --Minimum 0.1 --ratio_Maximum 4" )
-#    wwwplotter.drawbyproc( "Region_rawcounter", "--printYieldsTable " )
-#    wwwplotter.drawbytype( "Region_counter", "--printYieldsTable " )
-#    wwwplotter.drawbytype( "Region_rawcounter", "--printYieldsTable " )
+    wwwplotter.drawbyproc( "BTagVRSS_counter", "--printYieldsTable --Minimum 0.1 --ratio_Maximum 4" )
+    wwwplotter.drawbyproc( "BTagARSS_counter", "--printYieldsTable --Minimum 0.1 --ratio_Maximum 4" )
+    wwwplotter.drawbyproc( "SignalRegion_rawcounter", "--printYieldsTable --Minimum 0.1 --ratio_Maximum 4" )
+    wwwplotter.drawbyproc( "BTagVRSS_rawcounter", "--printYieldsTable --Minimum 0.1 --ratio_Maximum 4" )
+    wwwplotter.drawbyproc( "BTagARSS_rawcounter", "--printYieldsTable --Minimum 0.1 --ratio_Maximum 4" )
+
+    sys.exit()
 
 #    cuts = [ "SSMM_CutSSMMLep", "SSMM_CutNTwoJet", "SSMM_CutThirdLepVeto", "SSMM_CutIsoTrackVeto", "SSMM_CutBVeto", "SSMM_CutWMjj", "SSMM_CutLowMjj", "SSMM_CutLowDEtajj" ]
 #    bins = [ 20               , 20               , 20                    , 20                    , 10             , 10            , 10              , 10                  ]
@@ -287,7 +286,7 @@ if __name__ == "__main__":
 #    bins = [  20               , 20               , 20               , 20             ]
 
     cuts = [  "SSMM" ]
-    bins = [  20     ]
+    bins = [  10     ]
 
     funcs = [ wwwplotter.drawbyproc, wwwplotter.drawbytype ]
 

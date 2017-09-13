@@ -21,6 +21,9 @@ void ScanChain( TChain* chain, TString output_name, TString base_optstr, int nev
     int babyver = getBabyVersion( base_optstr );
     std::cout << "baby version = " << babyver << std::endl;
 
+    TasUtil::EventList event_list;
+    event_list.load( "list.txt" );
+
     // -~-~-~-~-~
     // Set output
     // -~-~-~-~-~
@@ -34,7 +37,7 @@ void ScanChain( TChain* chain, TString output_name, TString base_optstr, int nev
                 continue;
         }
         setObjectIndices();
-        doAnalysis( hists );
+        doAnalysis( hists, event_list );
         //doTmpAnalysis( hists );
     }
     hists.save( output_name );
@@ -62,14 +65,21 @@ void doTmpAnalysis( TasUtil::AutoHist& hists )
 }
 
 //_________________________________________________________________________________________________
-void doAnalysis( TasUtil::AutoHist& hists )
+void doAnalysis( TasUtil::AutoHist& hists, TasUtil::EventList& event_list )
 {
+    int cutidx = 0;
     if ( passSSMM() ) fillHistograms( hists, "SSMM", 0 );
     if ( passSSEM() ) fillHistograms( hists, "SSEM", 1 );
     if ( passSSEE() ) fillHistograms( hists, "SSEE", 2 );
     if ( pass3L0SFOS() ) fillHistograms( hists, "3L0SFOS", 3 );
     if ( pass3L1SFOS() ) fillHistograms( hists, "3L1SFOS", 4 );
     if ( pass3L2SFOS() ) fillHistograms( hists, "3L2SFOS", 5 );
+    if ( passBTagVRSSMM() ) fillHistograms( hists, "BTagVRSSMM",  6 );
+    if ( passBTagVRSSEM() ) fillHistograms( hists, "BTagVRSSEM",  7 );
+    if ( passBTagVRSSEE() ) fillHistograms( hists, "BTagVRSSEE",  8 );
+    if ( passBTagARSSMM() ) fillHistograms( hists, "BTagARSSMM",  9 );
+    if ( passBTagARSSEM() ) fillHistograms( hists, "BTagARSSEM", 10 );
+    if ( passBTagARSSEE() ) fillHistograms( hists, "BTagARSSEE", 11 );
 }
 
 //=================================================================================================
@@ -92,26 +102,13 @@ void fillHistograms( TasUtil::AutoHist& hists, TString prefix, int regionid )
 void fillHistogramsFull( TasUtil::AutoHist& hists, TString sample_category, TString bkg_category, TString prefix, int regionid )
 {
     TString procprefix = sample_category + "_" + bkg_category;
-    hists.fill( regionid, Form( "%s_Region_counter"   , procprefix.Data() ), weight(), 93, 0, 93 );
-    hists.fill( regionid, Form( "%s_Region_rawcounter", procprefix.Data() ),        1, 93, 0, 93 );
-    int srid = regionid;
-    if ( regionid ==  7 ) srid = 0;
-    if ( regionid == 19 ) srid = 1;
-    if ( regionid == 29 ) srid = 2;
-    if ( regionid == 90 ) srid = 3;
-    if ( regionid == 91 ) srid = 4;
-    if ( regionid == 92 ) srid = 5;
-    if ( srid >= 0 )
-    {
-        if ( srid == 0 && wwwbaby.isData() )
-        {
-            std::cout << "sc: " << sample_category << "bc: " << bkg_category << std::endl;
-            printEventID();
-        }
+    hists.fill( regionid     , Form( "%s_SignalRegion_counter"    , procprefix.Data() ) , weight() , 6  , 0 , 6 );
+    hists.fill( regionid     , Form( "%s_SignalRegion_rawcounter" , procprefix.Data() ) , 1        , 6  , 0 , 6 );
+    hists.fill( regionid - 6 , Form( "%s_BTagVRSS_counter"        , procprefix.Data() ) , weight() , 3  , 0 , 3 );
+    hists.fill( regionid - 6 , Form( "%s_BTagVRSS_rawcounter"     , procprefix.Data() ) , 1        , 3  , 0 , 3 );
+    hists.fill( regionid - 9 , Form( "%s_BTagARSS_counter"        , procprefix.Data() ) , weight() , 3  , 0 , 3 );
+    hists.fill( regionid - 9 , Form( "%s_BTagARSS_rawcounter"     , procprefix.Data() ) , 1        , 3  , 0 , 3 );
 
-        hists.fill( srid, Form( "%s_SignalRegion_counter"   , procprefix.Data() ), weight(), 6, 0, 6 );
-        hists.fill( srid, Form( "%s_SignalRegion_rawcounter", procprefix.Data() ),        1, 6, 0, 6 );
-    }
     TString fullprefix = sample_category + "_" + bkg_category + "_" + prefix + "_";
     fillLepHistograms( hists, "SignalLepton", ""      , fullprefix );
     fillLepHistograms( hists, "TightLepton" , "tight" , fullprefix );

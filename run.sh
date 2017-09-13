@@ -8,10 +8,27 @@ PACKAGE=package.tar.gz
 #echo "To check whether it's on condor universe Vanilla or Local. The following variables are used."
 #echo "If _CONDOR_SLOT is set, it's on Vanilla"
 #echo "If X509_USER_PROXY is set, it's either on Vanilla or Local."
-#echo "_CONDOR_SLOT" ${_CONDOR_SLOT}
-#echo "X509_USER_PROXY" ${X509_USER_PROXY}
+hostname
+uname -a
+date
+whoami
+pwd
+echo "ls'ing hadoop"
+ls -lh /hadoop/cms/store/user/phchang/
+echo "_CONDOR_SLOT" ${_CONDOR_SLOT}
+echo "X509_USER_PROXY" ${X509_USER_PROXY}
+echo "_CONDOR_SCRATCH_DIR"             ${_CONDOR_SCRATCH_DIR}
+echo "_CONDOR_SLOT"                    ${_CONDOR_SLOT}
+echo "CONDOR_VM"                       ${CONDOR_VM}
+echo "X509_USER_PROXY"                 ${X509_USER_PROXY}
+echo "_CONDOR_JOB_AD"                  ${_CONDOR_JOB_AD}
+echo "_CONDOR_MACHINE_AD"              ${_CONDOR_MACHINE_AD}
+echo "_CONDOR_JOB_IWD"                 ${_CONDOR_JOB_IWD}
+echo "_CONDOR_WRAPPER_ERROR_FILE"      ${_CONDOR_WRAPPER_ERROR_FILE}
+echo "CONDOR_IDS"                      ${CONDOR_IDS}
+echo "CONDOR_ID"                       ${CONDOR_ID}
 # if 
-if [ "x${X509_USER_PROXY}" == "x" ]; then
+if [ "x${_CONDOR_JOB_AD}" == "x" ]; then
     :
 else
     OUTPUTDIR=$1
@@ -98,7 +115,7 @@ INPUTTTREENAME=$3
 if [ -n "$4" ]; then NEVENTS=$4; fi
 
 # Parse the input file names differently depending on whether it's condor job or local job.
-if [ "x${X509_USER_PROXY}" == "x" ]; then
+if [ "x${_CONDOR_JOB_AD}" == "x" ]; then
     if [ -n "$5" ]; then INPUTFILENAMES=$5; fi
 else
     # If condor jobs, touch the .so files to prevent from recompiling
@@ -148,7 +165,17 @@ fi
 ###################################################################################################
 # ProjectMetis/CondorTask specific (Copying files over to hadoop)
 ###################################################################################################
-if [ "x${X509_USER_PROXY}" == "x" ]; then
+echo "==============================================================================="
+echo " Copying files to output directory"
+echo "==============================================================================="
+hostname
+uname -a
+date
+whoami
+pwd
+echo "ls'ing hadoop"
+ls -lh /hadoop/cms/store/user/phchang/
+if [ "x${_CONDOR_JOB_AD}" == "x" ]; then
     :
 else
     if [[ ${OUTPUTDIR} == *"home/users/"* ]]; then
@@ -156,21 +183,38 @@ else
         INFILE=${OUTPUTROOTNAME}
         cp ${INFILE} ${OUTPUTDIR}/${OUTPUTNAME}_${IFILE}.root
     else
-        echo 'ls -l'
-        ls -l
-        echo 'gfal-copy'
-        INFILE=${OUTPUTROOTNAME//.root/}
-        for OUTPUTFILE in $(ls ${INFILE}*.root); do
-            echo gfal-copy -p -f -t 4200 --verbose file://`pwd`/${OUTPUTFILE} gsiftp://gftp.t2.ucsd.edu/${OUTPUTDIR}/${OUTPUTNAME}_${IFILE}.root --checksum ADLER32
-            hostname
-            uname -a
-            date
-            whoami
-            pwd
-            echo "ls'ing hadoop"
-            ls -lh /hadoop/cms/store/user/phchang/
-            gfal-copy -p -f -t 4200 --verbose file://`pwd`/${OUTPUTFILE} gsiftp://gftp.t2.ucsd.edu/${OUTPUTDIR}/${OUTPUTNAME}_${IFILE}.root --checksum ADLER32
-        done
+        if [ "x${X509_USER_PROXY}" == "x" ]; then
+            echo "Copying outputs to Hadoop via cp."
+            mkdir -p ${OUTPUTDIR}
+            INFILE=${OUTPUTROOTNAME//.root/}
+            INDEX=0
+            for OUTPUTFILE in $(ls ${INFILE}*.root); do
+                if [ $INDEX -lt 1 ]; then
+                    echo "cp ${OUTPUTFILE} ${OUTPUTDIR}/${OUTPUTNAME}_${IFILE}.root"
+                    cp ${OUTPUTFILE} ${OUTPUTDIR}/${OUTPUTNAME}_${IFILE}.root
+                else
+                    echo "cp ${OUTPUTFILE} ${OUTPUTDIR}/${OUTPUTNAME}_${IFILE}_${INDEX}.root"
+                    cp ${OUTPUTFILE} ${OUTPUTDIR}/${OUTPUTNAME}_${IFILE}_${INDEX}.root
+                fi
+                INDEX=$((INDEX+1))
+            done
+        else
+            echo 'ls -l'
+            ls -l
+            echo 'gfal-copy'
+            INFILE=${OUTPUTROOTNAME//.root/}
+            INDEX=0
+            for OUTPUTFILE in $(ls ${INFILE}*.root); do
+                if [ $INDEX -lt 1 ]; then
+                    echo gfal-copy -p -f -t 4200 --verbose file://`pwd`/${OUTPUTFILE} gsiftp://gftp.t2.ucsd.edu/${OUTPUTDIR}/${OUTPUTNAME}_${IFILE}.root --checksum ADLER32
+                    gfal-copy -p -f -t 4200 --verbose file://`pwd`/${OUTPUTFILE} gsiftp://gftp.t2.ucsd.edu/${OUTPUTDIR}/${OUTPUTNAME}_${IFILE}.root --checksum ADLER32
+                else
+                    echo gfal-copy -p -f -t 4200 --verbose file://`pwd`/${OUTPUTFILE} gsiftp://gftp.t2.ucsd.edu/${OUTPUTDIR}/${OUTPUTNAME}_${IFILE}_${INDEX}.root --checksum ADLER32
+                    gfal-copy -p -f -t 4200 --verbose file://`pwd`/${OUTPUTFILE} gsiftp://gftp.t2.ucsd.edu/${OUTPUTDIR}/${OUTPUTNAME}_${IFILE}_${INDEX}.root --checksum ADLER32
+                fi
+                INDEX=$((INDEX+1))
+            done
+        fi
     fi
     if [ $? -eq 0 ]; then
         echo "Job Success"

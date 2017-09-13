@@ -10,6 +10,8 @@
 
 // C/C++
 #include <algorithm>
+#include <fstream>
+#include <iostream>
 #include <map>
 #include <string>
 #include <unordered_map>
@@ -265,7 +267,20 @@ namespace TasUtil
     }
 
     ///////////////////////////////////////////////////////////////////////////////////////////////
-    // Looper class
+    // Event List class
+    ///////////////////////////////////////////////////////////////////////////////////////////////
+    class EventList
+    {
+        public:
+        std::vector<std::vector<int>> event_list;
+        EventList(TString filename);
+        ~EventList();
+        void load(TString);
+        bool has(int, int, int);
+    };
+
+    ///////////////////////////////////////////////////////////////////////////////////////////////
+    // TTreeX class
     ///////////////////////////////////////////////////////////////////////////////////////////////
     // NOTE: This class assumes accessing TTree in the SNT style which uses the following,
     // https://github.com/cmstas/Software/blob/master/makeCMS3ClassFiles/makeCMS3ClassFiles.C
