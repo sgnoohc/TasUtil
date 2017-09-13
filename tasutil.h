@@ -968,7 +968,7 @@ void TasUtil::Looper<TREECLASS>::saveSkim()
 {
     double frac_skimmed = (double) nEventsSkimmed / (double) nEventsProcessed * 100;
     TasUtil::print(Form("Skimmed events %d out of %d. [%f%%]", nEventsSkimmed, nEventsProcessed, frac_skimmed));
-//    skimfile->cd();
+    skimtree->GetCurrentFile()->cd();
     skimtree->Write();
 //    skimfile->Close();
 }

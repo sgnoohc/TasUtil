@@ -58,7 +58,7 @@ if __name__ == "__main__":
                 sample = DirectorySample(
                     dataset="/WWW_v0_1_%s"%(baby_version),
                     #location="/nfs-7/userdata/bhashemi/WWW_babies/WWW_v0.1.%s/skim/"%baby_version,
-                    location="/home/users/phchang/public_html/tasutil/babies/www",
+                    location="/home/users/phchang/public_html/tasutil/babies/www/skim/WWW_v0.1.11_v2",
                     globber="*v0.1.%s*.root"%baby_version
                     ),
                 open_dataset = False,

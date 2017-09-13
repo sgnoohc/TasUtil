@@ -2,35 +2,36 @@
 
 PACKAGE=package.tar.gz
 
+
 ###################################################################################################
 # ProjectMetis/CondorTask specific (Setting up some common environment)
 ###################################################################################################
 #echo "To check whether it's on condor universe Vanilla or Local. The following variables are used."
 #echo "If _CONDOR_SLOT is set, it's on Vanilla"
 #echo "If X509_USER_PROXY is set, it's either on Vanilla or Local."
-hostname
-uname -a
-date
-whoami
-pwd
-echo "ls'ing hadoop"
-ls -lh /hadoop/cms/store/user/phchang/
-echo "_CONDOR_SLOT" ${_CONDOR_SLOT}
-echo "X509_USER_PROXY" ${X509_USER_PROXY}
-echo "_CONDOR_SCRATCH_DIR"             ${_CONDOR_SCRATCH_DIR}
-echo "_CONDOR_SLOT"                    ${_CONDOR_SLOT}
-echo "CONDOR_VM"                       ${CONDOR_VM}
-echo "X509_USER_PROXY"                 ${X509_USER_PROXY}
-echo "_CONDOR_JOB_AD"                  ${_CONDOR_JOB_AD}
-echo "_CONDOR_MACHINE_AD"              ${_CONDOR_MACHINE_AD}
-echo "_CONDOR_JOB_IWD"                 ${_CONDOR_JOB_IWD}
-echo "_CONDOR_WRAPPER_ERROR_FILE"      ${_CONDOR_WRAPPER_ERROR_FILE}
-echo "CONDOR_IDS"                      ${CONDOR_IDS}
-echo "CONDOR_ID"                       ${CONDOR_ID}
 # if 
 if [ "x${_CONDOR_JOB_AD}" == "x" ]; then
     :
 else
+    hostname
+    uname -a
+    date
+    whoami
+    pwd
+    echo "ls'ing hadoop"
+    ls -lh /hadoop/cms/store/user/phchang/
+    echo "_CONDOR_SLOT" ${_CONDOR_SLOT}
+    echo "X509_USER_PROXY" ${X509_USER_PROXY}
+    echo "_CONDOR_SCRATCH_DIR"             ${_CONDOR_SCRATCH_DIR}
+    echo "_CONDOR_SLOT"                    ${_CONDOR_SLOT}
+    echo "CONDOR_VM"                       ${CONDOR_VM}
+    echo "X509_USER_PROXY"                 ${X509_USER_PROXY}
+    echo "_CONDOR_JOB_AD"                  ${_CONDOR_JOB_AD}
+    echo "_CONDOR_MACHINE_AD"              ${_CONDOR_MACHINE_AD}
+    echo "_CONDOR_JOB_IWD"                 ${_CONDOR_JOB_IWD}
+    echo "_CONDOR_WRAPPER_ERROR_FILE"      ${_CONDOR_WRAPPER_ERROR_FILE}
+    echo "CONDOR_IDS"                      ${CONDOR_IDS}
+    echo "CONDOR_ID"                       ${CONDOR_ID}
     OUTPUTDIR=$1
     OUTPUTNAME=$2
     INPUTFILENAMES=$3
@@ -67,8 +68,6 @@ else
 fi
 ###################################################################################################
 
-
-
 #------------=================-----------------===============---------------==============--------
 # Begin execution
 #------------=================-----------------===============---------------==============--------
@@ -96,9 +95,6 @@ while getopts ":gpch" OPTION; do
   esac
 done
 
-# Setup the same root I want
-source ./root.sh "" &> /dev/null
-
 # to shift away the parsed options
 shift $(($OPTIND - 1))
 
@@ -121,6 +117,9 @@ else
     # If condor jobs, touch the .so files to prevent from recompiling
     touch *.so
 fi
+
+# Setup the same root I want
+source ./root.sh "" &> /dev/null
 
 # echo current settings
 echo "==============================================================================="
@@ -165,19 +164,19 @@ fi
 ###################################################################################################
 # ProjectMetis/CondorTask specific (Copying files over to hadoop)
 ###################################################################################################
-echo "==============================================================================="
-echo " Copying files to output directory"
-echo "==============================================================================="
-hostname
-uname -a
-date
-whoami
-pwd
-echo "ls'ing hadoop"
-ls -lh /hadoop/cms/store/user/phchang/
 if [ "x${_CONDOR_JOB_AD}" == "x" ]; then
     :
 else
+    echo "==============================================================================="
+    echo " Copying files to output directory"
+    echo "==============================================================================="
+    hostname
+    uname -a
+    date
+    whoami
+    pwd
+    echo "ls'ing hadoop"
+    ls -lh /hadoop/cms/store/user/phchang/
     if [[ ${OUTPUTDIR} == *"home/users/"* ]]; then
         mkdir -p ${OUTPUTDIR}
         INFILE=${OUTPUTROOTNAME}
