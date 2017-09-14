@@ -87,6 +87,7 @@ void doAnalysis( TasUtil::AutoHist& hists, TasUtil::EventList& event_list )
         std::cout << wwwbaby.evt() << " ";
         std::cout << wwwbaby.run() << " ";
         std::cout << wwwbaby.lumi() << " ";
+        std::cout << wwwbaby.evt_dataset()[0].Data();
         std::cout << std::endl;
     }
 

@@ -269,7 +269,7 @@ if __name__ == "__main__":
 
     wwwplotter = WWWPlotter()
 
-    wwwplotter.proc_groups["data"]  = [ "data_mm", "data_em", "data_ee" ]
+    wwwplotter.proc_groups["data"]  = [ "data_mm", "data_em", "data_ee", "data_other" ]
     wwwplotter.drawbyproc( "SignalRegion_counter", "--printYieldsTable --Minimum 0.1 --ratio_Maximum 4" )
     wwwplotter.drawbyproc( "BTagVRSS_counter", "--printYieldsTable --Minimum 0.1 --ratio_Maximum 4" )
     wwwplotter.drawbyproc( "BTagARSS_counter", "--printYieldsTable --Minimum 0.1 --ratio_Maximum 4" )
