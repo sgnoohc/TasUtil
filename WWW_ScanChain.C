@@ -70,15 +70,25 @@ void doAnalysis( TasUtil::AutoHist& hists, TasUtil::EventList& event_list )
     if ( passSSMM() ) fillHistograms( hists, "SSMM", 0 );
     if ( passSSEM() ) fillHistograms( hists, "SSEM", 1 );
     if ( passSSEE() ) fillHistograms( hists, "SSEE", 2 );
-//    if ( pass3L0SFOS() ) fillHistograms( hists, "3L0SFOS", 3 );
-//    if ( pass3L1SFOS() ) fillHistograms( hists, "3L1SFOS", 4 );
-//    if ( pass3L2SFOS() ) fillHistograms( hists, "3L2SFOS", 5 );
+    if ( pass3L0SFOS() ) fillHistograms( hists, "3L0SFOS", 3 );
+    if ( pass3L1SFOS() ) fillHistograms( hists, "3L1SFOS", 4 );
+    if ( pass3L2SFOS() ) fillHistograms( hists, "3L2SFOS", 5 );
     if ( passBTagVRSSMM() ) fillHistograms( hists, "BTagVRSSMM",  6 );
     if ( passBTagVRSSEM() ) fillHistograms( hists, "BTagVRSSEM",  7 );
     if ( passBTagVRSSEE() ) fillHistograms( hists, "BTagVRSSEE",  8 );
     if ( passBTagARSSMM() ) fillHistograms( hists, "BTagARSSMM",  9 );
     if ( passBTagARSSEM() ) fillHistograms( hists, "BTagARSSEM", 10 );
     if ( passBTagARSSEE() ) fillHistograms( hists, "BTagARSSEE", 11 );
+
+    if ( event_list.has( wwwbaby.event(), wwwbaby.run(), wwwbaby.lumi() ) )
+    {
+        passBTagVRSSMM( -1, cutidx );
+        std::cout << "passBTagVRSSMM ";
+        std::cout << wwwbaby.event() << " ";
+        std::cout << wwwbaby.run() << " ";
+        std::cout << wwwbaby.lumi() << " ";
+        std::cout << cutidx << std::endl;
+    }
 }
 
 //=================================================================================================
