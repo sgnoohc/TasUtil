@@ -25,7 +25,7 @@ try:
     os.chdir( "WWW_CORE" )
     wwwcoregittag = subprocess.check_output( "git log --pretty=format:'%h' -n 1", shell=True )
     os.chdir( ".." )
-    job_tag = "tasutil%s_wwwcore%s"%( tasutilgittag, wwwcoregittag )
+    job_tag = "tasutil_%s_wwwcore_%s"%( tasutilgittag, wwwcoregittag )
     # parse the executable path argument
     baby_version = default_babyver
     exec_path = "run.sh"

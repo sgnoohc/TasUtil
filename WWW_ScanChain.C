@@ -21,7 +21,7 @@ void ScanChain( TChain* chain, TString output_name, TString base_optstr, int nev
     int babyver = getBabyVersion( base_optstr );
     std::cout << "baby version = " << babyver << std::endl;
 
-    TasUtil::EventList event_list( "list.txt" );
+    TasUtil::EventList event_list( "bobaklist.txt" );
 
     // -~-~-~-~-~
     // Set output
@@ -80,15 +80,35 @@ void doAnalysis( TasUtil::AutoHist& hists, TasUtil::EventList& event_list )
     if ( passBTagARSSEM() ) fillHistograms( hists, "BTagARSSEM", 10 );
     if ( passBTagARSSEE() ) fillHistograms( hists, "BTagARSSEE", 11 );
 
-    if ( wwwbaby.isData() && passBTagVRSSMM() )
+    if ( wwwbaby.isData() )
     {
-        std::cout << std::endl;
-        std::cout << "mypassedBTagVRSSMM ";
-        std::cout << wwwbaby.evt() << " ";
-        std::cout << wwwbaby.run() << " ";
-        std::cout << wwwbaby.lumi() << " ";
-        std::cout << wwwbaby.evt_dataset()[0].Data();
-        std::cout << std::endl;
+        if ( passBTagVRSSMM() )
+        {
+            std::cout << std::endl;
+            std::cout << "mypassedBTagVRSSMM ";
+            std::cout << wwwbaby.evt() << " ";
+            std::cout << wwwbaby.run() << " ";
+            std::cout << wwwbaby.lumi() << " ";
+            std::cout << std::endl;
+        }
+        if ( passBTagVRSSEM() )
+        {
+            std::cout << std::endl;
+            std::cout << "mypassedBTagVRSSEM ";
+            std::cout << wwwbaby.evt() << " ";
+            std::cout << wwwbaby.run() << " ";
+            std::cout << wwwbaby.lumi() << " ";
+            std::cout << std::endl;
+        }
+        if ( passBTagVRSSEE() )
+        {
+            std::cout << std::endl;
+            std::cout << "mypassedBTagVRSSEE ";
+            std::cout << wwwbaby.evt() << " ";
+            std::cout << wwwbaby.run() << " ";
+            std::cout << wwwbaby.lumi() << " ";
+            std::cout << std::endl;
+        }
     }
 
     if ( event_list.has( wwwbaby.evt(), wwwbaby.run(), wwwbaby.lumi() ) )
