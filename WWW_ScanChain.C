@@ -80,6 +80,16 @@ void doAnalysis( TasUtil::AutoHist& hists, TasUtil::EventList& event_list )
     if ( passBTagARSSEM() ) fillHistograms( hists, "BTagARSSEM", 10 );
     if ( passBTagARSSEE() ) fillHistograms( hists, "BTagARSSEE", 11 );
 
+    if ( wwwbaby.isData() && passBTagVRSSMM() )
+    {
+        std::cout << std::endl;
+        std::cout << "mypassedBTagVRSSMM ";
+        std::cout << wwwbaby.evt() << " ";
+        std::cout << wwwbaby.run() << " ";
+        std::cout << wwwbaby.lumi() << " ";
+        std::cout << std::endl;
+    }
+
     if ( event_list.has( wwwbaby.evt(), wwwbaby.run(), wwwbaby.lumi() ) )
     {
 
