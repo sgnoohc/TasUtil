@@ -21,8 +21,7 @@ void ScanChain( TChain* chain, TString output_name, TString base_optstr, int nev
     int babyver = getBabyVersion( base_optstr );
     std::cout << "baby version = " << babyver << std::endl;
 
-    TasUtil::EventList event_list;
-    event_list.load( "list.txt" );
+    TasUtil::EventList event_list( "list.txt" );
 
     // -~-~-~-~-~
     // Set output
@@ -71,9 +70,9 @@ void doAnalysis( TasUtil::AutoHist& hists, TasUtil::EventList& event_list )
     if ( passSSMM() ) fillHistograms( hists, "SSMM", 0 );
     if ( passSSEM() ) fillHistograms( hists, "SSEM", 1 );
     if ( passSSEE() ) fillHistograms( hists, "SSEE", 2 );
-    if ( pass3L0SFOS() ) fillHistograms( hists, "3L0SFOS", 3 );
-    if ( pass3L1SFOS() ) fillHistograms( hists, "3L1SFOS", 4 );
-    if ( pass3L2SFOS() ) fillHistograms( hists, "3L2SFOS", 5 );
+//    if ( pass3L0SFOS() ) fillHistograms( hists, "3L0SFOS", 3 );
+//    if ( pass3L1SFOS() ) fillHistograms( hists, "3L1SFOS", 4 );
+//    if ( pass3L2SFOS() ) fillHistograms( hists, "3L2SFOS", 5 );
     if ( passBTagVRSSMM() ) fillHistograms( hists, "BTagVRSSMM",  6 );
     if ( passBTagVRSSEM() ) fillHistograms( hists, "BTagVRSSEM",  7 );
     if ( passBTagVRSSEE() ) fillHistograms( hists, "BTagVRSSEE",  8 );

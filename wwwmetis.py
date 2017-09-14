@@ -9,20 +9,25 @@ from metis.StatsParser import StatsParser
 import sys
 import os
 import glob
+import subprocess
 
 default_babyver = "11" # this is str
 
-def usage(errormsg):
-    print "usage: python %s JOBTAG [BABYVERSION=%s]"%(os.path.basename(sys.argv[0]), default_babyver)
+def usage( errormsg ):
+    print "usage: python %s"%( os.path.basename( sys.argv[0] ) )
     print errormsg
     sys.exit()
 
 # Parsing arguments
 try:
+    # Get git versions
+    tasutilgittag = subprocess.check_output( "git log --pretty=format:'%h' -n 1", shell=True )
+    os.chdir( "WWW_CORE" )
+    wwwcoregittag = subprocess.check_output( "git log --pretty=format:'%h' -n 1", shell=True )
+    os.chdir( ".." )
+    job_tag = "tasutil%s_wwwcore%s"%( tasutilgittag, wwwcoregittag )
     # parse the executable path argument
-    job_tag = sys.argv[1]
-    if len( sys.argv ) == 2:
-        baby_version = default_babyver
+    baby_version = default_babyver
     exec_path = "run.sh"
     tar_path = "package.tar.gz"
     hadoop_path = "test/wwwlooper/%s"%job_tag
@@ -59,7 +64,7 @@ if __name__ == "__main__":
                     dataset="/WWW_v0_1_%s"%(baby_version),
                     #location="/nfs-7/userdata/bhashemi/WWW_babies/WWW_v0.1.%s/skim/"%baby_version,
                     location="/home/users/phchang/public_html/tasutil/babies/www/skim/WWW_v0.1.11_v2",
-                    globber="*v0.1.%s*.root"%baby_version
+                    globber="*.root"
                     ),
                 open_dataset = False,
                 flush = True,
@@ -71,8 +76,8 @@ if __name__ == "__main__":
                 executable = exec_path,
                 tarfile = tar_path,
                 special_dir = hadoop_path,
-                condor_submit_params = {"universe" : "local"}
-                #condor_submit_params = {"sites" : "UAF"}
+                #condor_submit_params = {"universe" : "local"}
+                condor_submit_params = {"sites" : "UAF"}
                 )
 
         task.process()
