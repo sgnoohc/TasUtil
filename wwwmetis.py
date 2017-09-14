@@ -36,6 +36,8 @@ try:
 except:
     usage("error: check your arguments.")
 
+os.system( "sh condor_tar.sh -f" )
+
 def parseSampleList(pathtolist):
     samplelist = {}
     dsname = ""
