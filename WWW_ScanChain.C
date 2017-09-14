@@ -80,11 +80,26 @@ void doAnalysis( TasUtil::AutoHist& hists, TasUtil::EventList& event_list )
     if ( passBTagARSSEM() ) fillHistograms( hists, "BTagARSSEM", 10 );
     if ( passBTagARSSEE() ) fillHistograms( hists, "BTagARSSEE", 11 );
 
-    if ( event_list.has( wwwbaby.event(), wwwbaby.run(), wwwbaby.lumi() ) )
+    if ( event_list.has( wwwbaby.evt(), wwwbaby.run(), wwwbaby.lumi() ) )
     {
         passBTagVRSSMM( -1, cutidx );
+        std::cout << std::endl;
         std::cout << "passBTagVRSSMM ";
-        std::cout << wwwbaby.event() << " ";
+        std::cout << wwwbaby.evt() << " ";
+        std::cout << wwwbaby.run() << " ";
+        std::cout << wwwbaby.lumi() << " ";
+        std::cout << cutidx << std::endl;
+        passBTagVRSSEM( -1, cutidx );
+        std::cout << std::endl;
+        std::cout << "passBTagVRSSEM ";
+        std::cout << wwwbaby.evt() << " ";
+        std::cout << wwwbaby.run() << " ";
+        std::cout << wwwbaby.lumi() << " ";
+        std::cout << cutidx << std::endl;
+        passBTagVRSSEE( -1, cutidx );
+        std::cout << std::endl;
+        std::cout << "passBTagVRSSEE ";
+        std::cout << wwwbaby.evt() << " ";
         std::cout << wwwbaby.run() << " ";
         std::cout << wwwbaby.lumi() << " ";
         std::cout << cutidx << std::endl;
@@ -119,14 +134,15 @@ void fillHistogramsFull( TasUtil::AutoHist& hists, TString sample_category, TStr
     hists.fill( regionid - 9 , Form( "%s_BTagARSS_rawcounter"     , procprefix.Data() ) , 1        , 3  , 0 , 3 );
 
     TString fullprefix = sample_category + "_" + bkg_category + "_" + prefix + "_";
-    fillLepHistograms( hists, "SignalLepton", ""      , fullprefix );
-    fillLepHistograms( hists, "TightLepton" , "tight" , fullprefix );
-    fillLepHistograms( hists, "LooseLepton" , "loose" , fullprefix );
-    fillLepHistograms( hists, "LbntLepton"  , "lbnt"  , fullprefix );
-    fillJetHistograms( hists, "GoodSSJet"   , ""      , fullprefix );
-    fillJetHistograms( hists, "LooseBJet"   , "b"     , fullprefix );
-    fillJetHistograms( hists, "Good3LJet"   , "3l"    , fullprefix );
-    fillJetHistograms( hists, "GoodSSWJet"  , "wtag"  , fullprefix );
+    fillLepHistograms( hists, "SignalLepton" , ""      , fullprefix );
+    fillLepHistograms( hists, "3LTightLepton", ""      , fullprefix );
+    fillLepHistograms( hists, "TightLepton"  , "tight" , fullprefix );
+    fillLepHistograms( hists, "LooseLepton"  , "loose" , fullprefix );
+    fillLepHistograms( hists, "LbntLepton"   , "lbnt"  , fullprefix );
+    fillJetHistograms( hists, "GoodSSJet"    , ""      , fullprefix );
+    fillJetHistograms( hists, "LooseBJet"    , "b"     , fullprefix );
+    fillJetHistograms( hists, "Good3LJet"    , "3l"    , fullprefix );
+    fillJetHistograms( hists, "GoodSSWJet"   , "wtag"  , fullprefix );
     fillWWWHistograms( hists, fullprefix );
 }
 
@@ -188,7 +204,7 @@ void fillWWWHistograms( TasUtil::AutoHist& hists, TString prefix )
     hists.fill( wwwbaby.nisoTrack_mt2_cleaned_VVV_cutbased_veto() , Form( "%snisotrack"  , prefix.Data() ) , weight() , 5   , 0  , 5      );
     hists.fill( wwwbaby.nlep_VVV_cutbased_veto()                  , Form( "%snvetolep"   , prefix.Data() ) , weight() , 5   , 0  , 5      );
     hists.fill( wwwbaby.nVert()                                   , Form( "%snvtx"       , prefix.Data() ) , weight() , 70  , 0  , 70.    );
-    if ( lepidx["SignalLepton"].size() == 3 )
+    if ( lepidx["3LTightLepton"].size() == 3 )
     {
         hists.fill( Pt3l()           , Form( "%sPt3l"         , prefix.Data() ) , weight() , 180 , 0. , 180.   );
         hists.fill( DPhi3lMET()      , Form( "%sDPhi3lMET"    , prefix.Data() ) , weight() , 180 , 0. , 3.1416 );
