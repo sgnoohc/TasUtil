@@ -82,6 +82,7 @@ void doAnalysis( TasUtil::AutoHist& hists, TasUtil::EventList& event_list )
 
     if ( event_list.has( wwwbaby.evt(), wwwbaby.run(), wwwbaby.lumi() ) )
     {
+
         passBTagVRSSMM( -1, cutidx );
         if ( cutidx != 2 && cutidx != 14 )
         {
