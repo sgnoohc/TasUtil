@@ -126,5 +126,5 @@ elif [ "x${INDEX}" == x4 ]; then
     echo "                        - Optimus Prime"
 fi
 
-tar cvzf ${PACKAGEOUTPUT} *.cc *.py *.C *.h *CORE.so *.sh *CORE/*.h CORE/Tools/dorky/dorky.h CORE/Tools/*.h CORE/Tools/*/*.h CORE/data configs/ $@
+tar cvzf ${PACKAGEOUTPUT} list.txt *.cc *.py *.C *.h *CORE.so *.sh *CORE/*.h CORE/Tools/dorky/dorky.h CORE/Tools/*.h CORE/Tools/*/*.h CORE/data configs/ $@
 

@@ -860,7 +860,9 @@ void TasUtil::EventList::load(TString filename)
     int evt, run, lumi;
     while (std::getline(ifile, line)) 
     {
-        ifile >> evt >> run >> lumi;
+        std::stringstream ss(line);
+        ss >> evt >> run >> lumi;
+        std::cout << evt << ":" << run << ":" << lumi << ":" << std::endl;
         std::vector<int> evtid;
         evtid.push_back(evt);
         evtid.push_back(run);

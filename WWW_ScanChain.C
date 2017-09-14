@@ -83,26 +83,35 @@ void doAnalysis( TasUtil::AutoHist& hists, TasUtil::EventList& event_list )
     if ( event_list.has( wwwbaby.evt(), wwwbaby.run(), wwwbaby.lumi() ) )
     {
         passBTagVRSSMM( -1, cutidx );
-        std::cout << std::endl;
-        std::cout << "passBTagVRSSMM ";
-        std::cout << wwwbaby.evt() << " ";
-        std::cout << wwwbaby.run() << " ";
-        std::cout << wwwbaby.lumi() << " ";
-        std::cout << cutidx << std::endl;
+        if ( cutidx != 2 && cutidx != 14 )
+        {
+            std::cout << std::endl;
+            std::cout << "passBTagVRSSMM ";
+            std::cout << wwwbaby.evt() << " ";
+            std::cout << wwwbaby.run() << " ";
+            std::cout << wwwbaby.lumi() << " ";
+            std::cout << cutidx << std::endl;
+        }
         passBTagVRSSEM( -1, cutidx );
-        std::cout << std::endl;
-        std::cout << "passBTagVRSSEM ";
-        std::cout << wwwbaby.evt() << " ";
-        std::cout << wwwbaby.run() << " ";
-        std::cout << wwwbaby.lumi() << " ";
-        std::cout << cutidx << std::endl;
+        if ( cutidx != 2 && cutidx != 16 )
+        {
+            std::cout << std::endl;
+            std::cout << "passBTagVRSSEM ";
+            std::cout << wwwbaby.evt() << " ";
+            std::cout << wwwbaby.run() << " ";
+            std::cout << wwwbaby.lumi() << " ";
+            std::cout << cutidx << std::endl;
+        }
         passBTagVRSSEE( -1, cutidx );
-        std::cout << std::endl;
-        std::cout << "passBTagVRSSEE ";
-        std::cout << wwwbaby.evt() << " ";
-        std::cout << wwwbaby.run() << " ";
-        std::cout << wwwbaby.lumi() << " ";
-        std::cout << cutidx << std::endl;
+        if ( cutidx != 2 && cutidx != 16 )
+        {
+            std::cout << std::endl;
+            std::cout << "passBTagVRSSEE ";
+            std::cout << wwwbaby.evt() << " ";
+            std::cout << wwwbaby.run() << " ";
+            std::cout << wwwbaby.lumi() << " ";
+            std::cout << cutidx << std::endl;
+        }
     }
 }
 
