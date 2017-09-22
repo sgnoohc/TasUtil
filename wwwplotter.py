@@ -6,278 +6,452 @@ import plotmaker
 import ROOT as r
 from array import *
 import glob
+from multiprocessing import Pool as ThreadPool 
+
+histtype = "TH2*"
 
 jobtag = "TEST-v1"
 
-class WWWPlotter:
+proc_groups = {}
+proc_groups["W"]        = [ "wj", "wg" ]
+proc_groups["Z"]        = [ "dy", "zg" ]
+proc_groups["tt1l"]     = [ "tt1l" ]
+proc_groups["tt2l"]     = [ "tt2l" ]
+proc_groups["WW"]       = [ "ww", "wwdpi", "vbsww" ]
+proc_groups["WZ"]       = [ "wz" ]
+proc_groups["ZZ"]       = [ "zz" ]
+proc_groups["tX"]       = [ "singletop" ]
+proc_groups["ttX"]      = [ "ttz", "ttw", "tth", "ttg" ]
+proc_groups["VVV"]      = [ "wwz_incl", "wzz_incl", "zzz_incl"]#, "wwg_incl", "wzg_incl" ]
+proc_groups["VH"]       = [ "vh" ]
+proc_groups["Fake"]     = [ "fakepred" ]
+proc_groups["WH"]       = [ "whwww" ]
+proc_groups["WWW"]      = [ "www" ]
+proc_groups["Data"]     = [ "data_mm", "data_em", "data_ee", "data_other" ]
 
-    def __init__( self ):
+proc_colors = {}
+proc_colors["W"]        = 2006
+proc_colors["Z"]        = 2010
+proc_colors["tt1l"]     = 2005
+proc_colors["tt2l"]     = 2008
+proc_colors["WW"]       = 2007
+proc_colors["WZ"]       = 2003
+proc_colors["ZZ"]       = 2011
+proc_colors["tX"]       = 2009
+proc_colors["ttX"]      = 2004
+proc_colors["VVV"]      = 616
+proc_colors["VH"]       = 2002
+proc_colors["Fake"]     = 2005
+proc_colors["WH"]       = 4
+proc_colors["WWW"]      = 2
+proc_colors["Data"]     = 1
 
-        self.proc_groups = {}
-        self.proc_groups["W"]     = [ "wj" ]
-        #self.proc_groups["W"]     = [ ]
-        self.proc_groups["Z"]     = [ "dy" ]
-        self.proc_groups["tt1l"]  = [ "tt1l" ]
-        self.proc_groups["tt2l"]  = [ "tt2l" ]
-        self.proc_groups["WW"]    = [ "ww", "wwdpi", "vbsww" ]
-        self.proc_groups["WZ"]    = [ "wz" ]
-        self.proc_groups["ZZ"]    = [ "zz" ]
-        self.proc_groups["tX"]    = [ "singletop" ]
-        self.proc_groups["ttX"]   = [ "ttz", "ttw", "tth", "ttg" ]
-        self.proc_groups["VVV"]   = [ "wwz_incl", "wzz_incl", "zzz_incl"]#, "wwg_incl", "wzg_incl" ]
-        self.proc_groups["vh"]    = [ "vh" ]
-        self.proc_groups["whwww"] = [ "whwww" ]
-        self.proc_groups["www"]   = [ "www" ]
-        self.proc_groups["data"]  = [ "data_mm", "data_em", "data_ee" ]
+proc_categs = {}
+proc_categs["W"]        = "bkg"
+proc_categs["Z"]        = "bkg"
+proc_categs["tt1l"]     = "bkg"
+proc_categs["tt2l"]     = "bkg"
+proc_categs["WW"]       = "bkg"
+proc_categs["WZ"]       = "bkg"
+proc_categs["ZZ"]       = "bkg"
+proc_categs["tX"]       = "bkg"
+proc_categs["ttX"]      = "bkg"
+proc_categs["Fake"]     = "bkg"
+proc_categs["VVV"]      = "bkg"
+proc_categs["VH"]       = "bkg"
+proc_categs["WH"]       = "sig"
+proc_categs["WWW"]      = "sig"
+proc_categs["Data"]     = "data"
 
-        self.proc_colors = {}
-        self.proc_colors["W"]     = 2006
-        self.proc_colors["Z"]     = 2010
-        self.proc_colors["tt1l"]  = 2005
-        self.proc_colors["tt2l"]  = 2008
-        self.proc_colors["WW"]    = 2007
-        self.proc_colors["WZ"]    = 2003
-        self.proc_colors["ZZ"]    = 2011
-        self.proc_colors["tX"]    = 2009
-        self.proc_colors["ttX"]   = 2004
-        self.proc_colors["VVV"]   = 616
-        self.proc_colors["vh"]    = 2002
-        self.proc_colors["whwww"] = 4
-        self.proc_colors["www"]   = 2
-        self.proc_colors["data"]  = 1
+bkg_groups = {}
+bkg_groups["Prompt"]             = [ "trueSS" ]
+bkg_groups["Q-flip"]             = [ "chargeflips" ]
+bkg_groups["Lost-lep"]           = [ "SSLL" ]
+bkg_groups["#gamma#rightarrowl"] = [ "photonfakes", "photondoublefakes", "photontriplefakes", "fakesphotonfakes", "otherphotonfakes" ]
+bkg_groups["Fake"]               = [ "fakes", "doublefakes", "fakepred" ]
+bkg_groups["Others"]             = [ "others" ]
+bkg_groups["Data"]               = [ "data_mm", "data_em", "data_ee", "data_other" ]
+bkg_groups["WWW"]                = [ "www" ]
+bkg_groups["WH"]                 = [ "whwww" ]
 
-        self.proc_categs = {}
-        self.proc_categs["W"]     = "bkg"
-        self.proc_categs["Z"]     = "bkg"
-        self.proc_categs["tt1l"]  = "bkg"
-        self.proc_categs["tt2l"]  = "bkg"
-        self.proc_categs["WW"]    = "bkg"
-        self.proc_categs["WZ"]    = "bkg"
-        self.proc_categs["ZZ"]    = "bkg"
-        self.proc_categs["tX"]    = "bkg"
-        self.proc_categs["ttX"]   = "bkg"
-        self.proc_categs["VVV"]   = "bkg"
-        self.proc_categs["vh"]    = "bkg"
-        self.proc_categs["whwww"] = "sig"
-        self.proc_categs["www"]   = "sig"
-        self.proc_categs["data"]  = "data"
+bkg_colors = {}
+bkg_colors["Prompt"]             = 2001
+bkg_colors["Q-flip"]             = 2007
+bkg_colors["Lost-lep"]           = 2003
+bkg_colors["#gamma#rightarrowl"] = 2011
+bkg_colors["Fake"]               = 2005
+bkg_colors["Others"]             = 616
+bkg_colors["Data"]               = 1
+bkg_colors["WWW"]                = 2
+bkg_colors["WH"]                 = 4
 
-        self.bkg_groups = {}
-        self.bkg_groups["trueSS"]      = [ "trueSS" ]
-        self.bkg_groups["chargeflips"] = [ "chargeflips" ]
-        self.bkg_groups["SSLL"]        = [ "SSLL" ]
-        self.bkg_groups["photon"]      = [ "photonfakes", "photondoublefakes", "photontriplefakes", "fakesphotonfakes", "otherphotonfakes" ]
-        self.bkg_groups["fakes"]       = [ "fakes", "doublefakes" ]
-        self.bkg_groups["others"]      = [ "others" ]
-        self.bkg_groups["data"]        = [ "data_mm", "data_em", "data_ee" ]
-        self.bkg_groups["www"]         = [ "www" ]
-        self.bkg_groups["whwww"]       = [ "whwww" ]
+bkg_categs = {}
+bkg_categs["Prompt"]             = "bkg"
+bkg_categs["Q-flip"]             = "bkg"
+bkg_categs["Lost-lep"]           = "bkg"
+bkg_categs["#gamma#rightarrowl"] = "bkg"
+bkg_categs["Fake"]               = "bkg"
+bkg_categs["Others"]             = "bkg"
+bkg_categs["Data"]               = "data"
+bkg_categs["WWW"]                = "sig"
+bkg_categs["WH"]                 = "sig"
 
-        self.bkg_colors = {}
-        self.bkg_colors["trueSS"]      = 2001
-        self.bkg_colors["chargeflips"] = 2007
-        self.bkg_colors["SSLL"]        = 2003
-        self.bkg_colors["photon"]      = 2011
-        self.bkg_colors["fakes"]       = 2005
-        self.bkg_colors["others"]      = 616
-        self.bkg_colors["data"]        = 1
-        self.bkg_colors["www"]         = 2
-        self.bkg_colors["whwww"]       = 4
+tfile = r.TFile( "output.root" )
 
-        self.bkg_categs = {}
-        self.bkg_categs["trueSS"]      = "bkg"
-        self.bkg_categs["chargeflips"] = "bkg"
-        self.bkg_categs["SSLL"]        = "bkg"
-        self.bkg_categs["photon"]      = "bkg"
-        self.bkg_categs["fakes"]       = "bkg"
-        self.bkg_categs["others"]      = "bkg"
-        self.bkg_categs["data"]        = "data"
-        self.bkg_categs["www"]         = "sig"
-        self.bkg_categs["whwww"]       = "sig"
+hists = {}
 
-        self.tfile = r.TFile( "output.root" )
+def drawbyproc( histname, extraoptions="" ):
 
-        self.hists = {}
+    # Declare a map to hold the histograms that I access for this round of plotting
+    hists = {}
 
-        #for key in self.tfile.GetListOfKeys():
-        #    histname = key.GetName()
-        #    if histname.find("counter") != -1:
-        #        print histname
-        #    #self.hists[histname] = self.tfile.Get( histname )
-
-    def drawbyproc( self, histname, extraoptions="" ):
-
-        # Declare a map to hold the histograms that I access for this round of plotting
-        hists = {}
-
-        # Looping over MC sample process (e.g. W, ttbar, WZ, etc.)
-        for key in self.proc_groups:
+    # Looping over MC sample process (e.g. W, ttbar, WZ, etc.)
+    for key in proc_groups:
 
 #            if key != "W": continue
 
-            # the total background for this category is saved (e.g. W, ttbar, WZ, etc.)
-            histsum = None
+        # the total background for this category is saved (e.g. W, ttbar, WZ, etc.)
+        histsum = None
 
-            # Loop over the individual that makes up the grouping.
-            for proc in self.proc_groups[key]:
+        # Loop over the individual that makes up the grouping.
+        for proc in proc_groups[key]:
 
-                # place holder
-                hist = None
+            # place holder
+            hist = None
 
-                # Form the name of the histogram
-                histkey = proc + "__" + histname
+            # Form the name of the histogram
+            histkey = proc + "__" + histname
 
-                # Try to access it
-                try :
-                    hist = self.hists[histkey]
-                # If not get it from the tfile
-                except:
-                    # Open it and save it to the self.hists which persists as long as this object persists.
-                    self.hists[histkey] = self.tfile.Get( histkey )
+            # Try to access it
+            try :
+                hist = hists[histkey]
+            # If not get it from the tfile
+            except:
+                # Open it and save it to the self.hists which persists as long as this object persists.
+                hists[histkey] = tfile.Get( histkey )
 
-                    # Get the pointer
-                    hist = self.hists[histkey]
+                # Get the pointer
+                hist = hists[histkey]
 
-                # If successfully retrieved
-                if hist:
+            # If successfully retrieved
+            if hist:
 
-                    # If already a clone was created copy the content over
-                    if histsum:
-                        histsum.Add( hist )
-                    # If a clone has not been created yet, create one
-                    else:
-                        histsum = hist.Clone( key )
-                        histsum.SetDirectory( 0 )
+                # If already a clone was created copy the content over
+                if histsum:
+                    histsum.Add( hist )
+                # If a clone has not been created yet, create one
+                else:
+                    histsum = hist.Clone( key )
+                    histsum.SetDirectory( 0 )
 
-            # Once done looping over the grouping, set the histogram
-            hists[key] = histsum
+        if key.find( "WZ" ) != -1:
+            r.setNormSyst( histsum, 0.23 )
 
-        # Now, we put them in std::vector<TH1*> so that we can pass it on to plotmaker.cc
-        v_bkg_hists = r.vector("TH1*")()
-        v_sig_hists = r.vector("TH1*")()
-        v_data_hists = r.vector("TH1*")()
+        if key.find( "Fake" ) != -1:
+            r.setNormSyst( histsum, 0.3 )
 
-        # For the histograms we have stylize a bit
-        for key in self.proc_categs:
+        if key.find( "WW" ) != -1:
+            r.setNormSyst( histsum, 0.2 )
+
+        if key.find( "ttX" ) != -1:
+            r.setNormSyst( histsum, 0.15 )
+
+        # Once done looping over the grouping, set the histogram
+        hists[key] = histsum
+
+    # Now, we put them in std::vector<TH1*> so that we can pass it on to plotmaker.cc
+    v_bkg_hists = r.vector("TH2*")()
+    v_sig_hists = r.vector("TH2*")()
+    v_data_hists = r.vector("TH2*")()
+
+    # For the histograms we have stylize a bit
+    for key in proc_categs:
 #            if key != "W": continue
-            if self.proc_categs[key] == "bkg"  and hists[key]:
-                hists[key].SetLineColor( self.proc_colors[key] )
-                hists[key].SetFillColor( self.proc_colors[key] )
-                v_bkg_hists .push_back( hists[key] )
-            if self.proc_categs[key] == "sig"  and hists[key]:
-                hists[key].SetLineColor( self.proc_colors[key] )
-                hists[key].SetLineWidth( 2 )
-                v_sig_hists .push_back( hists[key] )
-            if self.proc_categs[key] == "data" and hists[key]:
-                hists[key].SetLineColor( 1 )
-                v_data_hists.push_back( hists[key] )
+        if proc_categs[key] == "bkg"  and hists[key]:
+            hists[key].SetLineColor( proc_colors[key] )
+            hists[key].SetFillColor( proc_colors[key] )
+            v_bkg_hists .push_back( hists[key] )
+        if proc_categs[key] == "sig"  and hists[key]:
+            hists[key].SetLineColor( proc_colors[key] )
+            hists[key].SetLineWidth( 2 )
+            v_sig_hists .push_back( hists[key] )
+        if proc_categs[key] == "data" and hists[key]:
+            hists[key].SetLineColor( 1 )
+            v_data_hists.push_back( hists[key] )
 
-        # Then plot
-        return r.plotmaker( """
-                      --yTitle N leptons
-                      --xTitle %s
-                      --plotOutputName plots/%s
-                      --ratio_Maximum 2
-                      --ratio_Minimum 0.
-                      --autoStack
-                      --legend_NColumns 2
-                      --MaximumMultiplier 1.2
-                      %s
-                      """%(histname, histname, extraoptions),
-                      v_data_hists, v_bkg_hists, v_sig_hists )
+    if histname.find( "SS" ) == 0:
+        extraoptions += " --noData"
 
-    def drawbytype( self, histname, extraoptions="" ):
+    # Then plot
+    return r.plotmaker( """
+                  --yTitle N leptons
+                  --xTitle %s
+                  --plotOutputName plots/%s
+                  --ratio_Maximum 2
+                  --ratio_Minimum 0.
+                  --autoStack
+                  --legend_NColumns 2
+                  --MaximumMultiplier 1.2
+                  %s
+                  """%(histname, histname, extraoptions),
+                  v_data_hists, v_bkg_hists, v_sig_hists )
 
-        # Declare a map to hold the histograms that I access for this round of plotting
-        hists = {}
+def drawbyproc_helper(  args ):
+    drawbyproc( *args )
+    return True
+
+
+def drawbytype(  histname, extraoptions="" ):
+
+    # Declare a map to hold the histograms that I access for this round of plotting
+    hists = {}
+
+    # Looping over based on background categorization
+    for bkgtype in bkg_groups:
+
+        # the total background for this category is saved (e.g. trueSS, LL, fakes, etc.)
+        histsum = None
+
+        # Loop over the individual bkg type
+        for bkg in bkg_groups[bkgtype]:
+
+            # place holder
+            hist = None
+
+            # Form the name of the histogram
+            histkey = "_" + bkg + "_" + histname
+
+            # Try to access it
+            try :
+                hist = hists[histkey]
+            # If not get it from the tfile
+            except:
+                # Open it and save it to the hists which persists as long as this object persists.
+                hists[histkey] = tfile.Get( histkey )
+
+                # Get the pointer
+                hist = hists[histkey]
+
+            # If successfully retrieved
+            if hist:
+
+                # If already a clone was created copy the content over
+                if histsum:
+                    histsum.Add( hist )
+                # If a clone has not been created yet, create one
+                else:
+                    histsum = hist.Clone( bkgtype )
+                    histsum.SetDirectory( 0 )
+
+        if bkgtype.find( "Lost" ) != -1:
+            r.setNormSyst( histsum, 0.23 )
+
+        if bkgtype.find( "Fake" ) != -1:
+            r.setNormSyst( histsum, 0.3 )
+
+        if bkgtype.find( "Prompt" ) != -1:
+            r.setNormSyst( histsum, 0.25 )
+
+        # Once done looping over the grouping, set the histogram
+        hists[bkgtype] = histsum
+
+    # Now, we put them in std::vector<TH1*> so that we can pass it on to plotmaker.cc
+    v_bkg_hists = r.vector("TH2*")()
+    v_sig_hists = r.vector("TH2*")()
+    v_data_hists = r.vector("TH2*")()
+
+    # For the histograms we have stylize a bit
+    for key in bkg_groups:
+        if bkg_categs[key] == "bkg"  and hists[key]:
+            hists[key].SetLineColor( bkg_colors[key] )
+            hists[key].SetFillColor( bkg_colors[key] )
+            v_bkg_hists .push_back( hists[key] )
+        if bkg_categs[key] == "sig"  and hists[key]:
+            hists[key].SetLineColor( bkg_colors[key] )
+            hists[key].SetLineWidth( 2 )
+            v_sig_hists .push_back( hists[key] )
+        if bkg_categs[key] == "data" and hists[key]:
+            hists[key].SetLineColor( 1 )
+            v_data_hists.push_back( hists[key] )
+
+    if histname.find( "SS" ) == 0:
+        extraoptions += " --noData"
+
+    # Then plot
+    return r.plotmaker( """
+                  --yTitle N leptons
+                  --xTitle %s
+                  --plotOutputName plots/%s_bytype
+                  --ratio_Maximum 2
+                  --ratio_Minimum 0.
+                  --autoStack
+                  --legend_NColumns 2
+                  %s
+                  --MaximumMultiplier 1.2
+                  """%(histname, histname, extraoptions),
+                  v_data_hists, v_bkg_hists, v_sig_hists )
+
+def drawbytype_helper(  args ):
+    drawbytype( *args )
+    return True
+
+
+def drawbyprocandtype(  histname, extraoptions="" ):
+
+    # Declare a map to hold the histograms that I access for this round of plotting
+    hists = {}
+
+    # Looping over based on background categorization
+    for proctype in proc_groups:
+
 
         # Looping over based on background categorization
-        for bkgtype in self.bkg_groups:
+        for bkgtype in bkg_groups:
 
             # the total background for this category is saved (e.g. trueSS, LL, fakes, etc.)
             histsum = None
 
-            # Loop over the individual bkg type
-            for bkg in self.bkg_groups[bkgtype]:
+            # Loop over the individual proc type
+            for proc in proc_groups[proctype]:
 
-                # place holder
-                hist = None
+                # Loop over the individual bkg type
+                for bkg in bkg_groups[bkgtype]:
 
-                # Form the name of the histogram
-                histkey = "_" + bkg + "_" + histname
+                    # place holder
+                    hist = None
 
-                # Try to access it
-                try :
-                    hist = self.hists[histkey]
-                # If not get it from the tfile
-                except:
-                    # Open it and save it to the self.hists which persists as long as this object persists.
-                    self.hists[histkey] = self.tfile.Get( histkey )
+                    # Form the name of the histogram
+                    histkey = proc + "_" + bkg + "_" + histname
 
-                    # Get the pointer
-                    hist = self.hists[histkey]
+                    # Try to access it
+                    try :
+                        hist = hists[histkey]
+                    # If not get it from the tfile
+                    except:
+                        # Open it and save it to the hists which persists as long as this object persists.
+                        hists[histkey] = tfile.Get( histkey )
 
-                # If successfully retrieved
-                if hist:
+                        # Get the pointer
+                        hist = hists[histkey]
 
-                    # If already a clone was created copy the content over
-                    if histsum:
-                        histsum.Add( hist )
-                    # If a clone has not been created yet, create one
-                    else:
-                        histsum = hist.Clone( bkgtype )
-                        histsum.SetDirectory( 0 )
+                    # If successfully retrieved
+                    if hist:
+
+                        # If already a clone was created copy the content over
+                        if histsum:
+                            histsum.Add( hist )
+                        # If a clone has not been created yet, create one
+                        else:
+                            histsum = hist.Clone( proctype + "_" + bkgtype )
+                            histsum.SetDirectory( 0 )
 
             # Once done looping over the grouping, set the histogram
-            hists[bkgtype] = histsum
+            hists[proctype + "_" + bkgtype] = histsum
 
-        # Now, we put them in std::vector<TH1*> so that we can pass it on to plotmaker.cc
-        v_bkg_hists = r.vector("TH1*")()
-        v_sig_hists = r.vector("TH1*")()
-        v_data_hists = r.vector("TH1*")()
+    # Now, we put them in std::vector<TH1*> so that we can pass it on to plotmaker.cc
+    v_bkg_hists = r.vector("TH2*")()
+    v_sig_hists = r.vector("TH2*")()
+    v_data_hists = r.vector("TH2*")()
 
-        # For the histograms we have stylize a bit
-        for key in self.bkg_groups:
-            if self.bkg_categs[key] == "bkg"  and hists[key]:
-                hists[key].SetLineColor( self.bkg_colors[key] )
-                hists[key].SetFillColor( self.bkg_colors[key] )
+    # For the histograms we have stylize a bit
+    for proc in proc_groups:
+        for bkg in bkg_groups:
+            key = proc + "_" + bkg
+            if bkg_categs[bkg] == "bkg"  and hists[key]:
+                hists[key].SetLineColor( bkg_colors[bkg] )
+                hists[key].SetFillColor( bkg_colors[bkg] )
                 v_bkg_hists .push_back( hists[key] )
-            if self.bkg_categs[key] == "sig"  and hists[key]:
-                hists[key].SetLineColor( self.bkg_colors[key] )
+            if bkg_categs[bkg] == "sig"  and hists[key]:
+                hists[key].SetLineColor( bkg_colors[bkg] )
                 hists[key].SetLineWidth( 2 )
                 v_sig_hists .push_back( hists[key] )
-            if self.bkg_categs[key] == "data" and hists[key]:
+            if bkg_categs[bkg] == "data" and hists[key]:
                 hists[key].SetLineColor( 1 )
                 v_data_hists.push_back( hists[key] )
 
-        # Then plot
-        return r.plotmaker( """
-                      --yTitle N leptons
-                      --xTitle %s
-                      --plotOutputName plots/%s_bytype
-                      --ratio_Maximum 2
-                      --ratio_Minimum 0.
-                      --autoStack
-                      --showOverflow
-                      --legend_NColumns 1
-                      %s
-                      --MaximumMultiplier 1.2
-                      """%(histname, histname, extraoptions),
-                      v_data_hists, v_bkg_hists, v_sig_hists )
+    if histname.find( "SS" ) == 0:
+        extraoptions += " --noData"
+
+    # Then plot
+    return r.plotmaker( """
+                  --yTitle N leptons
+                  --xTitle %s
+                  --plotOutputName plots/%s_bytype
+                  --ratio_Maximum 2
+                  --ratio_Minimum 0.
+                  --legend_NColumns 1
+                  %s
+                  --MaximumMultiplier 1.2
+                  """%(histname, histname, extraoptions),
+                  v_data_hists, v_bkg_hists, v_sig_hists )
+
+
+def exit():
+    import os
+    os.system( "chmod 755 plots/*pdf plots/*png plots/*txt" )
+    os.chdir( "plots" )
+    os.system( "ln -s ../syncfiles/miscfiles/index.php ." )
+    os.system( "chmod 755 index.php" )
+
+    sys.exit()
 
 if __name__ == "__main__":
 
-    wwwplotter = WWWPlotter()
+    drawbyproc( "SSPred_counter"         , "--noSyst --printExpSignif --onlyLin --printYieldsTable --Minimum 0.1 --ratio_Maximum 2" )
+    drawbytype( "SSPred_counter"         , "--noSyst --printExpSignif --onlyLin --printYieldsTable --Minimum 0.1 --ratio_Maximum 2" )
+    drawbyproc( "MjjSBPRVRSSPred_counter", "--printObsSignif --onlyLin --printYieldsTable --Minimum 0.1 --ratio_Maximum 2" )
+    drawbytype( "MjjSBPRVRSSPred_counter", "--printObsSignif --onlyLin --printYieldsTable --Minimum 0.1 --ratio_Maximum 2" )
+    drawbyproc( "MjjSBVRSSPred_counter"  , "--printObsSignif --onlyLin --printYieldsTable --Minimum 0.1 --ratio_Maximum 2" )
+    drawbytype( "MjjSBVRSSPred_counter"  , "--printObsSignif --onlyLin --printYieldsTable --Minimum 0.1 --ratio_Maximum 2" )
+    drawbyproc( "BTagVRSSPred_counter"   , "--printObsSignif --onlyLin --printYieldsTable --Minimum 0.1 --ratio_Maximum 2" )
+    drawbytype( "BTagVRSSPred_counter"   , "--printObsSignif --onlyLin --printYieldsTable --Minimum 0.1 --ratio_Maximum 2" )
+    exit()
 
-    wwwplotter.proc_groups["data"]  = [ "data_mm", "data_em", "data_ee", "data_other" ]
-    wwwplotter.drawbyproc( "SignalRegion_counter", "--printYieldsTable --Minimum 0.1 --ratio_Maximum 4" )
-    wwwplotter.drawbyproc( "BTagVRSS_counter", "--printYieldsTable --Minimum 0.1 --ratio_Maximum 4" )
-    wwwplotter.drawbyproc( "BTagARSS_counter", "--printYieldsTable --Minimum 0.1 --ratio_Maximum 4" )
-    wwwplotter.drawbyproc( "SignalRegion_rawcounter", "--printYieldsTable --Minimum 0.1 --ratio_Maximum 4" )
-    wwwplotter.drawbyproc( "BTagVRSS_rawcounter", "--printYieldsTable --Minimum 0.1 --ratio_Maximum 4" )
-    wwwplotter.drawbyproc( "BTagARSS_rawcounter", "--printYieldsTable --Minimum 0.1 --ratio_Maximum 4" )
 
-    sys.exit()
+
+
+
+
+
+
+    cuts = [  "BTagVRSSPred", "MjjSBVRSSPred", "SSPred" ]
+    bins = [  10            , 10             , 10       ]
+
+    funcs = [ drawbyproc, drawbytype ]
+
+    arguments_list = []
+    for cut, nbin in zip(cuts, bins):
+        for func in funcs:
+            func( "%s_met"    % cut , "--xNbin %d" % nbin )
+
+    proc_groups["data"]  = [ "data_mm", "data_em", "data_ee", "data_other" ]
+    drawbyprocandtype( "SS_counter", "--printYieldsTable --Minimum 0.1 --ratio_Maximum 2" )
+    drawbyproc( "SS_counter", "--printYieldsTable --Minimum 0.1 --ratio_Maximum 2" )
+    drawbytype( "SS_counter", "--printYieldsTable --Minimum 0.1 --ratio_Maximum 2" )
+    drawbyproc( "BTagVRSS_counter", "--printYieldsTable --Minimum 0.1 --ratio_Maximum 2" )
+    drawbytype( "BTagVRSS_counter", "--printYieldsTable --Minimum 0.1 --ratio_Maximum 2" )
+    drawbyproc( "MjjSBVRSS_counter", "--printYieldsTable --Minimum 0.1 --ratio_Maximum 2" )
+    drawbytype( "MjjSBVRSS_counter", "--printYieldsTable --Minimum 0.1 --ratio_Maximum 2" )
+    drawbyproc( "SSPred_counter", "--printYieldsTable --Minimum 0.1 --ratio_Maximum 2" )
+    drawbytype( "SSPred_counter", "--printYieldsTable --Minimum 0.1 --ratio_Maximum 2" )
+    drawbyproc( "BTagVRSSPred_counter", "--printYieldsTable --Minimum 0.1 --ratio_Maximum 2" )
+    drawbytype( "BTagVRSSPred_counter", "--printYieldsTable --Minimum 0.1 --ratio_Maximum 2" )
+    drawbyproc( "MjjSBVRSSPred_counter", "--printYieldsTable --Minimum 0.1 --ratio_Maximum 2" )
+    drawbytype( "MjjSBVRSSPred_counter", "--printYieldsTable --Minimum 0.1 --ratio_Maximum 2" )
+    #drawbyproc( "BTagVRSS_counter", "--printYieldsTable --Minimum 0.1 --ratio_Maximum 4" )
+    #drawbyproc( "BTagARSS_counter", "--printYieldsTable --Minimum 0.1 --ratio_Maximum 4" )
+    #drawbyproc( "BTagARSSPred_counter", "--printYieldsTable --Minimum 0.1 --ratio_Maximum 4" )
+    #drawbyproc( "MjjSBVRSS_counter", "--printYieldsTable --Minimum 0.1 --ratio_Maximum 4" )
+    #drawbyproc( "MjjSBARSS_counter", "--printYieldsTable --Minimum 0.1 --ratio_Maximum 4" )
+    #drawbyproc( "MjjSBARSSPred_counter", "--printYieldsTable --Minimum 0.1 --ratio_Maximum 4" )
+    #drawbyproc( "SignalRegion_rawcounter", "--printYieldsTable --Minimum 0.1 --ratio_Maximum 4" )
+    #drawbyproc( "BTagVRSS_rawcounter", "--printYieldsTable --Minimum 0.1 --ratio_Maximum 4" )
+    #drawbyproc( "BTagARSS_rawcounter", "--printYieldsTable --Minimum 0.1 --ratio_Maximum 4" )
+    #drawbyproc( "BTagARSSPred_rawcounter", "--printYieldsTable --Minimum 0.1 --ratio_Maximum 4" )
+    #drawbyproc( "MjjSBVRSS_rawcounter", "--printYieldsTable --Minimum 0.1 --ratio_Maximum 4" )
+    #drawbyproc( "MjjSBARSS_rawcounter", "--printYieldsTable --Minimum 0.1 --ratio_Maximum 4" )
+    #drawbyproc( "MjjSBARSSPred_rawcounter", "--printYieldsTable --Minimum 0.1 --ratio_Maximum 4" )
+    exit()
 
 #    cuts = [ "SSMM_CutSSMMLep", "SSMM_CutNTwoJet", "SSMM_CutThirdLepVeto", "SSMM_CutIsoTrackVeto", "SSMM_CutBVeto", "SSMM_CutWMjj", "SSMM_CutLowMjj", "SSMM_CutLowDEtajj" ]
 #    bins = [ 20               , 20               , 20                    , 20                    , 10             , 10            , 10              , 10                  ]
@@ -285,16 +459,22 @@ if __name__ == "__main__":
 #    cuts = [  "SSMM_CutSSMMLep", "SSEM_CutSSEMLep", "SSEE_CutSSEELep", "SSMM_CutNjet" ]
 #    bins = [  20               , 20               , 20               , 20             ]
 
-    cuts = [  "SSMM" ]
-    bins = [  10     ]
+    cuts = [  "BTagVRSSPred", "MjjSBVRSSPred", "SSPred" ]
+    bins = [  10            , 10             , 10       ]
 
-    funcs = [ wwwplotter.drawbyproc, wwwplotter.drawbytype ]
+    funcs = [ drawbyproc, drawbytype ]
 
+    arguments_list = []
     for cut, nbin in zip(cuts, bins):
         for func in funcs:
             func( "%s_met"    % cut , "--xNbin %d" % nbin )
             func( "%s_nvtx"    % cut , "--xNbin %d" % 70 )
+            #func( "%s_m4"     % cut , "--xNbin %d" % nbin )
+            #func( "%s_m4wide" % cut , "--xNbin %d" % nbin )
             func( "%s_Mll"    % cut , "--xNbin %d" % nbin )
+            func( "%s_MjjW"   % cut , "--xNbin %d" % nbin )
+            func( "%s_MjjLead"% cut , "--xNbin %d" % nbin )
+            func( "%s_DEtajjLead"% cut , "--xNbin %d" % nbin )
             func( "%s_Mll250" % cut , "--xNbin %d" % nbin )
             func( "%s_Mll500" % cut , "--xNbin %d" % nbin )
             func( "%s_jetb_size" % cut , "" )
@@ -304,41 +484,20 @@ if __name__ == "__main__":
             func( "%s_jet1_csv" % cut , "--xNbin %d" % nbin )
             func( "%s_lep0_pid" % cut , "--xNbin %d" % nbin )
             func( "%s_lep1_pid" % cut , "--xNbin %d" % nbin )
-            func( "%s_leplbnt0_pid" % cut , "--xNbin %d" % nbin )
             func( "%s_lep0_pt" % cut , "--xNbin %d" % nbin )
             func( "%s_lep1_pt" % cut , "--xNbin %d" % nbin )
-            func( "%s_leptight0_pt" % cut , "--xNbin %d" % nbin )
-            func( "%s_leplbnt0_pt" % cut , "--xNbin %d" % nbin )
             func( "%s_lep0_eta" % cut , "--xNbin %d" % nbin )
             func( "%s_lep1_eta" % cut , "--xNbin %d" % nbin )
-            func( "%s_leptight0_eta" % cut , "--xNbin %d" % nbin )
-            func( "%s_leplbnt0_eta" % cut , "--xNbin %d" % nbin )
             func( "%s_lep0_phi" % cut , "--xNbin %d" % nbin )
             func( "%s_lep1_phi" % cut , "--xNbin %d" % nbin )
-            func( "%s_leptight0_phi" % cut , "--xNbin %d" % nbin )
-            func( "%s_leplbnt0_phi" % cut , "--xNbin %d" % nbin )
             func( "%s_lep0_iso" % cut , "--xNbin %d" % nbin )
             func( "%s_lep1_iso" % cut , "--xNbin %d" % nbin )
-            func( "%s_leptight0_iso" % cut , "--xNbin %d" % nbin )
-            func( "%s_leplbnt0_iso" % cut , "--xNbin %d" % nbin )
             func( "%s_lep0_ip3" % cut , "--xNbin %d" % 36 )
             func( "%s_lep1_ip3" % cut , "--xNbin %d" % 36 )
-            func( "%s_leptight0_ip3" % cut , "--xNbin %d" % nbin )
-            func( "%s_leplbnt0_ip3" % cut , "--xNbin %d" % nbin )
-            func( "%s_leplbnt0_ip3_wide" % cut , "--xNbin %d" % 60 )
-            func( "%s_leplbnt0_ip3_widepp" % cut , "--xNbin %d" % 60 )
-            func( "%s_leplbnt0_ip3err" % cut , "--xNbin %d" % 60 )
-            func( "%s_leplbnt0_dxy" % cut , "--xNbin %d" % 60 )
-            func( "%s_leplbnt0_dz" % cut , "--xNbin %d" % 60 )
-            func( "%s_leptight0_ip3_wide" % cut , "--xNbin %d" % 60 )
-            func( "%s_leptight0_ip3err" % cut , "--xNbin %d" % 60 )
-            func( "%s_leptight0_dxy" % cut , "--xNbin %d" % 60 )
-            func( "%s_leptight0_dz" % cut , "--xNbin %d" % 60 )
             func( "%s_DPhill" % cut , "--xNbin %d" % nbin )
             func( "%s_DEtall" % cut , "--xNbin %d" % nbin )
             func( "%s_met"    % cut , "--xNbin %d" % nbin )
 
-    import os
-    os.system( "chmod 755 plots/*pdf plots/*png" )
+    exit()
 
 #

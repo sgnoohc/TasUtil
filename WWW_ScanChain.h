@@ -11,20 +11,21 @@
 using namespace std;
 
 #define MAXOBJ 3
+#define NSYST 3
 
 void ScanChain( TChain* chain, TString output_name, TString optstr, int nevents = -1 ); // the default nevents=-1 option means loop over all events.
 
-void doAnalysis( TasUtil::AutoHist&, TasUtil::EventList& );
-//bool passpresel( int& idx );
-void doTmpAnalysis( TasUtil::AutoHist& hists );
-//void doSSAnalysis( TasUtil::AutoHist& hists, int cutidx );
+bool doAnalysis( TasUtil::AutoHist& );
 
-void fillHistograms( TasUtil::AutoHist&, TString, int regionid );
-void fillHistogramsFull( TasUtil::AutoHist&, TString, TString, TString, int regionid );
+void fillHistograms( bool& passed, TasUtil::AutoHist&, TString, int regionid, int isyst );
+void fillHistogramsFull( TasUtil::AutoHist&, TString, TString, TString, int regionid, int isyst );
 void fillLepHistograms( TasUtil::AutoHist&, TString, TString, TString );
 void fillJetHistograms( TasUtil::AutoHist&, TString, TString, TString );
 void fillWWWHistograms( TasUtil::AutoHist&, TString );
 
+void printevent( TString );
+
+//void doTmpAnalysis( TasUtil::AutoHist& hists );
 //void createBranches( TasUtil::TTreeX& tree );
 //void fillTree( TasUtil::TTreeX& tree, int regionid );
 //void fillHist( TasUtil::AutoHist&, TString );

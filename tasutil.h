@@ -33,6 +33,7 @@
 #include "TH2D.h"
 #include "TChainElement.h"
 #include "TTreeCache.h"
+#include "TTreePerfStats.h"
 #include "TStopwatch.h"
 #include "TSystem.h"
 #include "TLorentzVector.h"
@@ -112,8 +113,8 @@ namespace TasUtil
         ~AutoHist();
         // user interface
         void fill(double xval, STRING name, double wgt=1);
-        void fill(double xval, STRING name, double wgt, int nbin, double xmin, double xmax);
-        void fill(double xval, double yval, STRING name, double wgt, int, double, double, int, double, double);
+        void fill(double xval, STRING name, double wgt, int nbin, double xmin, double xmax, std::vector<TString> = std::vector<TString>());
+        void fill(double xval, double yval, STRING name, double wgt, int, double, double, int, double, double, std::vector<TString> = std::vector<TString>());
         void fill(double xval, STRING name, double wgt, int nbin, double*);
         void fill(double xval, double yval, STRING name, double wgt, int, double*, int, double*);
         void save(TString ofilename, TString option="recreate");
@@ -367,6 +368,7 @@ namespace TasUtil
         TObjArrayIter* fileIter;
         TFile* tfile;
         TTree* ttree;
+        TTreePerfStats* ps;
         unsigned int nEventsTotalInChain;
         unsigned int nEventsTotalInTree;
         int nEventsToProcess;
@@ -401,6 +403,7 @@ namespace TasUtil
         void saveSkim();
         TTree* getSkimTree() { return skimtree; }
         void setSkimMaxSize(Long64_t maxsize) { skimtree->SetMaxTreeSize( maxsize ); }
+        TTreePerfStats* getTTreePerfStats() { return ps; }
         private:
         void setFileList();
         void setNEventsToProcess();
@@ -530,6 +533,7 @@ TasUtil::Looper<TREECLASS>::Looper(TChain* c, TREECLASS* t, int nevtToProc) :
     fileIter(0),
     tfile(0),
     ttree(0),
+    ps(0),
     nEventsTotalInChain(0),
     nEventsTotalInTree(0),
     nEventsToProcess(nevtToProc),
@@ -649,6 +653,10 @@ bool TasUtil::Looper<TREECLASS>::nextTree()
             createSkimTree();
         else if (doskim)
             copyAddressesToSkimTree();
+        // TTreePerfStats
+        if ( ps )
+            ps->SaveAs( "perf.root" );
+        ps = new TTreePerfStats("ioperf", ttree);
         // Return that I got a good one
         return true;
     }

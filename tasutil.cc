@@ -305,7 +305,9 @@ void TasUtil::AutoHist::fill(double xval, STRING name, double wgt)
 }
 
 //__________________________________________________________________________________________________
-void TasUtil::AutoHist::fill(double xval, STRING name, double wgt, int nbin, double min, double max)
+void TasUtil::AutoHist::fill(
+        double xval, STRING name, double wgt, int nbin, double min, double max,
+        std::vector<TString> binlabels)
 {
     TH1* hist = 0;
     std::pair<MAP<STRING,TH1*>::iterator,bool> ret;
@@ -317,6 +319,8 @@ void TasUtil::AutoHist::fill(double xval, STRING name, double wgt, int nbin, dou
     else
     {
         hist = createFixedBinHist(xval, name, wgt, nbin, min, max);
+        for (unsigned int ibin = 0; ibin < binlabels.size(); ++ibin)
+            hist->GetXaxis()->SetBinLabel(ibin+1, binlabels[ibin]);
         histdb[name] = hist;
     }
 }
@@ -342,7 +346,8 @@ void TasUtil::AutoHist::fill(double xval, STRING name, double wgt, int nbin, dou
 void TasUtil::AutoHist::fill(
         double xval, double yval, STRING name, double wgt,
         int nbx, double xm, double xM,
-        int nby, double ym, double yM
+        int nby, double ym, double yM,
+        std::vector<TString> binlabels
         )
 {
     TH1* hist = 0;
@@ -355,6 +360,8 @@ void TasUtil::AutoHist::fill(
     else
     {
         hist = createFixedBinHist(xval, yval, name, wgt, nbx, xm, xM, nby, ym, yM);
+        for (unsigned int ibin = 0; ibin < binlabels.size(); ++ibin)
+            hist->GetXaxis()->SetBinLabel(ibin+1, binlabels[ibin]);
         histdb[name] = hist;
     }
 }

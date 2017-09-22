@@ -10,6 +10,7 @@
 #include "TLegend.h"
 #include "TLegendEntry.h"
 
+#include <cstdio>
 #include <iostream>
 #include <vector>
 #include <map>
@@ -19,6 +20,7 @@
 #include <sstream>
 #include <iomanip>
 #include <string>
+#include <deque>
 
 typedef std::pair<TH1*, TH1*> Hist;
 typedef std::vector<Hist> Hists;
@@ -139,77 +141,83 @@ TString getOpt( TString key )
     TString gTickLength = "-0.02";
     TString gNdiv = "505";
 
-    if      ( key.EqualTo( "xTitle"            )  ) return getDefaultOpt( key, "XVar"             ) ;
-    else if ( key.EqualTo( "xTickLength"       )  ) return getDefaultOpt( key, gTickLength        ) ;
-    else if ( key.EqualTo( "xTitleOffset"      )  ) return getDefaultOpt( key, "1.2"              ) ;
-    else if ( key.EqualTo( "xLabelOffset"      )  ) return getDefaultOpt( key, gLabelOffset       ) ;
-    else if ( key.EqualTo( "xTitleSize"        )  ) return getDefaultOpt( key, gFontSize          ) ;
-    else if ( key.EqualTo( "xLabelSize"        )  ) return getDefaultOpt( key, gFontSize          ) ;
-    else if ( key.EqualTo( "xTitleFont"        )  ) return getDefaultOpt( key, gFont              ) ;
-    else if ( key.EqualTo( "xLabelFont"        )  ) return getDefaultOpt( key, gFont              ) ;
-    else if ( key.EqualTo( "xNdivisions"       )  ) return getDefaultOpt( key, gNdiv              ) ;
-    else if ( key.EqualTo( "xNbin"             )  ) return getDefaultOpt( key, ""                 ) ;
+    if      ( key.EqualTo( "xTitle"                    )  ) return getDefaultOpt( key, "XVar"             ) ;
+    else if ( key.EqualTo( "xTickLength"               )  ) return getDefaultOpt( key, gTickLength        ) ;
+    else if ( key.EqualTo( "xTitleOffset"              )  ) return getDefaultOpt( key, "1.2"              ) ;
+    else if ( key.EqualTo( "xLabelOffset"              )  ) return getDefaultOpt( key, gLabelOffset       ) ;
+    else if ( key.EqualTo( "xTitleSize"                )  ) return getDefaultOpt( key, gFontSize          ) ;
+    else if ( key.EqualTo( "xLabelSize"                )  ) return getDefaultOpt( key, gFontSize          ) ;
+    else if ( key.EqualTo( "xTitleFont"                )  ) return getDefaultOpt( key, gFont              ) ;
+    else if ( key.EqualTo( "xLabelFont"                )  ) return getDefaultOpt( key, gFont              ) ;
+    else if ( key.EqualTo( "xNdivisions"               )  ) return getDefaultOpt( key, gNdiv              ) ;
+    else if ( key.EqualTo( "xNbin"                     )  ) return getDefaultOpt( key, ""                 ) ;
 
-    else if ( key.EqualTo( "yTitle"            )  ) return getDefaultOpt( key, "YVar"             ) ;
-    else if ( key.EqualTo( "yTickLength"       )  ) return getDefaultOpt( key, gTickLength        ) ;
-    else if ( key.EqualTo( "yTitleOffset"      )  ) return getDefaultOpt( key, "2.1"              ) ;
-    else if ( key.EqualTo( "yLabelOffset"      )  ) return getDefaultOpt( key, gLabelOffset       ) ;
-    else if ( key.EqualTo( "yTitleSize"        )  ) return getDefaultOpt( key, gFontSize          ) ;
-    else if ( key.EqualTo( "yLabelSize"        )  ) return getDefaultOpt( key, gFontSize          ) ;
-    else if ( key.EqualTo( "yTitleFont"        )  ) return getDefaultOpt( key, gFont              ) ;
-    else if ( key.EqualTo( "yLabelFont"        )  ) return getDefaultOpt( key, gFont              ) ;
-    else if ( key.EqualTo( "yNdivisions"       )  ) return getDefaultOpt( key, gNdiv              ) ;
+    else if ( key.EqualTo( "yTitle"                    )  ) return getDefaultOpt( key, "YVar"             ) ;
+    else if ( key.EqualTo( "yTickLength"               )  ) return getDefaultOpt( key, gTickLength        ) ;
+    else if ( key.EqualTo( "yTitleOffset"              )  ) return getDefaultOpt( key, "2.1"              ) ;
+    else if ( key.EqualTo( "yLabelOffset"              )  ) return getDefaultOpt( key, gLabelOffset       ) ;
+    else if ( key.EqualTo( "yTitleSize"                )  ) return getDefaultOpt( key, gFontSize          ) ;
+    else if ( key.EqualTo( "yLabelSize"                )  ) return getDefaultOpt( key, gFontSize          ) ;
+    else if ( key.EqualTo( "yTitleFont"                )  ) return getDefaultOpt( key, gFont              ) ;
+    else if ( key.EqualTo( "yLabelFont"                )  ) return getDefaultOpt( key, gFont              ) ;
+    else if ( key.EqualTo( "yNdivisions"               )  ) return getDefaultOpt( key, gNdiv              ) ;
 
-    else if ( key.EqualTo( "MaximumMultiplier" )  ) return getDefaultOpt( key, "1.2"              ) ;
+    else if ( key.EqualTo( "MaximumMultiplier"         )  ) return getDefaultOpt( key, "1.2"              ) ;
 
-    else if ( key.EqualTo( "Minimum"           )  ) return getDefaultOpt( key, ""                 ) ;
-    else if ( key.EqualTo( "Maximum"           )  ) return getDefaultOpt( key, ""                 ) ;
+    else if ( key.EqualTo( "Minimum"                   )  ) return getDefaultOpt( key, ""                 ) ;
+    else if ( key.EqualTo( "Maximum"                   )  ) return getDefaultOpt( key, ""                 ) ;
 
-    else if ( key.EqualTo( "error_FillColor"   )  ) return getDefaultOpt( key, "1"                ) ;
-    else if ( key.EqualTo( "error_FillStyle"   )  ) return getDefaultOpt( key, "3245"             ) ;
+    else if ( key.EqualTo( "error_FillColor"           )  ) return getDefaultOpt( key, "1"                ) ;
+    else if ( key.EqualTo( "error_FillStyle"           )  ) return getDefaultOpt( key, "3245"             ) ;
 
-    else if ( key.EqualTo( "ratio_xTitle"      )  ) return getDefaultOpt( key, getOpt( "xTitle" ) ) ;
-    else if ( key.EqualTo( "ratio_yTitle"      )  ) return getDefaultOpt( key, getOpt( "reverseRatio" ).IsNull() ? "Data / MC" : "MC / Data" ) ;
-    else if ( key.EqualTo( "ratio_Minimum"     )  ) return getDefaultOpt( key, "0.7"              ) ;
-    else if ( key.EqualTo( "ratio_Maximum"     )  ) return getDefaultOpt( key, "1.3"              ) ;
-    else if ( key.EqualTo( "ratio_yNdivisions" )  ) return getDefaultOpt( key, gNdiv              ) ;
-    else if ( key.EqualTo( "ratio_DrawOpt"     )  ) return getDefaultOpt( key, "ex0p"             ) ;
+    else if ( key.EqualTo( "ratio_xTitle"              )  ) return getDefaultOpt( key, getOpt( "xTitle" ) ) ;
+    else if ( key.EqualTo( "ratio_yTitle"              )  ) return getDefaultOpt( key, getOpt( "reverseRatio" ).IsNull() ? "Data / MC" : "MC / Data" ) ;
+    else if ( key.EqualTo( "ratio_Minimum"             )  ) return getDefaultOpt( key, "0.7"              ) ;
+    else if ( key.EqualTo( "ratio_Maximum"             )  ) return getDefaultOpt( key, "1.3"              ) ;
+    else if ( key.EqualTo( "ratio_yNdivisions"         )  ) return getDefaultOpt( key, gNdiv              ) ;
+    else if ( key.EqualTo( "ratio_DrawOpt"             )  ) return getDefaultOpt( key, "ex0p"             ) ;
 
-    else if ( key.EqualTo( "data_DrawOpt"      )  ) return getDefaultOpt( key, "ex0p"             ) ;
+    else if ( key.EqualTo( "data_DrawOpt"              )  ) return getDefaultOpt( key, "ex0p"             ) ;
 
-    else if ( key.EqualTo( "stack_DrawOpt"     )  ) return getDefaultOpt( key, "hist"             ) ;
+    else if ( key.EqualTo( "stack_DrawOpt"             )  ) return getDefaultOpt( key, "hist"             ) ;
 
-    else if ( key.EqualTo( "legend_bkgDrawOpt" )  ) return getDefaultOpt( key, "f"                ) ;
-    else if ( key.EqualTo( "legend_NColumns"   )  ) return getDefaultOpt( key, "1"                ) ;
+    else if ( key.EqualTo( "legend_bkgDrawOpt"         )  ) return getDefaultOpt( key, "f"                ) ;
+    else if ( key.EqualTo( "legend_NColumns"           )  ) return getDefaultOpt( key, "1"                ) ;
+    else if ( key.EqualTo( "legend_EntrySeparation"    )  ) return getDefaultOpt( key, "0.02"             ) ;
+    else if ( key.EqualTo( "legend_ColumnSeparation"   )  ) return getDefaultOpt( key, "0.0"              ) ;
+    else if ( key.EqualTo( "legend_Margin"             )  ) return getDefaultOpt( key, "0.300"            ) ;
 
-    else if ( key.EqualTo( "plotOutputName"    )  ) return getDefaultOpt( key, "test"             ) ;
-    else if ( key.EqualTo( "autoStack"         )  ) return getDefaultOpt( key, ""                 ) ;
-    else if ( key.EqualTo( "showOverflow"      )  ) return getDefaultOpt( key, ""                 ) ;
-    else if ( key.EqualTo( "showUnderflow"     )  ) return getDefaultOpt( key, ""                 ) ;
-    else if ( key.EqualTo( "printRatio"        )  ) return getDefaultOpt( key, ""                 ) ;
-    else if ( key.EqualTo( "printBkg"          )  ) return getDefaultOpt( key, ""                 ) ;
-    else if ( key.EqualTo( "printTotalBkg"     )  ) return getDefaultOpt( key, ""                 ) ;
-    else if ( key.EqualTo( "printData"         )  ) return getDefaultOpt( key, ""                 ) ;
-    else if ( key.EqualTo( "sumDataHists"      )  ) return getDefaultOpt( key, ""                 ) ;
-    else if ( key.EqualTo( "sumSigHists"       )  ) return getDefaultOpt( key, ""                 ) ;
-    else if ( key.EqualTo( "reverseRatio"      )  ) return getDefaultOpt( key, ""                 ) ;
-    else if ( key.EqualTo( "ratioPaneAtBottom" )  ) return getDefaultOpt( key, ""                 ) ;
-    else if ( key.EqualTo( "divideByBinWidth"  )  ) return getDefaultOpt( key, ""                 ) ;
-    else if ( key.EqualTo( "scaleByLumi"       )  ) return getDefaultOpt( key, ""                 ) ;
-    else if ( key.EqualTo( "printYieldsTable"  )  ) return getDefaultOpt( key, ""                 ) ;
-    else if ( key.EqualTo( "printYieldsMinBin" )  ) return getDefaultOpt( key, ""                 ) ;
-    else if ( key.EqualTo( "printYieldsMaxBin" )  ) return getDefaultOpt( key, ""                 ) ;
-    else if ( key.EqualTo( "noData"            )  ) return getDefaultOpt( key, ""                 ) ;
-    else if ( key.EqualTo( "systByDiff"        )  ) return getDefaultOpt( key, ""                 ) ;
-    else if ( key.EqualTo( "onlyLog"           )  ) return getDefaultOpt( key, ""                 ) ;
-    else if ( key.EqualTo( "onlyLin"           )  ) return getDefaultOpt( key, ""                 ) ;
-    else if ( key.EqualTo( "noSyst"            )  ) return getDefaultOpt( key, ""                 ) ;
-    else if ( key.EqualTo( "legendOnMainPad"   )  ) return getDefaultOpt( key, ""                 ) ;
-    else if ( key.EqualTo( "saveMainPad"       )  ) return getDefaultOpt( key, ""                 ) ;
-    else if ( key.EqualTo( "MaxDigits"         )  ) return getDefaultOpt( key, ""                 ) ;
-    else if ( key.EqualTo( "getMaxFromData"    )  ) return getDefaultOpt( key, ""                 ) ;
-    else if ( key.EqualTo( "publogo"           )  ) return getDefaultOpt( key, "Supplementary"    ) ;
-    else if ( key.EqualTo( "userhack0"         )  ) return getDefaultOpt( key, ""                 ) ;
+    else if ( key.EqualTo( "plotOutputName"            )  ) return getDefaultOpt( key, "test"             ) ;
+    else if ( key.EqualTo( "autoStack"                 )  ) return getDefaultOpt( key, ""                 ) ;
+    else if ( key.EqualTo( "showOverflow"              )  ) return getDefaultOpt( key, ""                 ) ;
+    else if ( key.EqualTo( "showUnderflow"             )  ) return getDefaultOpt( key, ""                 ) ;
+    else if ( key.EqualTo( "printRatio"                )  ) return getDefaultOpt( key, ""                 ) ;
+    else if ( key.EqualTo( "printBkg"                  )  ) return getDefaultOpt( key, ""                 ) ;
+    else if ( key.EqualTo( "printTotalBkg"             )  ) return getDefaultOpt( key, ""                 ) ;
+    else if ( key.EqualTo( "printData"                 )  ) return getDefaultOpt( key, ""                 ) ;
+    else if ( key.EqualTo( "sumDataHists"              )  ) return getDefaultOpt( key, ""                 ) ;
+    else if ( key.EqualTo( "sumSigHists"               )  ) return getDefaultOpt( key, ""                 ) ;
+    else if ( key.EqualTo( "reverseRatio"              )  ) return getDefaultOpt( key, ""                 ) ;
+    else if ( key.EqualTo( "ratioPaneAtBottom"         )  ) return getDefaultOpt( key, "true"             ) ;
+    else if ( key.EqualTo( "divideByBinWidth"          )  ) return getDefaultOpt( key, ""                 ) ;
+    else if ( key.EqualTo( "scaleByLumi"               )  ) return getDefaultOpt( key, ""                 ) ;
+    else if ( key.EqualTo( "printYieldsTable"          )  ) return getDefaultOpt( key, ""                 ) ;
+    else if ( key.EqualTo( "printYieldsMinBin"         )  ) return getDefaultOpt( key, ""                 ) ;
+    else if ( key.EqualTo( "printYieldsMaxBin"         )  ) return getDefaultOpt( key, ""                 ) ;
+    else if ( key.EqualTo( "noData"                    )  ) return getDefaultOpt( key, ""                 ) ;
+    else if ( key.EqualTo( "noSyst"                    )  ) return getDefaultOpt( key, ""                 ) ;
+    else if ( key.EqualTo( "systByDiff"                )  ) return getDefaultOpt( key, ""                 ) ;
+    else if ( key.EqualTo( "onlyLog"                   )  ) return getDefaultOpt( key, ""                 ) ;
+    else if ( key.EqualTo( "onlyLin"                   )  ) return getDefaultOpt( key, ""                 ) ;
+    else if ( key.EqualTo( "legendOnMainPad"           )  ) return getDefaultOpt( key, "true"             ) ;
+    else if ( key.EqualTo( "saveMainPad"               )  ) return getDefaultOpt( key, ""                 ) ;
+    else if ( key.EqualTo( "MaxDigits"                 )  ) return getDefaultOpt( key, ""                 ) ;
+    else if ( key.EqualTo( "getMaxFromData"            )  ) return getDefaultOpt( key, ""                 ) ;
+    else if ( key.EqualTo( "publogo"                   )  ) return getDefaultOpt( key, "Supplementary"    ) ;
+    else if ( key.EqualTo( "userhack0"                 )  ) return getDefaultOpt( key, ""                 ) ;
+    else if ( key.EqualTo( "totalBkgFlatSyst"          )  ) return getDefaultOpt( key, ""                 ) ;
+    else if ( key.EqualTo( "printObsSignif"            )  ) return getDefaultOpt( key, ""                 ) ;
+    else if ( key.EqualTo( "printExpSignif"            )  ) return getDefaultOpt( key, ""                 ) ;
 
     else
     {
@@ -226,6 +234,18 @@ std::vector<double> getBinInfo( std::vector<TH1*> hists )
     bininfo.push_back( hists[0]->GetXaxis()->GetXmin() );
     bininfo.push_back( hists[0]->GetXaxis()->GetXmax() );
     return bininfo;
+}
+
+//_________________________________________________________________________________________________
+void setNormSyst( TH2* hist, double fracsyst )
+{
+    hist->SetBinContent( 0, 0, fracsyst );
+}
+
+//_________________________________________________________________________________________________
+double getNormSyst( TH2* hist )
+{
+    return hist->GetBinContent( 0, 0 );
 }
 
 //_________________________________________________________________________________________________
@@ -291,9 +311,11 @@ void divideByBinWidth( TH1* hist )
 }
 
 //_________________________________________________________________________________________________
-TH1* cloneHist( TH1* obj )
+TH1* cloneHist( TH1* obj, TString name="" )
 {
-    TH1* rtn = ( TH1* ) obj->Clone( obj->GetName() );
+    if ( name.IsNull() )
+        name = obj->GetName();
+    TH1* rtn = ( TH1* ) obj->Clone( name );
     rtn->SetTitle( "" );
 
     if ( !rtn->GetSumw2N() )
@@ -316,11 +338,15 @@ TH1* histWithFullError( TH1* nominal, TH1* error )
     
     for ( unsigned int ibin = 0; ibin <= nominal->GetNbinsX() + 1; ibin++ )
     {
+        if ( TString( nominal->GetTitle() ).Contains( "counter" ) && ibin == nominal->GetNbinsX() + 1 )
+            continue;
         double content = nominal->GetBinContent( ibin );
         double nominal_hist_error = nominal->GetBinError( ibin );
         double additional_error = error ? error->GetBinContent( ibin ) : 0;
         if ( !getOpt( "systByDiff" ).IsNull() )
             additional_error = error ? fabs( additional_error - content ) : 0;
+        if ( !getOpt( "noSyst" ).IsNull() )
+            additional_error = 0;
         double all_error = error ? sqrt( pow( nominal_hist_error, 2 ) + pow( additional_error, 2 ) )
                            : nominal_hist_error;
         nominal_with_full_error->SetBinContent( ibin, content );
@@ -382,7 +408,7 @@ std::vector<TH1*> histsWithFullError( Hists& hist_pairs )
 }
 
 //_________________________________________________________________________________________________
-TH1* getSystByMaxDiff( TH1* nominal, std::vector<TH1*> systs )
+TH1* getSystByMaxDiff( TH1* nominal, std::vector<TH1*> systs, double normfracsyst=0 )
 {
     TH1D* totalsyst = ( TH1D* ) cloneHist( nominal );
     TH1D* diff = ( TH1D* ) cloneHist( nominal );
@@ -397,6 +423,8 @@ TH1* getSystByMaxDiff( TH1* nominal, std::vector<TH1*> systs )
             double nomicontent = nominal->GetBinContent( ibin );
             double thisdiff = fabs( systcontent - nomicontent );
             double currmaxdiff = diff->GetBinContent( ibin );
+            double normsyst = normfracsyst > 0 ? nomicontent * normfracsyst : 0.;
+            thisdiff = sqrt( pow( thisdiff, 2 ) + pow( normsyst, 2 ) );
             if ( currmaxdiff < thisdiff )
             {
                 diff->SetBinContent( ibin, thisdiff );
@@ -404,7 +432,8 @@ TH1* getSystByMaxDiff( TH1* nominal, std::vector<TH1*> systs )
             }
         }
     }
-    return totalsyst;
+    return diff;
+//    return totalsyst;
 }
 
 //_________________________________________________________________________________________________
@@ -477,6 +506,18 @@ TH1* getTotalBkgHists( std::vector<TH1*> hists )
         sum_hist->Print("all");
     }
 
+    if ( !getOpt( "totalBkgFlatSyst" ).IsNull() )
+    {
+        float frac = getOpt( "totalBkgFlatSyst" ).Atof();
+        for ( int ibin = 0; ibin <= sum_hist->GetNbinsX() + 1; ++ibin )
+        {
+            float binc = sum_hist->GetBinContent( ibin );
+            float bine = sum_hist->GetBinError( ibin );
+            bine = sqrt( bine * bine + frac * binc * frac * binc );
+            sum_hist->SetBinError( ibin, bine );
+        }
+    }
+
     return sum_hist;
 }
 
@@ -527,7 +568,7 @@ void stylizeAxes( TH1* h, TPad* pad )
     h->GetXaxis ( ) ->SetLabelSize   ( getOpt( "xLabelSize"   ) .Atof( )   ) ;
     h->GetXaxis ( ) ->SetTitleSize   ( getOpt( "xTitleSize"   ) .Atof( )   ) ;
     h->GetXaxis ( ) ->SetTitle       ( getOpt( "xTitle"       )            ) ;
-    h->GetXaxis ( ) ->SetTickLength  ( getOpt( "xTickLength"  ) .Atof( )   ) ;
+    h->GetXaxis ( ) ->SetTickLength  ( getOpt( "xTickLength"  ) .Atof( ) * 1.15 ) ;
     h->GetXaxis ( ) ->SetTitleOffset ( getOpt( "xTitleOffset" ) .Atof( )   ) ;
     h->GetXaxis ( ) ->SetTitleFont   ( getOpt( "xLabelFont"   ) .Atoi( )   ) ;
     h->GetYaxis ( ) ->SetNdivisions  ( getOpt( "yNdivisions"  ) .Atoi( )   ) ;
@@ -536,7 +577,7 @@ void stylizeAxes( TH1* h, TPad* pad )
     h->GetYaxis ( ) ->SetLabelSize   ( getOpt( "yLabelSize"   ) .Atof( )   ) ;
     h->GetYaxis ( ) ->SetTitleSize   ( getOpt( "yTitleSize"   ) .Atof( )   ) ;
     h->GetYaxis ( ) ->SetTitle       ( getOpt( "yTitle"       )            ) ;
-    h->GetYaxis ( ) ->SetTickLength  ( getOpt( "yTickLength"  ) .Atof( )   ) ;
+    h->GetYaxis ( ) ->SetTickLength  ( getOpt( "yTickLength"  ) .Atof( ) * 1.15 ) ;
     h->GetYaxis ( ) ->SetTitleOffset ( getOpt( "yTitleOffset" ) .Atof( )   ) ;
     h->GetYaxis ( ) ->SetTitleFont   ( getOpt( "xLabelFont"   ) .Atoi( )   ) ;
 //    // TODO: Come back below when we need to implement it
@@ -624,7 +665,7 @@ void draw( THStack* h, TString option, TPad* pad )
 void drawData( TH1* h, TString option, TPad* pad )
 {
     h->SetMarkerStyle(19);
-    h->SetMarkerSize(1);
+    h->SetMarkerSize(1.2);
 //    h->SetLineColor(1);
 
     if ( !getOpt( "printData" ).IsNull() )
@@ -648,7 +689,7 @@ void drawData( TH1* h, TString option, TPad* pad )
 void drawRatio( TH1* h, TString option, TPad* pad )
 {
     h->SetMarkerStyle(19);
-    h->SetMarkerSize(1);
+    h->SetMarkerSize(1.2);
 //    h->SetLineColor(1);
 
     pad->cd();
@@ -711,12 +752,54 @@ std::vector<TH1*> getRatioHists( std::vector<TH1*> data_hists, TH1* bkg_hist )
 }
 
 //_________________________________________________________________________________________________
+std::vector<TH1*> getSignifHists( std::vector<TH1*> data_hists, std::vector<TH1*> bkg_hists, bool doExp=false )
+{
+    std::vector<TH1*> signif_hists;
+    
+    for ( unsigned int ihist = 0; ihist < data_hists.size(); ++ihist )
+    {
+        TH1* signif = cloneHist( data_hists[ihist], Form( "signif%d", ihist ) );
+        signif->Reset();
+
+        THashList* labels = signif->GetXaxis()->GetLabels();
+        if (labels)
+            signif->GetXaxis()->SetRange(1, signif->GetXaxis()->GetNbins() ); 
+        signif->GetXaxis()->SetCanExtend( false );
+
+        for ( int ibin = 0; ibin <= signif->GetNbinsX() + 1; ++ibin )
+        {
+            double obs = data_hists[ihist]->GetBinContent( ibin );
+            double bkg = bkg_hists.size() == 1 ? bkg_hists[0]->GetBinContent( ibin ) : bkg_hists[ihist]->GetBinContent( ibin );
+            double err = bkg_hists.size() == 1 ? bkg_hists[0]->GetBinError( ibin ) : bkg_hists[ihist]->GetBinError( ibin );
+            double fer = err / bkg;
+            if ( doExp )
+                signif->SetBinContent( ibin, RooStats::NumberCountingUtils::BinomialExpZ( obs, bkg, fer ) );
+            else
+                signif->SetBinContent( ibin, RooStats::NumberCountingUtils::BinomialObsZ( obs, bkg, fer ) );
+        }
+        
+        signif_hists.push_back( signif );
+    }
+    
+    return signif_hists;
+}
+
+//_________________________________________________________________________________________________
+std::vector<TH1*> getSignifHists( std::vector<TH1*> data_hists, TH1* bkg_hist, bool doExp=false )
+{
+    std::vector<TH1*> bkg_hists;
+    bkg_hists.push_back( bkg_hist );
+
+    return getSignifHists( data_hists, bkg_hists, doExp );
+}
+
+//_________________________________________________________________________________________________
 void drawLegend( std::vector<TH1*> data_hists, std::vector<TH1*> bkg_hists, std::vector<TH1*> sig_hists, TPad* pad )
 {
-    float xmin = getOpt( "legendOnMainPad" ).IsNull() ? 0    : 0.72;
-    float xmax = getOpt( "legendOnMainPad" ).IsNull() ? 1    : 1.0 ;
+    float xmin = getOpt( "legendOnMainPad" ).IsNull() ? 0    : 0.605;
+    float xmax = getOpt( "legendOnMainPad" ).IsNull() ? 1    : 0.92;
     float ymin = getOpt( "legendOnMainPad" ).IsNull() ? 0    : 0.75;
-    float ymax = getOpt( "legendOnMainPad" ).IsNull() ? 0.65 : 0.90;
+    float ymax = getOpt( "legendOnMainPad" ).IsNull() ? 0.65 : 0.91;
     TLegend* leg = new TLegend( xmin, ymin, xmax, ymax, NULL, "brNDC" );
     leg->SetBorderSize( 0 );
     leg->SetLineColor( 0 );
@@ -730,7 +813,7 @@ void drawLegend( std::vector<TH1*> data_hists, std::vector<TH1*> bkg_hists, std:
         leg->SetEntrySeparation( 0.033 );
     leg->SetTextSize( 0.062 * 6. / 4. );
     if ( !getOpt( "legendOnMainPad" ).IsNull() )
-        leg->SetTextSize( 0.040 );
+        leg->SetTextSize( 0.034 );
     
     if ( getOpt( "noData" ).IsNull() )
     {
@@ -745,13 +828,28 @@ void drawLegend( std::vector<TH1*> data_hists, std::vector<TH1*> bkg_hists, std:
     for ( auto& sig_hist : sig_hists )
         addToLegend( sig_hist, leg, "l" );
 
+    int totalentries = leg->GetNRows();
     leg->SetNColumns( getOpt( "legend_NColumns" ).Atoi() );
+    leg->SetEntrySeparation( getOpt( "legend_EntrySeparation" ).Atof() );
+    leg->SetColumnSeparation( getOpt( "legend_ColumnSeparation" ).Atof() );
+    leg->SetMargin( getOpt( "legend_Margin" ).Atof() );
         
     int entries = leg->GetNRows();
     if ( getOpt( "legendOnMainPad" ).IsNull() )
         leg->SetY1( 0.65 - leg->GetEntrySeparation() * entries );
     else
         leg->SetY1( 0.75 - leg->GetEntrySeparation() * entries );
+
+    if ( totalentries > 8 )
+    {
+        leg->SetNColumns( 3 );
+        leg->SetX1( 0.405 );
+    }
+    if ( totalentries > 4 )
+    {
+        leg->SetNColumns( 2 );
+        leg->SetX1( 0.405 );
+    }
     pad->cd();
 
     if ( !getOpt( "userhack0" ).IsNull() )
@@ -774,22 +872,29 @@ void drawLegend( std::vector<TH1*> data_hists, std::vector<TH1*> bkg_hists, std:
 void drawLogos( TPad* pad )
 {
     pad->cd();
-    TLatex* tex = new TLatex( 0.28, 0.78, "35.9 fb^{-1} (13 TeV)" );
-    tex->SetNDC();
-    tex->SetTextFont( 42 );
-    tex->SetTextSize( 0.049 );
-    tex->SetLineWidth( 2 );
-    tex->Draw();
-    TLatex* texcms = new TLatex( 0.28, 0.85, "CMS" );
+    TLatex* texlumi = new TLatex( 0.580, 0.93, "35.9 fb^{-1} (13 TeV)" );
+    texlumi->SetNDC();
+    texlumi->SetTextFont( 42 );
+    texlumi->SetTextSize( 0.049 );
+    texlumi->SetLineWidth( 2 );
+    texlumi->Draw();
+    //TLatex* texcom = new TLatex( 0.265, 0.77, "13 TeV" );
+    //texcom->SetNDC();
+    //texcom->SetTextFont( 42 );
+    //texcom->SetTextSize( 0.040 );
+    //texcom->SetLineWidth( 2 );
+    //texcom->Draw();
+    TLatex* texcms = new TLatex( 0.265, 0.845, "CMS" );
     texcms->SetNDC();
     texcms->SetTextFont( 62 );
-    texcms->SetTextSize( 0.058 );
+    texcms->SetTextSize( 0.060 );
     texcms->SetLineWidth( 2 );
     texcms->Draw();
-    TLatex* texpub = new TLatex( 0.40, 0.85, getOpt( "publogo" ) );
+    TLatex* texpub = new TLatex( 0.265, 0.81, getOpt( "publogo" ) );
     texpub->SetNDC();
     texpub->SetTextFont( 52 );
-    texpub->SetTextSize( 0.049 );
+    float xsize = texpub->GetXsize();
+    texpub->SetTextSize( 0.049 * 0.5 / 1.335 );
     texpub->SetLineWidth( 2 );
     texpub->Draw();
     pad->Modified();
@@ -843,30 +948,52 @@ void clearGlobalSettings()
 }
 
 //_________________________________________________________________________________________________
-void printYields( TH1* hist, int ibinmin, int ibinmax )
+void printYields( TH1* hist, int ibinmin, int ibinmax, std::ostream &yieldscout )
 {
-    std::cout << center( hist->GetName(), 20 ) << " , ";
+    yieldscout << center( hist->GetName(), 20 ) << " ,";
     for ( unsigned int ibin = ibinmin; ibin <= ibinmax; ++ibin )
     {
-        std::cout << prd( hist->GetBinContent( ibin ), 4, 9 );
-        std::cout << " +- ";
-        std::cout << prd( hist->GetBinError( ibin ), 4, 7 );
+        yieldscout << prd( hist->GetBinContent( ibin ), 4, 9 );
+        yieldscout << " +- ";
+        yieldscout << prd( hist->GetBinError( ibin ), 4, 7 );
         if ( ibin < ibinmax )
-            std::cout << " , ";
+            yieldscout << " ,";
         else if ( ibin == ibinmax )
-            std::cout << "\n";
+            yieldscout << " \n";
     }
 }
 
 //_________________________________________________________________________________________________
-void printYieldsTable(
+bool printYieldsTable(
         std::vector<TH1*>& data_hists,
         std::vector<TH1*>& bkg_hists,
         std::vector<TH1*>& sig_hists,
-        std::vector<TH1*>& ratio_hists )
+        std::vector<TH1*>& ratio_hists,
+        TString fname="" )
 {
+
     if ( data_hists.size() == 0 && bkg_hists.size() == 0 && sig_hists.size() == 0 )
-        return;
+        return false;
+
+    // https://stackoverflow.com/questions/366955/obtain-a-stdostream-either-from-stdcout-or-stdofstreamfile
+    std::streambuf * buf;
+    std::ofstream of;
+
+    if ( !fname.IsNull() )
+    {
+        fname.ReplaceAll( ".png", "" );
+        fname.ReplaceAll( ".pdf", "" );
+        fname.ReplaceAll( ".C", "" );
+        fname.ReplaceAll( ".txt", "" );
+        of.open( ( fname + ".txt" ).Data() );
+        buf = of.rdbuf();
+    }
+    else
+    {
+        buf = std::cout.rdbuf();
+    }
+
+    std::ostream yieldscout( buf );
 
     TH1* hist;
     if ( data_hists.size() != 0 ) hist = data_hists[0];
@@ -883,23 +1010,192 @@ void printYieldsTable(
     if ( !getOpt( "printYieldsMaxBin" ).IsNull() )
         ibinmax = getOpt( "printYieldsMaxBin" ).Atoi();
 
-    std::cout << center( "name", 20 ) << " , ";;
+    yieldscout << center( "name", 20 ) << " ,";
 
     // Putting column header
     for ( unsigned int ibin = ibinmin; ibin <= ibinmax; ++ibin )
     {
-        std::cout << center( Form( "bin%d", ibin ), 20 );
+        yieldscout << center( Form( "bin%d", ibin ), 20 );
         if ( ibin < ibinmax )
-            std::cout << " , ";
+            yieldscout << " ,";
         else if ( ibin == ibinmax )
-            std::cout << "\n";
+            yieldscout << " \n";
     }
 
-    for ( auto& bkg_hist  : bkg_hists )  printYields( bkg_hist , ibinmin, ibinmax );
-    if ( bkg_hists.size() ) printYields( getTotalBkgHists( bkg_hists ), ibinmin, ibinmax );
-    if ( getOpt( "noData" ).IsNull() ) for ( auto& data_hist : data_hists ) printYields( data_hist, ibinmin, ibinmax );
-    if ( getOpt( "noData" ).IsNull() ) for ( auto& ratio_hist  : ratio_hists )  printYields( ratio_hist , ibinmin, ibinmax );
-    for ( auto& sig_hist  : sig_hists )  printYields( sig_hist , ibinmin, ibinmax );
+    for ( auto& bkg_hist  : bkg_hists )  printYields( bkg_hist , ibinmin, ibinmax, yieldscout );
+    if ( bkg_hists.size() ) printYields( getTotalBkgHists( bkg_hists ), ibinmin, ibinmax, yieldscout );
+    if ( getOpt( "noData" ).IsNull() ) for ( auto& data_hist : data_hists ) printYields( data_hist, ibinmin, ibinmax, yieldscout );
+    if ( getOpt( "noData" ).IsNull() ) for ( auto& ratio_hist  : ratio_hists )  printYields( ratio_hist , ibinmin, ibinmax, yieldscout );
+    if ( getOpt( "noData" ).IsNull() && !getOpt( "printObsSignif" ).IsNull() )
+    {
+        std::vector<TH1*> signif_hists = getSignifHists( data_hists, getTotalBkgHists( bkg_hists ) );
+        for ( auto& signif_hist  : signif_hists )
+            printYields( signif_hist , ibinmin, ibinmax, yieldscout );
+    }
+    for ( auto& sig_hist  : sig_hists )  printYields( sig_hist , ibinmin, ibinmax, yieldscout );
+    if ( !getOpt( "printExpSignif" ).IsNull() )
+    {
+        std::vector<TH1*> signif_hists = getSignifHists( sig_hists, getTotalBkgHists( bkg_hists ), true );
+        for ( auto& signif_hist  : signif_hists )
+            printYields( signif_hist , ibinmin, ibinmax, yieldscout );
+    }
+
+    if ( !fname.IsNull() )
+    {
+        of.flush();
+        of.close();
+        gSystem->Exec( TString::Format( "chmod 755 %s", ( fname + ".txt" ).Data() ) );
+    }
+
+    return true;
+}
+
+//_________________________________________________________________________________________________
+// http://www.cplusplus.com/forum/beginner/171037/
+void transpose_CSV( const std::string& filename )
+{
+    typedef std::vector <std::string> record;
+    std::deque <record> table;
+    std::size_t cols = 0;
+
+    // read the file
+    {
+        std::ifstream f( filename );
+        std::string s;
+
+        while ( std::getline( f, s ) )
+        {
+            record r;
+            std::istringstream ss( s );
+            std::string cell;
+
+            while ( std::getline( ss, cell, ',' ) )
+                r.emplace_back( cell );
+
+            table.emplace_back( r );
+            cols = std::max <std::size_t> ( cols, r.size() );
+        }
+    }
+
+    // write the file, transposing (col <--> row)
+    {
+        std::ofstream f( filename );
+
+        for ( std::size_t col = 0; col < cols; col++ )
+        {
+            f << table[ 0 ][ col ];
+
+            for ( std::size_t row = 1; row < table.size(); row++ )
+            {
+                f << ",";
+
+                if ( col < table[ row ].size() )
+                    f << table[ row ][ col ];
+            }
+
+            f << "\n";
+        }
+    }
+}
+
+//_________________________________________________________________________________________________
+void setMaximum(
+        std::vector<TH1*> data_hists,
+        std::vector<TH1*> bkg_hists,
+        std::vector<TH1*> sig_hists )
+{
+    float max = 0;
+    float maxerr = 0;
+    if ( getOpt( "noData" ).IsNull() )
+    for ( auto& hist : data_hists )
+        if ( max < ( hist->GetMaximum() + hist->GetBinError( hist->GetMaximumBin() ) ) )
+            max = hist->GetMaximum() + hist->GetBinError( hist->GetMaximumBin() );
+    TH1* hist = getTotalBkgHists( bkg_hists );
+    if ( max < ( hist->GetMaximum() + hist->GetBinError( hist->GetMaximumBin() ) ) )
+        max = hist->GetMaximum() + hist->GetBinError( hist->GetMaximumBin() );
+    for ( auto& hist : sig_hists )
+        if ( max < ( hist->GetMaximum() + hist->GetBinError( hist->GetMaximumBin() ) ) )
+            max = hist->GetMaximum() + hist->GetBinError( hist->GetMaximumBin() );
+    float setmax = 1.8 * max;
+    options["Maximum"] = TString::Format( "%f", setmax );
+    if ( setmax < 100 )
+        options["yTitleOffset"] = "1.4";
+    else if ( setmax < 1000 )
+        options["yTitleOffset"] = "1.75";
+    else
+        options["yTitleOffset"] = "2.1";
+}
+
+//_________________________________________________________________________________________________
+void save( TPad* c,
+        TString fname,
+        std::vector<TH1*> data_hists = std::vector<TH1*>(),
+        std::vector<TH1*> bkg_hists = std::vector<TH1*>(),
+        std::vector<TH1*> sig_hists = std::vector<TH1*>(),
+        std::vector<TH1*> ratio_hists = std::vector<TH1*>()
+        )
+{
+    if ( printYieldsTable( data_hists, bkg_hists, sig_hists, ratio_hists, fname ) )
+    {
+        TString csvfilename = fname;
+        csvfilename.ReplaceAll( ".png", "" );
+        csvfilename.ReplaceAll( ".pdf", "" );
+        csvfilename.ReplaceAll( ".C", "" );
+        csvfilename.ReplaceAll( ".txt", "" );
+        transpose_CSV( ( csvfilename + ".txt" ).Data() );
+    }
+    c->SaveAs( fname );
+    gSystem->Chmod( fname, 755 );
+}
+
+//_________________________________________________________________________________________________
+Hists makeHistsFromTH2( std::vector<TH2*> hists )
+{
+    // Final output instance
+    Hists hist_pair_out;
+
+    // Nominal histogram
+    std::vector<TH1*> nomhists;
+    // Total syst histogram
+    std::vector<TH1*> systhists;
+
+    // Loop over the input TH2's
+    for ( unsigned int ihist = 0; ihist < hists.size(); ++ihist )
+    {
+        TH2* hist = hists[ihist];
+        std::vector<TH1*> thissysts;
+        for ( int ibin = 1; ibin <= hist->GetNbinsY(); ++ibin )
+        {
+            TString name = hist->GetName();
+            // https://root-forum.cern.ch/t/setbinlabel-causes-unexpected-behavior-when-handling-the-histograms/26202/2
+            THashList* labels = hist->GetXaxis()->GetLabels();
+            if (labels)
+                hist->GetXaxis()->SetRange(1, hist->GetXaxis()->GetNbins() ); 
+            if ( ibin != 1 )
+                name += Form( "syst%d", ibin - 1 );
+            TH1D* projhist = hist->ProjectionX( name.Data(), ibin, ibin );
+            projhist->SetDirectory( 0 );
+            if ( ibin == 1 )
+            {
+                nomhists.push_back( projhist );
+            }
+            else
+            {
+                // If the histograms are booked but nothing is filled,
+                // it's likely that the systematics didn't apply to this specific histogram.
+                // In such case, we don't want to erroneously blow up the error.
+                if ( projhist->Integral() != 0 )
+                    thissysts.push_back( projhist );
+            }
+        }
+        TH1* totalsyst = getSystByMaxDiff( nomhists.back(), thissysts, getNormSyst( hist ) );
+        systhists.push_back( totalsyst );
+    }
+
+    for ( unsigned int ihist = 0; ihist < nomhists.size(); ++ihist )
+        hist_pair_out.push_back( std::pair<TH1*, TH1*>( nomhists[ihist], systhists[ihist] ) );
+
+    return hist_pair_out;
 }
 
 //_________________________________________________________________________________________________
@@ -933,8 +1229,9 @@ std::vector<TH1*> plotmaker(
     // For some reason, even though I ask 800x824, it outputs 796x796 pdf or png files.
     // In x-direction 4 pixels are added
     // In y-direction 28 pixels are added
-    double canvas_width = !getOpt( "legendOnMainPad" ).IsNull() ? 604 : 1004;
-    TCanvas* canvas = new TCanvas( "canvas", "canvas", 0, 0, canvas_width, 828 );
+    double canvas_width  = !getOpt( "legendOnMainPad" ).IsNull() ? 604 : 1004;
+    double canvas_height = !getOpt( "ratioPaneAtBottom" ).IsNull() ? 728 : 828;
+    TCanvas* canvas = new TCanvas( "canvas", "canvas", 0, 0, canvas_width, canvas_height );
     canvas->SetHighLightColor( 2 );
     canvas->Range( 0, 0, 1, 1 );
     canvas->SetFillColor( -1 );
@@ -950,7 +1247,7 @@ std::vector<TH1*> plotmaker(
     double legendPadOffset = !getOpt( "legendOnMainPad" ).IsNull() ? 0 : 0.4;
     TPad* pad0 = 0;
     if ( !getOpt( "ratioPaneAtBottom" ).IsNull() )
-        pad0 = new TPad( "pad0", "pad0", 0, 0.3, 1 - legendPadOffset, 1.0 );
+        pad0 = new TPad( "pad0", "pad0", 0, 0.2, 1 - legendPadOffset, 1.0 );
     else
         pad0 = new TPad( "pad0", "pad0", 0, 0, 1 - legendPadOffset, 0.7 );
     pad0->Draw();
@@ -984,9 +1281,9 @@ std::vector<TH1*> plotmaker(
     canvas->cd();
     TPad* pad2 = 0;
     if ( !getOpt( "ratioPaneAtBottom" ).IsNull() )
-        pad2 = new TPad( "pad2", "pad2", 0, 0.125, 1 - legendPadOffset, 0.425 );
+        pad2 = new TPad( "pad2", "pad2", 0, 0.0, 1 - legendPadOffset, 0.343 );
     else
-        pad2 = new TPad( "pad2", "pad2", 0, 0.7, 1 - legendPadOffset, 1 );
+        pad2 = new TPad( "pad2", "pad2", 0, 0.8, 1 - legendPadOffset, 1 );
     pad2->Draw();
     pad2->cd();
     pad2->Range( -80, -0.82, 320, 1.98 );
@@ -1020,6 +1317,11 @@ std::vector<TH1*> plotmaker(
     std::vector<TH1*> data_hists = histsWithFullError( datas_pair_in );
     std::vector<TH1*> bkg_hists = histsWithFullError( bkgs_pair_in );
     std::vector<TH1*> sig_hists = histsWithFullError( sigs_pair_in );
+
+    // ~-~-~-~-~-~
+    // Set Maximum
+    // ~-~-~-~-~-~
+    setMaximum( data_hists, bkg_hists, sig_hists );
     
     // ~-~-~-~-~-~-~-~
     // Draw background
@@ -1123,22 +1425,26 @@ std::vector<TH1*> plotmaker(
     // ~-~-~-~-~-
     if ( !getOpt( "onlyLin" ).IsNull() )
     {
-        canvas->SaveAs( getOpt( "plotOutputName" ) + "_liny.png" );
-        canvas->SaveAs( getOpt( "plotOutputName" ) + "_liny.pdf" );
+        save( canvas, getOpt( "plotOutputName" ) + "_ratio_liny.png", data_hists, bkg_hists, sig_hists, ratio_hists );
+        save( canvas, getOpt( "plotOutputName" ) + "_ratio_liny.pdf", data_hists, bkg_hists, sig_hists, ratio_hists );
+//        save( canvas, getOpt( "plotOutputName" ) + "_ratio_liny.C"  , data_hists, bkg_hists, sig_hists, ratio_hists );
     }
     else if ( !getOpt( "onlyLog" ).IsNull() )
     {
         pad0->SetLogy();
-        canvas->SaveAs( getOpt( "plotOutputName" ) + "_logy.png" );
-        canvas->SaveAs( getOpt( "plotOutputName" ) + "_logy.pdf" );
+        save( canvas, getOpt( "plotOutputName" ) + "_ratio_logy.png", data_hists, bkg_hists, sig_hists, ratio_hists );
+        save( canvas, getOpt( "plotOutputName" ) + "_ratio_logy.pdf", data_hists, bkg_hists, sig_hists, ratio_hists );
+//        save( canvas, getOpt( "plotOutputName" ) + "_ratio_logy.C"  , data_hists, bkg_hists, sig_hists, ratio_hists );
     }
     else
     {
-        canvas->SaveAs( getOpt( "plotOutputName" ) + "_liny.png" );
-        canvas->SaveAs( getOpt( "plotOutputName" ) + "_liny.pdf" );
+        save( canvas, getOpt( "plotOutputName" ) + "_ratio_liny.png", data_hists, bkg_hists, sig_hists, ratio_hists );
+        save( canvas, getOpt( "plotOutputName" ) + "_ratio_liny.pdf", data_hists, bkg_hists, sig_hists, ratio_hists );
+//        save( canvas, getOpt( "plotOutputName" ) + "_ratio_liny.C"  , data_hists, bkg_hists, sig_hists, ratio_hists );
         pad0->SetLogy();
-        canvas->SaveAs( getOpt( "plotOutputName" ) + "_logy.png" );
-        canvas->SaveAs( getOpt( "plotOutputName" ) + "_logy.pdf" );
+        save( canvas, getOpt( "plotOutputName" ) + "_ratio_logy.png", data_hists, bkg_hists, sig_hists, ratio_hists );
+        save( canvas, getOpt( "plotOutputName" ) + "_ratio_logy.pdf", data_hists, bkg_hists, sig_hists, ratio_hists );
+//        save( canvas, getOpt( "plotOutputName" ) + "_ratio_logy.C"  , data_hists, bkg_hists, sig_hists, ratio_hists );
     }
 
     // ~-~-~-~-~-~-~-~-~-
@@ -1146,10 +1452,31 @@ std::vector<TH1*> plotmaker(
     // ~-~-~-~-~-~-~-~-~-
     if ( !getOpt( "saveMainPad" ).IsNull() )
     {
-        pad0->SetLogy(0);
-        pad0->SaveAs( getOpt( "plotOutputName" ) + "_main_liny.pdf" );
-        pad0->SetLogy(1);
-        pad0->SaveAs( getOpt( "plotOutputName" ) + "_main_logy.pdf" );
+        if ( !getOpt( "onlyLin" ).IsNull() )
+        {
+            pad0->SetLogy(0);
+            save( pad0, getOpt( "plotOutputName" ) + "_main_liny.pdf", data_hists, bkg_hists, sig_hists, ratio_hists );
+            save( pad0, getOpt( "plotOutputName" ) + "_main_liny.png", data_hists, bkg_hists, sig_hists, ratio_hists );
+//            save( pad0, getOpt( "plotOutputName" ) + "_main_liny.C"  , data_hists, bkg_hists, sig_hists, ratio_hists );
+        }
+        else if ( !getOpt( "onlyLog" ).IsNull() )
+        {
+            pad0->SetLogy(1);
+            save( pad0, getOpt( "plotOutputName" ) + "_main_logy.pdf", data_hists, bkg_hists, sig_hists, ratio_hists );
+            save( pad0, getOpt( "plotOutputName" ) + "_main_logy.png", data_hists, bkg_hists, sig_hists, ratio_hists );
+//            save( pad0, getOpt( "plotOutputName" ) + "_main_logy.C"  , data_hists, bkg_hists, sig_hists, ratio_hists );
+        }
+        else
+        {
+            pad0->SetLogy(0);
+            save( pad0, getOpt( "plotOutputName" ) + "_main_liny.pdf", data_hists, bkg_hists, sig_hists, ratio_hists );
+            save( pad0, getOpt( "plotOutputName" ) + "_main_liny.png", data_hists, bkg_hists, sig_hists, ratio_hists );
+//            save( pad0, getOpt( "plotOutputName" ) + "_main_liny.C"  , data_hists, bkg_hists, sig_hists, ratio_hists );
+            pad0->SetLogy(1);
+            save( pad0, getOpt( "plotOutputName" ) + "_main_logy.pdf", data_hists, bkg_hists, sig_hists, ratio_hists );
+            save( pad0, getOpt( "plotOutputName" ) + "_main_logy.png", data_hists, bkg_hists, sig_hists, ratio_hists );
+//            save( pad0, getOpt( "plotOutputName" ) + "_main_logy.C"  , data_hists, bkg_hists, sig_hists, ratio_hists );
+        }
     }
 
     delete canvas;
@@ -1273,6 +1600,20 @@ std::vector<TH1*> plotmaker(
     for ( unsigned int isig = 0; isig < sig_hists.size(); ++isig )
         sigs_pair_in.push_back( std::pair<TH1*, TH1*>( sig_hists[isig], sig_hists_syst[isig] ) );
         
+    return plotmaker( options_string, datas_pair_in, bkgs_pair_in, sigs_pair_in );
+}
+
+//_________________________________________________________________________________________________
+std::vector<TH1*> plotmaker(
+    std::string options_string,
+    std::vector<TH2*> data_hists,
+    std::vector<TH2*> bkg_hists,
+    std::vector<TH2*> sig_hists = std::vector<TH2*>()
+)
+{
+    Hists datas_pair_in = makeHistsFromTH2( data_hists );
+    Hists bkgs_pair_in = makeHistsFromTH2( bkg_hists );
+    Hists sigs_pair_in = makeHistsFromTH2( sig_hists );
     return plotmaker( options_string, datas_pair_in, bkgs_pair_in, sigs_pair_in );
 }
 

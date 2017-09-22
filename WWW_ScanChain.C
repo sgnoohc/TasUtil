@@ -21,192 +21,235 @@ void ScanChain( TChain* chain, TString output_name, TString base_optstr, int nev
     int babyver = getBabyVersion( base_optstr );
     std::cout << "baby version = " << babyver << std::endl;
 
-    TasUtil::EventList event_list( "bobaklist.txt" );
+    TasUtil::EventList event_list( "list.txt" );
 
     // -~-~-~-~-~
     // Set output
     // -~-~-~-~-~
+    if ( !base_optstr.Contains( "wwwevents" ) )
+        looper.setSkim( "output_wwwevents.root" );
     TasUtil::AutoHist hists;
+
     while ( looper.nextEvent() )
     {
         if ( wwwbaby.isData() )
         {
-            duplicate_removal::DorkyEventIdentifier id( wwwbaby.run(), wwwbaby.evt(), wwwbaby.lumi() );
+            duplicate_removal::DorkyEventIdentifier
+                id( wwwbaby.run(), wwwbaby.evt(), wwwbaby.lumi() );
             if ( is_duplicate( id ) )
                 continue;
         }
+
         setObjectIndices();
-        doAnalysis( hists, event_list );
-        //doTmpAnalysis( hists );
+
+        if ( event_list.has( wwwbaby.evt(), wwwbaby.run(), wwwbaby.lumi() ) )
+            printEvent();
+
+        if ( doAnalysis( hists ) )
+            if ( !base_optstr.Contains( "wwwevents" ) )
+                looper.fillSkim();
     }
+    if ( !base_optstr.Contains( "wwwevents" ) )
+        looper.saveSkim();
+    looper.getTTreePerfStats()->SaveAs( "perf.root" );
     hists.save( output_name );
 }
 
 //_________________________________________________________________________________________________
-void doTmpAnalysis( TasUtil::AutoHist& hists )
+bool doAnalysis( TasUtil::AutoHist& hists )
 {
-    lepidx["SignalLepton"] = lepidx["LooseLepton"];
-    if (!( lepidx["TightLepton"].size()                     ==   1   )) return;
-    if (!( lepidx["LooseLepton"].size()                     ==   2   )) return;
-    if (!( wwwbaby.lep_p4()[lepidx["SignalLepton"][0]].pt()  >   30. )) return;
-    if (!( wwwbaby.lep_p4()[lepidx["SignalLepton"][1]].pt()  >   30. )) return;
-    if (!( isSS()                                                    )) return;
-    if ( isSSMM() && Mll() > 40. )
+    bool passed = false;
+    for ( int isyst = 0; isyst < NSYST; ++isyst )
     {
-        fillHistograms( hists, "SSMM_CutSSMMLep", 0 );
-        if ( jetidx["GoodSSJet"].size() == 0 )
-            fillHistograms( hists, "SSMM_CutNjet", 0 );
+        if ( passSSEE              () ) fillHistograms ( passed, hists, "SSEE"             , 0 , isyst );
+        if ( passSSEM              () ) fillHistograms ( passed, hists, "SSEM"             , 1 , isyst );
+        if ( passSSMM              () ) fillHistograms ( passed, hists, "SSMM"             , 2 , isyst );
+        if ( pass3L0SFOS           () ) fillHistograms ( passed, hists, "3L0SFOS"          , 3 , isyst );
+        if ( pass3L1SFOS           () ) fillHistograms ( passed, hists, "3L1SFOS"          , 4 , isyst );
+        if ( pass3L2SFOS           () ) fillHistograms ( passed, hists, "3L2SFOS"          , 5 , isyst );
+        if ( passBTagVRSSEE        () ) fillHistograms ( passed, hists, "BTagVRSSEE"       , 6 , isyst );
+        if ( passBTagVRSSEM        () ) fillHistograms ( passed, hists, "BTagVRSSEM"       , 7 , isyst );
+        if ( passBTagVRSSMM        () ) fillHistograms ( passed, hists, "BTagVRSSMM"       , 8 , isyst );
+        if ( passBTagARSSEE        () ) fillHistograms ( passed, hists, "BTagARSSEE"       , 9 , isyst );
+        if ( passBTagARSSEM        () ) fillHistograms ( passed, hists, "BTagARSSEM"       , 10, isyst );
+        if ( passBTagARSSMM        () ) fillHistograms ( passed, hists, "BTagARSSMM"       , 11, isyst );
+        if ( passSSAREE            () ) fillHistograms ( passed, hists, "SSAREE"           , 12, isyst );
+        if ( passSSAREM            () ) fillHistograms ( passed, hists, "SSAREM"           , 13, isyst );
+        if ( passSSARMM            () ) fillHistograms ( passed, hists, "SSARMM"           , 14, isyst );
+        if ( passMjjSBVRSSEE       () ) fillHistograms ( passed, hists, "MjjSBVRSSEE"      , 15, isyst );
+        if ( passMjjSBVRSSEM       () ) fillHistograms ( passed, hists, "MjjSBVRSSEM"      , 16, isyst );
+        if ( passMjjSBVRSSMM       () ) fillHistograms ( passed, hists, "MjjSBVRSSMM"      , 17, isyst );
+        if ( passMjjSBARSSEE       () ) fillHistograms ( passed, hists, "MjjSBARSSEE"      , 18, isyst );
+        if ( passMjjSBARSSEM       () ) fillHistograms ( passed, hists, "MjjSBARSSEM"      , 19, isyst );
+        if ( passMjjSBARSSMM       () ) fillHistograms ( passed, hists, "MjjSBARSSMM"      , 20, isyst );
+        if ( passSSEEPred          () ) fillHistograms ( passed, hists, "SSEEPred"         , 21, isyst );
+        if ( passSSEMPred          () ) fillHistograms ( passed, hists, "SSEMPred"         , 22, isyst );
+        if ( passSSMMPred          () ) fillHistograms ( passed, hists, "SSMMPred"         , 23, isyst );
+        if ( passSSAREEPred        () ) fillHistograms ( passed, hists, "SSAREEPred"       , 21, isyst );
+        if ( passSSAREMPred        () ) fillHistograms ( passed, hists, "SSAREMPred"       , 22, isyst );
+        if ( passSSARMMPred        () ) fillHistograms ( passed, hists, "SSARMMPred"       , 23, isyst );
+        if ( passBTagVRSSEEPred    () ) fillHistograms ( passed, hists, "BTagVRSSEEPred"   , 24, isyst );
+        if ( passBTagVRSSEMPred    () ) fillHistograms ( passed, hists, "BTagVRSSEMPred"   , 25, isyst );
+        if ( passBTagVRSSMMPred    () ) fillHistograms ( passed, hists, "BTagVRSSMMPred"   , 26, isyst );
+        if ( passBTagARSSEEPred    () ) fillHistograms ( passed, hists, "BTagARSSEEPred"   , 24, isyst );
+        if ( passBTagARSSEMPred    () ) fillHistograms ( passed, hists, "BTagARSSEMPred"   , 25, isyst );
+        if ( passBTagARSSMMPred    () ) fillHistograms ( passed, hists, "BTagARSSMMPred"   , 26, isyst );
+        if ( passMjjSBVRSSEEPred   () ) fillHistograms ( passed, hists, "MjjSBVRSSEEPred"  , 27, isyst );
+        if ( passMjjSBVRSSEMPred   () ) fillHistograms ( passed, hists, "MjjSBVRSSEMPred"  , 28, isyst );
+        if ( passMjjSBVRSSMMPred   () ) fillHistograms ( passed, hists, "MjjSBVRSSMMPred"  , 29, isyst );
+        if ( passMjjSBARSSEEPred   () ) fillHistograms ( passed, hists, "MjjSBARSSEEPred"  , 27, isyst );
+        if ( passMjjSBARSSEMPred   () ) fillHistograms ( passed, hists, "MjjSBARSSEMPred"  , 28, isyst );
+        if ( passMjjSBARSSMMPred   () ) fillHistograms ( passed, hists, "MjjSBARSSMMPred"  , 29, isyst );
+        if ( passMjjSBPRVRSSEE     () ) fillHistograms ( passed, hists, "MjjSBPRVRSSEE"    , 30, isyst );
+        if ( passMjjSBPRVRSSEM     () ) fillHistograms ( passed, hists, "MjjSBPRVRSSEM"    , 31, isyst );
+        if ( passMjjSBPRVRSSMM     () ) fillHistograms ( passed, hists, "MjjSBPRVRSSMM"    , 32, isyst );
+        if ( passMjjSBPRARSSEE     () ) fillHistograms ( passed, hists, "MjjSBPRARSSEE"    , 33, isyst );
+        if ( passMjjSBPRARSSEM     () ) fillHistograms ( passed, hists, "MjjSBPRARSSEM"    , 34, isyst );
+        if ( passMjjSBPRARSSMM     () ) fillHistograms ( passed, hists, "MjjSBPRARSSMM"    , 35, isyst );
+        if ( passMjjSBPRVRSSEEPred () ) fillHistograms ( passed, hists, "MjjSBPRVRSSEEPred", 36, isyst );
+        if ( passMjjSBPRVRSSEMPred () ) fillHistograms ( passed, hists, "MjjSBPRVRSSEMPred", 37, isyst );
+        if ( passMjjSBPRVRSSMMPred () ) fillHistograms ( passed, hists, "MjjSBPRVRSSMMPred", 38, isyst );
+        if ( passMjjSBPRARSSEEPred () ) fillHistograms ( passed, hists, "MjjSBPRARSSEEPred", 36, isyst );
+        if ( passMjjSBPRARSSEMPred () ) fillHistograms ( passed, hists, "MjjSBPRARSSEMPred", 37, isyst );
+        if ( passMjjSBPRARSSMMPred () ) fillHistograms ( passed, hists, "MjjSBPRARSSMMPred", 38, isyst );
     }
-    if ( isSSEM() && Mll() > 40. && abs(wwwbaby.lep_pdgId()[lepidx["LbntLepton"][0]]) == 13 )
-        fillHistograms( hists, "SSEM_CutSSEMLep", 1 );
-    if ( isSSEE() && Mll() > 40. )
-        fillHistograms( hists, "SSEE_CutSSEELep", 2 );
+    return passed;
 }
 
-//_________________________________________________________________________________________________
-void doAnalysis( TasUtil::AutoHist& hists, TasUtil::EventList& event_list )
-{
-    int cutidx = 0;
-    if ( passSSMM() ) fillHistograms( hists, "SSMM", 0 );
-    if ( passSSEM() ) fillHistograms( hists, "SSEM", 1 );
-    if ( passSSEE() ) fillHistograms( hists, "SSEE", 2 );
-    if ( pass3L0SFOS() ) fillHistograms( hists, "3L0SFOS", 3 );
-    if ( pass3L1SFOS() ) fillHistograms( hists, "3L1SFOS", 4 );
-    if ( pass3L2SFOS() ) fillHistograms( hists, "3L2SFOS", 5 );
-    if ( passBTagVRSSMM() ) fillHistograms( hists, "BTagVRSSMM",  6 );
-    if ( passBTagVRSSEM() ) fillHistograms( hists, "BTagVRSSEM",  7 );
-    if ( passBTagVRSSEE() ) fillHistograms( hists, "BTagVRSSEE",  8 );
-    if ( passBTagARSSMM() ) fillHistograms( hists, "BTagARSSMM",  9 );
-    if ( passBTagARSSEM() ) fillHistograms( hists, "BTagARSSEM", 10 );
-    if ( passBTagARSSEE() ) fillHistograms( hists, "BTagARSSEE", 11 );
+//=================================================================================================
+//=================================================================================================
+//=================================================================================================
 
+//_________________________________________________________________________________________________
+void fillHistograms( bool& passed, TasUtil::AutoHist& hists, TString prefix, int regionid, int isyst )
+{
+
+    passed = true;
+
+    // Print event lists
     if ( wwwbaby.isData() )
-    {
-        if ( passBTagVRSSMM() )
-        {
-            std::cout << std::endl;
-            std::cout << "mypassedBTagVRSSMM ";
-            std::cout << wwwbaby.evt() << " ";
-            std::cout << wwwbaby.run() << " ";
-            std::cout << wwwbaby.lumi() << " ";
-            std::cout << std::endl;
-        }
-        if ( passBTagVRSSEM() )
-        {
-            std::cout << std::endl;
-            std::cout << "mypassedBTagVRSSEM ";
-            std::cout << wwwbaby.evt() << " ";
-            std::cout << wwwbaby.run() << " ";
-            std::cout << wwwbaby.lumi() << " ";
-            std::cout << std::endl;
-        }
-        if ( passBTagVRSSEE() )
-        {
-            std::cout << std::endl;
-            std::cout << "mypassedBTagVRSSEE ";
-            std::cout << wwwbaby.evt() << " ";
-            std::cout << wwwbaby.run() << " ";
-            std::cout << wwwbaby.lumi() << " ";
-            std::cout << std::endl;
-        }
-    }
+        printevent( prefix );
 
-    if ( event_list.has( wwwbaby.evt(), wwwbaby.run(), wwwbaby.lumi() ) )
-    {
-
-        passBTagVRSSMM( -1, cutidx );
-        if ( cutidx != 2 && cutidx != 14 )
-        {
-            std::cout << std::endl;
-            std::cout << "passBTagVRSSMM ";
-            std::cout << wwwbaby.evt() << " ";
-            std::cout << wwwbaby.run() << " ";
-            std::cout << wwwbaby.lumi() << " ";
-            std::cout << cutidx << std::endl;
-        }
-        passBTagVRSSEM( -1, cutidx );
-        if ( cutidx != 2 && cutidx != 16 )
-        {
-            std::cout << std::endl;
-            std::cout << "passBTagVRSSEM ";
-            std::cout << wwwbaby.evt() << " ";
-            std::cout << wwwbaby.run() << " ";
-            std::cout << wwwbaby.lumi() << " ";
-            std::cout << cutidx << std::endl;
-        }
-        passBTagVRSSEE( -1, cutidx );
-        if ( cutidx != 2 && cutidx != 16 )
-        {
-            std::cout << std::endl;
-            std::cout << "passBTagVRSSEE ";
-            std::cout << wwwbaby.evt() << " ";
-            std::cout << wwwbaby.run() << " ";
-            std::cout << wwwbaby.lumi() << " ";
-            std::cout << cutidx << std::endl;
-        }
-    }
-}
-
-//=================================================================================================
-//=================================================================================================
-//=================================================================================================
-
-//_________________________________________________________________________________________________
-void fillHistograms( TasUtil::AutoHist& hists, TString prefix, int regionid )
-{
+    // Sample categories (e.g. Z, DY.. or fake, trueSS etc.)
     int sample_priority = -1;
     TString sample_category = sampleCategory( sample_priority );
     TString bkg_category = bkgCategory();
     TString empty = "";
-    fillHistogramsFull( hists, sample_category, empty, prefix, regionid );
+
+    // If it's for a prediction the data category is replaced by "fakepred"
+    if ( wwwbaby.isData() && prefix.Contains( "AR" ) && prefix.Contains( "Pred" ) )
+    {
+        sample_category = "fakepred";
+        bkg_category = "fakepred";
+    }
+
+    // Fill histograms for the MC boundary plots
+    fillHistogramsFull( hists, sample_category, empty, prefix, regionid, isyst );
+
+    // Fill histograms for the bkg type boundary plots
     if ( sample_priority == 1 )
-        fillHistogramsFull( hists, empty, bkg_category, prefix, regionid );
+        fillHistogramsFull( hists, empty, bkg_category, prefix, regionid, isyst );
+
+    // The following fill will only occur for counter categories
+    fillHistogramsFull( hists, sample_category, bkg_category, prefix, regionid, isyst );
 }
 
 //_________________________________________________________________________________________________
-void fillHistogramsFull( TasUtil::AutoHist& hists, TString sample_category, TString bkg_category, TString prefix, int regionid )
+void fillHistogramsFull(
+        TasUtil::AutoHist& hists,
+        TString sample_category,
+        TString bkg_category,
+        TString prefix,
+        int regionid,
+        int isyst )
 {
+    // Compute a boolean whether to use fakefactor or not.
+    bool ff = prefix.Contains( "Pred" ) && prefix.Contains( "AR" );
+
+    // Generally the format is something like "ttX__" or "_trueSS_"
     TString procprefix = sample_category + "_" + bkg_category;
-    hists.fill( regionid     , Form( "%s_SignalRegion_counter"    , procprefix.Data() ) , weight() , 6  , 0 , 6 );
-    hists.fill( regionid     , Form( "%s_SignalRegion_rawcounter" , procprefix.Data() ) , 1        , 6  , 0 , 6 );
-    hists.fill( regionid - 6 , Form( "%s_BTagVRSS_counter"        , procprefix.Data() ) , weight() , 3  , 0 , 3 );
-    hists.fill( regionid - 6 , Form( "%s_BTagVRSS_rawcounter"     , procprefix.Data() ) , 1        , 3  , 0 , 3 );
-    hists.fill( regionid - 9 , Form( "%s_BTagARSS_counter"        , procprefix.Data() ) , weight() , 3  , 0 , 3 );
-    hists.fill( regionid - 9 , Form( "%s_BTagARSS_rawcounter"     , procprefix.Data() ) , 1        , 3  , 0 , 3 );
+
+    // The fake prediction will be applied to the appropriate region.
+    if ( wwwbaby.isData() && prefix.Contains( "AR" ) && prefix.Contains( "Pred" ) )
+    {
+        if ( prefix.Contains( "SSAR" ) ) prefix.ReplaceAll( "AR", "" );
+        if ( prefix.Contains( "ARSS" ) ) prefix.ReplaceAll( "AR", "VR" );
+    }
+
+    // The counter plots are split by lepton flavors
+    std::vector<TString> binlabels = { "ee", "e#mu", "#mu#mu" };
+    double wgt = weight( ff, isyst );
+
+    hists.fill( regionid     , isyst, Form( "%s_SS_counter"              , procprefix.Data() ), wgt, 3, 0, 3, NSYST, 0, NSYST, binlabels );
+    hists.fill( regionid     , isyst, Form( "%s_SS_rawcounter"           , procprefix.Data() ), 1  , 3, 0, 3, NSYST, 0, NSYST, binlabels );
+    hists.fill( regionid - 3 , isyst, Form( "%s_3L_counter"              , procprefix.Data() ), wgt, 3, 0, 3, NSYST, 0, NSYST, binlabels );
+    hists.fill( regionid - 3 , isyst, Form( "%s_3L_rawcounter"           , procprefix.Data() ), 1  , 3, 0, 3, NSYST, 0, NSYST, binlabels );
+    hists.fill( regionid - 6 , isyst, Form( "%s_BTagVRSS_counter"        , procprefix.Data() ), wgt, 3, 0, 3, NSYST, 0, NSYST, binlabels );
+    hists.fill( regionid - 6 , isyst, Form( "%s_BTagVRSS_rawcounter"     , procprefix.Data() ), 1  , 3, 0, 3, NSYST, 0, NSYST, binlabels );
+    hists.fill( regionid - 9 , isyst, Form( "%s_BTagARSS_counter"        , procprefix.Data() ), wgt, 3, 0, 3, NSYST, 0, NSYST, binlabels );
+    hists.fill( regionid - 9 , isyst, Form( "%s_BTagARSS_rawcounter"     , procprefix.Data() ), 1  , 3, 0, 3, NSYST, 0, NSYST, binlabels );
+    hists.fill( regionid - 12, isyst, Form( "%s_ARSS_counter"            , procprefix.Data() ), wgt, 3, 0, 3, NSYST, 0, NSYST, binlabels );
+    hists.fill( regionid - 12, isyst, Form( "%s_ARSS_rawcounter"         , procprefix.Data() ), 1  , 3, 0, 3, NSYST, 0, NSYST, binlabels );
+    hists.fill( regionid - 15, isyst, Form( "%s_MjjSBVRSS_counter"       , procprefix.Data() ), wgt, 3, 0, 3, NSYST, 0, NSYST, binlabels );
+    hists.fill( regionid - 15, isyst, Form( "%s_MjjSBVRSS_rawcounter"    , procprefix.Data() ), 1  , 3, 0, 3, NSYST, 0, NSYST, binlabels );
+    hists.fill( regionid - 18, isyst, Form( "%s_MjjSBARSS_counter"       , procprefix.Data() ), wgt, 3, 0, 3, NSYST, 0, NSYST, binlabels );
+    hists.fill( regionid - 18, isyst, Form( "%s_MjjSBARSS_rawcounter"    , procprefix.Data() ), 1  , 3, 0, 3, NSYST, 0, NSYST, binlabels );
+
+    hists.fill( regionid - 21, isyst, Form( "%s_SSPred_counter"          , procprefix.Data() ), wgt, 3, 0, 3, NSYST, 0, NSYST, binlabels );
+    hists.fill( regionid - 21, isyst, Form( "%s_SSPred_rawcounter"       , procprefix.Data() ), 1  , 3, 0, 3, NSYST, 0, NSYST, binlabels );
+    hists.fill( regionid - 24, isyst, Form( "%s_BTagVRSSPred_counter"    , procprefix.Data() ), wgt, 3, 0, 3, NSYST, 0, NSYST, binlabels );
+    hists.fill( regionid - 24, isyst, Form( "%s_BTagVRSSPred_rawcounter" , procprefix.Data() ), 1  , 3, 0, 3, NSYST, 0, NSYST, binlabels );
+    hists.fill( regionid - 27, isyst, Form( "%s_MjjSBVRSSPred_counter"   , procprefix.Data() ), wgt, 3, 0, 3, NSYST, 0, NSYST, binlabels );
+    hists.fill( regionid - 27, isyst, Form( "%s_MjjSBVRSSPred_rawcounter", procprefix.Data() ), 1  , 3, 0, 3, NSYST, 0, NSYST, binlabels );
+
+    hists.fill( regionid - 30, isyst, Form( "%s_MjjSBPRVRSS_counter"       , procprefix.Data() ), wgt, 3, 0, 3, NSYST, 0, NSYST, binlabels );
+    hists.fill( regionid - 30, isyst, Form( "%s_MjjSBPRVRSS_rawcounter"    , procprefix.Data() ), 1  , 3, 0, 3, NSYST, 0, NSYST, binlabels );
+    hists.fill( regionid - 33, isyst, Form( "%s_MjjSBPRARSS_counter"       , procprefix.Data() ), wgt, 3, 0, 3, NSYST, 0, NSYST, binlabels );
+    hists.fill( regionid - 33, isyst, Form( "%s_MjjSBPRARSS_rawcounter"    , procprefix.Data() ), 1  , 3, 0, 3, NSYST, 0, NSYST, binlabels );
+    hists.fill( regionid - 36, isyst, Form( "%s_MjjSBPRVRSSPred_counter"   , procprefix.Data() ), wgt, 3, 0, 3, NSYST, 0, NSYST, binlabels );
+    hists.fill( regionid - 36, isyst, Form( "%s_MjjSBPRVRSSPred_rawcounter", procprefix.Data() ), 1  , 3, 0, 3, NSYST, 0, NSYST, binlabels );
+
+
+    // Check whether the beginning or the ending of the procprefix has "_"
+    if ( !procprefix.BeginsWith( "_" ) && !procprefix.EndsWith( "_" ) )
+        return;
 
     TString fullprefix = sample_category + "_" + bkg_category + "_" + prefix + "_";
-    fillLepHistograms( hists, "SignalLepton" , ""      , fullprefix );
-    fillLepHistograms( hists, "3LTightLepton", ""      , fullprefix );
-    fillLepHistograms( hists, "TightLepton"  , "tight" , fullprefix );
+    //fillLepHistograms( hists, "SignalLepton" , ""      , fullprefix );
+    //fillLepHistograms( hists, "3LTightLepton", ""      , fullprefix );
+    //fillLepHistograms( hists, "TightLepton"  , "tight" , fullprefix );
     fillLepHistograms( hists, "LooseLepton"  , "loose" , fullprefix );
-    fillLepHistograms( hists, "LbntLepton"   , "lbnt"  , fullprefix );
+    //fillLepHistograms( hists, "LbntLepton"   , "lbnt"  , fullprefix );
+    //fillLepHistograms( hists, "Lbn3tLepton"  , "lbn3t" , fullprefix );
     fillJetHistograms( hists, "GoodSSJet"    , ""      , fullprefix );
     fillJetHistograms( hists, "LooseBJet"    , "b"     , fullprefix );
     fillJetHistograms( hists, "Good3LJet"    , "3l"    , fullprefix );
     fillJetHistograms( hists, "GoodSSWJet"   , "wtag"  , fullprefix );
     fillWWWHistograms( hists, fullprefix );
+
 }
 
 //_________________________________________________________________________________________________
 void fillLepHistograms( TasUtil::AutoHist& hists, TString categ, TString name, TString prefix )
 {
-    hists.fill( lepidx[categ].size() , Form( "%slep%s_size" , prefix.Data(), name.Data() ), weight(), 5, 0, 5 );
+    bool ff = prefix.Contains( "Pred" );
+    hists.fill( lepidx[categ].size() , Form( "%slep%s_size" , prefix.Data(), name.Data() ), weight( ff ), 5, 0, 5 );
     for ( unsigned int i = 0; i < lepidx[categ].size() && i < MAXOBJ; ++i )
     {
         int ilep = lepidx[categ][i];
-        hists.fill( wwwbaby.lep_pdgId()[ilep]      , Form( "%slep%s%d_pid"       , prefix.Data(), name.Data(), i ), weight(),   40,  -20     ,  20      );
-        hists.fill( wwwbaby.lep_p4()[ilep].pt()    , Form( "%slep%s%d_pt"        , prefix.Data(), name.Data(), i ), weight(), 1080,    0     , 250.     );
-        hists.fill( wwwbaby.lep_p4()[ilep].eta()   , Form( "%slep%s%d_eta"       , prefix.Data(), name.Data(), i ), weight(), 1080,   -3     ,   3      );
-        hists.fill( wwwbaby.lep_p4()[ilep].phi()   , Form( "%slep%s%d_phi"       , prefix.Data(), name.Data(), i ), weight(), 1080,   -3.1416,   3.1416 );
-        hists.fill( wwwbaby.lep_p4()[ilep].energy(), Form( "%slep%s%d_E"         , prefix.Data(), name.Data(), i ), weight(), 1080,    0     , 250.     );
-        hists.fill( wwwbaby.lep_relIso03EA()[ilep] , Form( "%slep%s%d_iso"       , prefix.Data(), name.Data(), i ), weight(), 1080,    0     ,   0.1    );
-        hists.fill( wwwbaby.lep_ip3d()[ilep]       , Form( "%slep%s%d_ip3"       , prefix.Data(), name.Data(), i ), weight(), 1080,   -0.05  ,   0.05   );
-        hists.fill( wwwbaby.lep_ip3derr()[ilep]    , Form( "%slep%s%d_ip3err"    , prefix.Data(), name.Data(), i ), weight(), 1080,   -0.5   ,   0.5    );
-        hists.fill( wwwbaby.lep_ip3d()[ilep]       , Form( "%slep%s%d_ip3_wide"  , prefix.Data(), name.Data(), i ), weight(), 1080,   -0.5   ,   0.5    );
-        hists.fill( wwwbaby.lep_ip3d()[ilep]       , Form( "%slep%s%d_ip3_widepp", prefix.Data(), name.Data(), i ), weight(), 1080,   -2.5   ,   2.5    );
-        hists.fill( wwwbaby.lep_ip3d()[ilep]       , Form( "%slep%s%d_ip3calc"   , prefix.Data(), name.Data(), i ), weight(), 1080,   -0.05  ,   0.05   );
-        hists.fill( wwwbaby.lep_dxy ()[ilep]       , Form( "%slep%s%d_dxy"       , prefix.Data(), name.Data(), i ), weight(), 1080,   -0.5   ,   0.5    );
-        hists.fill( wwwbaby.lep_dz  ()[ilep]       , Form( "%slep%s%d_dz"        , prefix.Data(), name.Data(), i ), weight(), 1080,   -0.5   ,   0.5    );
+        hists.fill( wwwbaby.lep_pdgId()[ilep]      , Form( "%slep%s%d_pid"       , prefix.Data(), name.Data(), i ), weight( ff ),   40,  -20     ,  20      );
+        hists.fill( wwwbaby.lep_p4()[ilep].pt()    , Form( "%slep%s%d_pt"        , prefix.Data(), name.Data(), i ), weight( ff ), 1080,    0     , 250.     );
+        hists.fill( wwwbaby.lep_p4()[ilep].eta()   , Form( "%slep%s%d_eta"       , prefix.Data(), name.Data(), i ), weight( ff ), 1080,   -3     ,   3      );
+        hists.fill( wwwbaby.lep_p4()[ilep].phi()   , Form( "%slep%s%d_phi"       , prefix.Data(), name.Data(), i ), weight( ff ), 1080,   -3.1416,   3.1416 );
+        hists.fill( wwwbaby.lep_p4()[ilep].energy(), Form( "%slep%s%d_E"         , prefix.Data(), name.Data(), i ), weight( ff ), 1080,    0     , 250.     );
+        hists.fill( wwwbaby.lep_relIso03EA()[ilep] , Form( "%slep%s%d_iso"       , prefix.Data(), name.Data(), i ), weight( ff ), 1080,    0     ,   0.1    );
+        hists.fill( wwwbaby.lep_ip3d()[ilep]       , Form( "%slep%s%d_ip3"       , prefix.Data(), name.Data(), i ), weight( ff ), 1080,   -0.05  ,   0.05   );
+        hists.fill( wwwbaby.lep_ip3derr()[ilep]    , Form( "%slep%s%d_ip3err"    , prefix.Data(), name.Data(), i ), weight( ff ), 1080,   -0.5   ,   0.5    );
+        hists.fill( wwwbaby.lep_ip3d()[ilep]       , Form( "%slep%s%d_ip3_wide"  , prefix.Data(), name.Data(), i ), weight( ff ), 1080,   -0.5   ,   0.5    );
+        hists.fill( wwwbaby.lep_ip3d()[ilep]       , Form( "%slep%s%d_ip3_widepp", prefix.Data(), name.Data(), i ), weight( ff ), 1080,   -2.5   ,   2.5    );
+        hists.fill( wwwbaby.lep_ip3d()[ilep]       , Form( "%slep%s%d_ip3calc"   , prefix.Data(), name.Data(), i ), weight( ff ), 1080,   -0.05  ,   0.05   );
+        hists.fill( wwwbaby.lep_dxy ()[ilep]       , Form( "%slep%s%d_dxy"       , prefix.Data(), name.Data(), i ), weight( ff ), 1080,   -0.5   ,   0.5    );
+        hists.fill( wwwbaby.lep_dz  ()[ilep]       , Form( "%slep%s%d_dz"        , prefix.Data(), name.Data(), i ), weight( ff ), 1080,   -0.5   ,   0.5    );
         if ( wwwbaby.lep_ip3d()[ilep] > 0.5 )
             std::cout << wwwbaby.lep_ip3d()[ilep] << std::endl;
     }
@@ -215,496 +258,90 @@ void fillLepHistograms( TasUtil::AutoHist& hists, TString categ, TString name, T
 //_________________________________________________________________________________________________
 void fillJetHistograms( TasUtil::AutoHist& hists, TString categ, TString name, TString prefix )
 {
-    hists.fill( jetidx[categ].size() , Form( "%sjet%s_size" , prefix.Data(), name.Data() ), weight(), 5, 0, 5 );
+    bool ff = prefix.Contains( "Pred" );
+    hists.fill( jetidx[categ].size() , Form( "%sjet%s_size" , prefix.Data(), name.Data() ), weight( ff ), 5, 0, 5 );
     for ( unsigned int i = 0; i < jetidx[categ].size() && i < MAXOBJ; ++i )
     {
         int ijet = jetidx[categ][i];
-        hists.fill( wwwbaby.jets_p4()[ijet].pt()    , Form( "%sjet%s%d_pt" , prefix.Data(), name.Data(), i ), weight(), 180,  0     , 180      );
-        hists.fill( wwwbaby.jets_p4()[ijet].eta()   , Form( "%sjet%s%d_eta", prefix.Data(), name.Data(), i ), weight(), 180, -3     ,   3      );
-        hists.fill( wwwbaby.jets_p4()[ijet].phi()   , Form( "%sjet%s%d_phi", prefix.Data(), name.Data(), i ), weight(), 180, -3.1416,   3.1416 );
-        hists.fill( wwwbaby.jets_p4()[ijet].energy(), Form( "%sjet%s%d_E"  , prefix.Data(), name.Data(), i ), weight(), 180,  0     , 250      );
-        hists.fill( wwwbaby.jets_csv()[ijet]        , Form( "%sjet%s%d_csv", prefix.Data(), name.Data(), i ), weight(), 180, -1     ,   1      );
+        hists.fill( wwwbaby.jets_p4()[ijet].pt()    , Form( "%sjet%s%d_pt" , prefix.Data(), name.Data(), i ), weight( ff ), 180,  0     , 180      );
+        hists.fill( wwwbaby.jets_p4()[ijet].eta()   , Form( "%sjet%s%d_eta", prefix.Data(), name.Data(), i ), weight( ff ), 180, -3     ,   3      );
+        hists.fill( wwwbaby.jets_p4()[ijet].phi()   , Form( "%sjet%s%d_phi", prefix.Data(), name.Data(), i ), weight( ff ), 180, -3.1416,   3.1416 );
+        hists.fill( wwwbaby.jets_p4()[ijet].energy(), Form( "%sjet%s%d_E"  , prefix.Data(), name.Data(), i ), weight( ff ), 180,  0     , 250      );
+        hists.fill( wwwbaby.jets_csv()[ijet]        , Form( "%sjet%s%d_csv", prefix.Data(), name.Data(), i ), weight( ff ), 180, -1     ,   1      );
     }
 }
 
 //_________________________________________________________________________________________________
 void fillWWWHistograms( TasUtil::AutoHist& hists, TString prefix )
 {
-    hists.fill( wwwbaby.met_pt()                                  , Form( "%smet"        , prefix.Data() ) , weight() , 180 , 0. , 250.   );
-    hists.fill( MjjW()                                            , Form( "%sMjjW"       , prefix.Data() ) , weight() , 180 , 0. , 160.   );
-    hists.fill( MjjLead()                                         , Form( "%sMjjLead"    , prefix.Data() ) , weight() , 180 , 0. , 800.   );
-    hists.fill( DEtajjLead()                                      , Form( "%sDEtajjLead" , prefix.Data() ) , weight() , 180 , 0. , 9.     );
-    hists.fill( DPhill()                                          , Form( "%sDPhill"     , prefix.Data() ) , weight() , 180 , 0. , 3.1416 );
-    hists.fill( DEtall()                                          , Form( "%sDEtall"     , prefix.Data() ) , weight() , 180 , 0. , 9.     );
-    hists.fill( Mll()                                             , Form( "%sMll"        , prefix.Data() ) , weight() , 180 , 0. , 180.   );
-    hists.fill( Mll()                                             , Form( "%sMll250"     , prefix.Data() ) , weight() , 180 , 0. , 250.   );
-    hists.fill( Mll()                                             , Form( "%sMll500"     , prefix.Data() ) , weight() , 180 , 0. , 500.   );
-    hists.fill( MTmax()                                           , Form( "%sMTmax"      , prefix.Data() ) , weight() , 180 , 0. , 180.   );
-    hists.fill( M4()                                              , Form( "%sm4"         , prefix.Data() ) , weight() , 180 , 0. , 180.   );
-    hists.fill( M4()                                              , Form( "%sm4wide"     , prefix.Data() ) , weight() , 150 , 0. , 1500.  );
-    hists.fill( wwwbaby.nisoTrack_mt2_cleaned_VVV_cutbased_veto() , Form( "%snisotrack"  , prefix.Data() ) , weight() , 5   , 0  , 5      );
-    hists.fill( wwwbaby.nlep_VVV_cutbased_veto()                  , Form( "%snvetolep"   , prefix.Data() ) , weight() , 5   , 0  , 5      );
-    hists.fill( wwwbaby.nVert()                                   , Form( "%snvtx"       , prefix.Data() ) , weight() , 70  , 0  , 70.    );
+    bool ff = prefix.Contains( "Pred" );
+    hists.fill( wwwbaby.met_pt()                                  , Form( "%smet"        , prefix.Data() ) , weight( ff ) , 180 , 0. , 250.   );
+    hists.fill( MjjW()                                            , Form( "%sMjjW"       , prefix.Data() ) , weight( ff ) , 180 , 0. , 160.   );
+    hists.fill( MjjLead()                                         , Form( "%sMjjLead"    , prefix.Data() ) , weight( ff ) , 180 , 0. , 800.   );
+    hists.fill( DEtajjLead()                                      , Form( "%sDEtajjLead" , prefix.Data() ) , weight( ff ) , 180 , 0. , 9.     );
+    hists.fill( DPhill()                                          , Form( "%sDPhill"     , prefix.Data() ) , weight( ff ) , 180 , 0. , 3.1416 );
+    hists.fill( DEtall()                                          , Form( "%sDEtall"     , prefix.Data() ) , weight( ff ) , 180 , 0. , 9.     );
+    hists.fill( Mll()                                             , Form( "%sMll"        , prefix.Data() ) , weight( ff ) , 180 , 0. , 180.   );
+    hists.fill( Mll()                                             , Form( "%sMll250"     , prefix.Data() ) , weight( ff ) , 180 , 0. , 250.   );
+    hists.fill( Mll()                                             , Form( "%sMll500"     , prefix.Data() ) , weight( ff ) , 180 , 0. , 500.   );
+    hists.fill( MTmax()                                           , Form( "%sMTmax"      , prefix.Data() ) , weight( ff ) , 180 , 0. , 180.   );
+    hists.fill( M4()                                              , Form( "%sm4"         , prefix.Data() ) , weight( ff ) , 180 , 0. , 180.   );
+    hists.fill( M4()                                              , Form( "%sm4wide"     , prefix.Data() ) , weight( ff ) , 150 , 0. , 1500.  );
+    hists.fill( wwwbaby.nisoTrack_mt2_cleaned_VVV_cutbased_veto() , Form( "%snisotrack"  , prefix.Data() ) , weight( ff ) , 5   , 0  , 5      );
+    hists.fill( wwwbaby.nlep_VVV_cutbased_veto()                  , Form( "%snvetolep"   , prefix.Data() ) , weight( ff ) , 5   , 0  , 5      );
+    hists.fill( wwwbaby.nVert()                                   , Form( "%snvtx"       , prefix.Data() ) , weight( ff ) , 70  , 0  , 70.    );
     if ( lepidx["3LTightLepton"].size() == 3 )
     {
-        hists.fill( Pt3l()           , Form( "%sPt3l"         , prefix.Data() ) , weight() , 180 , 0. , 180.   );
-        hists.fill( DPhi3lMET()      , Form( "%sDPhi3lMET"    , prefix.Data() ) , weight() , 180 , 0. , 3.1416 );
+        hists.fill( Pt3l()           , Form( "%sPt3l"         , prefix.Data() ) , weight( ff ) , 180 , 0. , 180.   );
+        hists.fill( DPhi3lMET()      , Form( "%sDPhi3lMET"    , prefix.Data() ) , weight( ff ) , 180 , 0. , 3.1416 );
         if ( pass3L0SFOS() )
         {
-            hists.fill( get0SFOSMll()    , Form( "%sget0SFOSMll"  , prefix.Data() ) , weight() , 180 , 0. , 180.   );
-            hists.fill( get0SFOSMee()    , Form( "%sget0SFOSMee"  , prefix.Data() ) , weight() , 180 , 0. , 180.   );
+            hists.fill( get0SFOSMll()    , Form( "%sget0SFOSMll"  , prefix.Data() ) , weight( ff ) , 180 , 0. , 180.   );
+            hists.fill( get0SFOSMee()    , Form( "%sget0SFOSMee"  , prefix.Data() ) , weight( ff ) , 180 , 0. , 180.   );
         }
         if ( pass3L1SFOS() )
         {
-            hists.fill( get1SFOSMll()    , Form( "%sget1SFOSMll"  , prefix.Data() ) , weight() , 180 , 0. , 180.   );
+            hists.fill( get1SFOSMll()    , Form( "%sget1SFOSMll"  , prefix.Data() ) , weight( ff ) , 180 , 0. , 180.   );
         }
         if ( pass3L2SFOS() )
         {
-            hists.fill( get2SFOSMll0()   , Form( "%sget2SFOSMll0" , prefix.Data() ) , weight() , 180 , 0. , 180.   );
-            hists.fill( get2SFOSMll1()   , Form( "%sget2SFOSMll1" , prefix.Data() ) , weight() , 180 , 0. , 180.   );
+            hists.fill( get2SFOSMll0()   , Form( "%sget2SFOSMll0" , prefix.Data() ) , weight( ff ) , 180 , 0. , 180.   );
+            hists.fill( get2SFOSMll1()   , Form( "%sget2SFOSMll1" , prefix.Data() ) , weight( ff ) , 180 , 0. , 180.   );
         }
     }
 }
 
-// eof
-
-//    // If  did not pass two same sign leptons skip
-//    if ( passpresel( cutidx ) )
-//    {
-//
-//        doSSAnalysis( hists, cutidx );
-//
-////        // Now split based on lepton flavors
-////        if ( isSSMM() && Mll() > 40. )
-////        {
-////            // Fill the histogram for after selecting two same sign muons with Mll > 40 inclusively
-////            fillHistograms( hists, "SSMM_CutSSMMLep", 0 );
-////            if ( isPlusPlus() ) fillHistograms( hists, "SSppMM_CutSSMMLep", 0 + 30 );
-////            if ( isMinusMinus() ) fillHistograms( hists, "SSmmMM_CutSSMMLep", 0 + 60 );
-////
-////            // If it did not pass the >= 2jet requirements, then skip
-////            if ( cutidx == 5 ) return;
-////            fillHistograms( hists, "SSMM_CutNTwoJet", 1 );
-////            if ( isPlusPlus() ) fillHistograms( hists, "SSppMM_CutNTwoJet", 1 + 30 );
-////            if ( isMinusMinus() ) fillHistograms( hists, "SSmmMM_CutNTwoJet", 1 + 60 );
-////
-////            // If it did not pass the n veto lep == 2 cut, then skip
-////            if ( cutidx == 6 ) return;
-////            fillHistograms( hists, "SSMM_CutThirdLepVeto", 2 );
-////            if ( isPlusPlus() ) fillHistograms( hists, "SSppMM_CutThirdLepVeto", 2 + 30 );
-////            if ( isMinusMinus() ) fillHistograms( hists, "SSmmMM_CutThirdLepVeto", 2 + 60 );
-////
-////            // If it did not pass nisotrack == 0 cut, then skip
-////            if ( cutidx == 7 ) return;
-////            fillHistograms( hists, "SSMM_CutIsoTrackVeto", 3 );
-////            if ( isPlusPlus() ) fillHistograms( hists, "SSppMM_CutIsoTrackVeto", 3 + 30 );
-////            if ( isMinusMinus() ) fillHistograms( hists, "SSmmMM_CutIsoTrackVeto", 3 + 60 );
-////
-////            // Run the selection
-////            passSScommon( 0, cutidx );
-////
-////            // If it did not pass N-bjet = 0 cut, then skip
-////            if ( cutidx == 1 ) return;
-////            fillHistograms( hists, "SSMM_CutBVeto", 4 );
-////            if ( isPlusPlus() ) fillHistograms( hists, "SSppMM_CutBVeto", 4 + 30 );
-////            if ( isMinusMinus() ) fillHistograms( hists, "SSmmMM_CutBVeto", 4 + 60 );
-////
-////            // If it did not pass W-mass cut, then skip
-////            if ( cutidx == 2 ) return;
-////            fillHistograms( hists, "SSMM_CutWMjj", 5 );
-////            if ( isPlusPlus() ) fillHistograms( hists, "SSppMM_CutWMjj", 5 + 30 );
-////            if ( isMinusMinus() ) fillHistograms( hists, "SSmmMM_CutWMjj", 5 + 60 );
-////
-////            // If it did not pass LowMjj cut, then skip (to kill VBS contributions)
-////            if ( cutidx == 3 ) return;
-////            fillHistograms( hists, "SSMM_CutLowMjj", 6 );
-////            if ( isPlusPlus() ) fillHistograms( hists, "SSppMM_CutLowMjj", 6 + 30 );
-////            if ( isMinusMinus() ) fillHistograms( hists, "SSmmMM_CutLowMjj", 6 + 60 );
-////
-////            // If it did not pass LowDEtajj cut, then skip (to kill VBS contributions)
-////            if ( cutidx == 4 ) return;
-////            fillHistograms( hists, "SSMM_CutLowDEtajj", 7 );
-////            if ( isPlusPlus() ) fillHistograms( hists, "SSppMM_CutLowDEtajj", 7 + 30 );
-////            if ( isMinusMinus() ) fillHistograms( hists, "SSmmMM_CutLowDEtajj", 7 + 60 );
-////        }
-////        else if ( isSSEM() && Mll() > 30. )
-////        {
-////            // Fill the histogram for after selecting one muon and one electron with same sign muons with Mll > 30 inclusively
-////            fillHistograms( hists, "SSEM_CutSSEMLep", 10 );
-////            if ( isPlusPlus() ) fillHistograms( hists, "SSppEM_CutSSEMLep", 10 + 30 );
-////            if ( isMinusMinus() ) fillHistograms( hists, "SSmmEM_CutSSEMLep", 10 + 60 );
-////
-////            // If it did not pass the >= 2jet requirements, then skip
-////            if ( cutidx == 5 ) return;
-////            fillHistograms( hists, "SSEM_CutNTwoJet", 11 );
-////            if ( isPlusPlus() ) fillHistograms( hists, "SSppEM_CutNTwoJet", 11 + 30 );
-////            if ( isMinusMinus() ) fillHistograms( hists, "SSmmEM_CutNTwoJet", 11 + 60 );
-////
-////            // If it did not pass the n veto lep == 2 cut, then skip
-////            if ( cutidx == 6 ) return;
-////            fillHistograms( hists, "SSEM_CutThirdLepVeto", 12 );
-////            if ( isPlusPlus() ) fillHistograms( hists, "SSppEM_CutThirdLepVeto", 12 + 30 );
-////            if ( isMinusMinus() ) fillHistograms( hists, "SSmmEM_CutThirdLepVeto", 12 + 60 );
-////
-////            // If it did not pass nisotrack == 0 cut, then skip
-////            if ( cutidx == 7 ) return;
-////            fillHistograms( hists, "SSEM_CutIsoTrackVeto", 13 );
-////            if ( isPlusPlus() ) fillHistograms( hists, "SSppEM_CutIsoTrackVeto", 13 + 30 );
-////            if ( isMinusMinus() ) fillHistograms( hists, "SSmmEM_CutIsoTrackVeto", 13 + 60 );
-////
-////            // Run the selection
-////            passSScommon( 0, cutidx );
-////
-////            // If it did not pass N-bjet = 0 cut, then skip
-////            if ( cutidx == 1 ) return;
-////            fillHistograms( hists, "SSEM_CutBVeto", 14 );
-////            if ( isPlusPlus() ) fillHistograms( hists, "SSppEM_CutBVeto", 14 + 30 );
-////            if ( isMinusMinus() ) fillHistograms( hists, "SSmmEM_CutBVeto", 14 + 60 );
-////
-////            // If it did not pass W-mass cut, then skip
-////            if ( cutidx == 2 ) return;
-////            fillHistograms( hists, "SSEM_CutWMjj", 15 );
-////            if ( isPlusPlus() ) fillHistograms( hists, "SSppEM_CutWMjj", 15 + 30 );
-////            if ( isMinusMinus() ) fillHistograms( hists, "SSmmEM_CutWMjj", 15 + 60 );
-////
-////            // If it did not pass LowMjj cut, then skip (to kill VBS contributions)
-////            if ( cutidx == 3 ) return;
-////            fillHistograms( hists, "SSEM_CutLowMjj", 16 );
-////            if ( isPlusPlus() ) fillHistograms( hists, "SSppEM_CutLowMjj", 16 + 30 );
-////            if ( isMinusMinus() ) fillHistograms( hists, "SSmmEM_CutLowMjj", 16 + 60 );
-////
-////            // If it did not pass LowDEtajj cut, then skip (to kill VBS contributions)
-////            if ( cutidx == 4 ) return;
-////            fillHistograms( hists, "SSEM_CutLowDEtajj", 17 );
-////            if ( isPlusPlus() ) fillHistograms( hists, "SSppEM_CutLowDEtajj", 17 + 30 );
-////            if ( isMinusMinus() ) fillHistograms( hists, "SSmmEM_CutLowDEtajj", 17 + 60 );
-////
-////            // If it did not pass MET cut, then skip
-////            if (!( wwwbaby.met_pt() > 40. )) return;
-////            fillHistograms( hists, "SSEM_CutMET", 18 );
-////            if ( isPlusPlus() ) fillHistograms( hists, "SSppEM_CutMET", 18 + 30 );
-////            if ( isMinusMinus() ) fillHistograms( hists, "SSmmEM_CutMET", 18 + 60 );
-////
-////            // If it did not pass MET cut, then skip
-////            if (!( MTmax() > 90. )) return;
-////            fillHistograms( hists, "SSEM_CutMET", 19 );
-////            if ( isPlusPlus() ) fillHistograms( hists, "SSppEM_CutMET", 19 + 30 );
-////            if ( isMinusMinus() ) fillHistograms( hists, "SSmmEM_CutMET", 19 + 60 );
-////        }
-////        else if ( isSSEE() && Mll() > 40. )
-////        {
-////            // Fill the histogram for after selecting one muon and one electron with same sign muons with Mll > 30 inclusively
-////            fillHistograms( hists, "SSEE_CutSSEELep", 20 );
-////            if ( isPlusPlus() ) fillHistograms( hists, "SSppEE_CutSSEELep", 20 + 30 );
-////            if ( isMinusMinus() ) fillHistograms( hists, "SSmmEE_CutSSEELep", 20 + 60 );
-////
-////            // If in Z-peak reject
-////            if (!( Mll() < 60. || Mll() > 100. )) return;
-////            fillHistograms( hists, "SSEE_CutSSZVeto", 21 );
-////            if ( isPlusPlus() ) fillHistograms( hists, "SSppEE_CutSSZVeto", 21 + 30 );
-////            if ( isMinusMinus() ) fillHistograms( hists, "SSmmEE_CutSSZVeto", 21 + 60 );
-////
-////            // If it did not pass the >= 2jet requirements, then skip
-////            if ( cutidx == 5 ) return;
-////            fillHistograms( hists, "SSEE_CutNTwoJet", 22 );
-////            if ( isPlusPlus() ) fillHistograms( hists, "SSppEE_CutNTwoJet", 22 + 30 );
-////            if ( isMinusMinus() ) fillHistograms( hists, "SSmmEE_CutNTwoJet", 22 + 60 );
-////
-////            // If it did not pass the n veto lep == 2 cut, then skip
-////            if ( cutidx == 6 ) return;
-////            fillHistograms( hists, "SSEE_CutThirdLepVeto", 23 );
-////            if ( isPlusPlus() ) fillHistograms( hists, "SSppEE_CutThirdLepVeto", 23 + 30 );
-////            if ( isMinusMinus() ) fillHistograms( hists, "SSmmEE_CutThirdLepVeto", 23 + 60 );
-////
-////            // If it did not pass nisotrack == 0 cut, then skip
-////            if ( cutidx == 7 ) return;
-////            fillHistograms( hists, "SSEE_CutIsoTrackVeto", 24 );
-////            if ( isPlusPlus() ) fillHistograms( hists, "SSppEE_CutIsoTrackVeto", 24 + 30 );
-////            if ( isMinusMinus() ) fillHistograms( hists, "SSmmEE_CutIsoTrackVeto", 24 + 60 );
-////
-////            // Run the selection
-////            passSScommon( 0, cutidx );
-////
-////            // If it did not pass N-bjet = 0 cut, then skip
-////            if ( cutidx == 1 ) return;
-////            fillHistograms( hists, "SSEE_CutBVeto", 25 );
-////            if ( isPlusPlus() ) fillHistograms( hists, "SSppEE_CutBVeto", 25 + 30 );
-////            if ( isMinusMinus() ) fillHistograms( hists, "SSmmEE_CutBVeto", 25 + 60 );
-////
-////            // If it did not pass W-mass cut, then skip
-////            if ( cutidx == 2 ) return;
-////            fillHistograms( hists, "SSEE_CutWMjj", 26 );
-////            if ( isPlusPlus() ) fillHistograms( hists, "SSppEE_CutWMjj", 26 + 30 );
-////            if ( isMinusMinus() ) fillHistograms( hists, "SSmmEE_CutWMjj", 26 + 60 );
-////
-////            // If it did not pass LowMjj cut, then skip (to kill VBS contributions)
-////            if ( cutidx == 3 ) return;
-////            fillHistograms( hists, "SSEE_CutLowMjj", 27 );
-////            if ( isPlusPlus() ) fillHistograms( hists, "SSppEE_CutLowMjj", 27 + 30 );
-////            if ( isMinusMinus() ) fillHistograms( hists, "SSmmEE_CutLowMjj", 27 + 60 );
-////
-////            // If it did not pass LowDEtajj cut, then skip (to kill VBS contributions)
-////            if ( cutidx == 4 ) return;
-////            fillHistograms( hists, "SSEE_CutLowDEtajj", 28 );
-////            if ( isPlusPlus() ) fillHistograms( hists, "SSppEE_CutLowDEtajj", 28 + 30 );
-////            if ( isMinusMinus() ) fillHistograms( hists, "SSmmEE_CutLowDEtajj", 28 + 60 );
-////
-////            // If it did not pass MET cut, then skip
-////            if (!( wwwbaby.met_pt() > 40. )) return;
-////            fillHistograms( hists, "SSEM_CutMET", 29 );
-////            if ( isPlusPlus() ) fillHistograms( hists, "SSppEM_CutMET", 29 + 30 );
-////            if ( isMinusMinus() ) fillHistograms( hists, "SSmmEM_CutMET", 29 + 60 );
-////        }
-//
-//    }
-////    else if ( passARpresel() )
-////    {
-////    }
-//    else if ( lepidx["SignalLepton"].size() == 3)
-//    {
-//        if ( pass3L0SFOS() )
-//            fillHistograms( hists, "3L0SFOS", 90 );
-//
-//        if ( pass3L1SFOS() )
-//            fillHistograms( hists, "3L1SFOS", 91 );
-//
-//        if ( pass3L2SFOS() )
-//            fillHistograms( hists, "3L2SFOS", 92 );
-//    }
+//_________________________________________________________________________________________________
+void printevent( TString region )
+{
+    std::cout << std::endl;
+    std::cout << "passed event list ";
+    std::cout << region.Data() << " ";
+    std::cout << wwwbaby.evt() << " ";
+    std::cout << wwwbaby.run() << " ";
+    std::cout << wwwbaby.lumi() << " ";
+    std::cout << std::endl;
+}
 
 ////_________________________________________________________________________________________________
-//void doSSAnalysis( TasUtil::AutoHist& hists, int cutidx )
+//void doTmpAnalysis( TasUtil::AutoHist& hists )
 //{
-//
-//    // Now split based on lepton flavors
+//    lepidx["SignalLepton"] = lepidx["LooseLepton"];
+//    if (!( lepidx["TightLepton"].size()                     ==   1   )) return;
+//    if (!( lepidx["LooseLepton"].size()                     ==   2   )) return;
+//    if (!( wwwbaby.lep_p4()[lepidx["SignalLepton"][0]].pt()  >   30. )) return;
+//    if (!( wwwbaby.lep_p4()[lepidx["SignalLepton"][1]].pt()  >   30. )) return;
+//    if (!( isSS()                                                    )) return;
 //    if ( isSSMM() && Mll() > 40. )
 //    {
-//        // Fill the histogram for after selecting two same sign muons with Mll > 40 inclusively
 //        fillHistograms( hists, "SSMM_CutSSMMLep", 0 );
-//        if ( isPlusPlus() ) fillHistograms( hists, "SSppMM_CutSSMMLep", 0 + 30 );
-//        if ( isMinusMinus() ) fillHistograms( hists, "SSmmMM_CutSSMMLep", 0 + 60 );
-//
-//        // If it did not pass the >= 2jet requirements, then skip
-//        if ( cutidx == 5 ) return;
-//        fillHistograms( hists, "SSMM_CutNTwoJet", 1 );
-//        if ( isPlusPlus() ) fillHistograms( hists, "SSppMM_CutNTwoJet", 1 + 30 );
-//        if ( isMinusMinus() ) fillHistograms( hists, "SSmmMM_CutNTwoJet", 1 + 60 );
-//
-//        // If it did not pass the n veto lep == 2 cut, then skip
-//        if ( cutidx == 6 ) return;
-//        fillHistograms( hists, "SSMM_CutThirdLepVeto", 2 );
-//        if ( isPlusPlus() ) fillHistograms( hists, "SSppMM_CutThirdLepVeto", 2 + 30 );
-//        if ( isMinusMinus() ) fillHistograms( hists, "SSmmMM_CutThirdLepVeto", 2 + 60 );
-//
-//        // If it did not pass nisotrack == 0 cut, then skip
-//        if ( cutidx == 7 ) return;
-//        fillHistograms( hists, "SSMM_CutIsoTrackVeto", 3 );
-//        if ( isPlusPlus() ) fillHistograms( hists, "SSppMM_CutIsoTrackVeto", 3 + 30 );
-//        if ( isMinusMinus() ) fillHistograms( hists, "SSmmMM_CutIsoTrackVeto", 3 + 60 );
-//
-//        // Run the selection
-//        passSScommon( 0, cutidx );
-//
-//        // If it did not pass N-bjet = 0 cut, then skip
-//        if ( cutidx == 1 ) return;
-//        fillHistograms( hists, "SSMM_CutBVeto", 4 );
-//        if ( isPlusPlus() ) fillHistograms( hists, "SSppMM_CutBVeto", 4 + 30 );
-//        if ( isMinusMinus() ) fillHistograms( hists, "SSmmMM_CutBVeto", 4 + 60 );
-//
-//        if ( bkgCategory().EqualTo( "fakes" ) )
-//        {
-//            if (
-//                    ( wwwbaby.lep_isFromB()[lepidx["TightLepton"][0]] && wwwbaby.lep_isFromW()[lepidx["TightLepton"][1]] ) ||
-//                    ( wwwbaby.lep_isFromB()[lepidx["TightLepton"][1]] && wwwbaby.lep_isFromW()[lepidx["TightLepton"][0]] )
-//               )
-//            {
-//                std::cout << std::endl;
-//                std::cout << wwwbaby.lep_isFromB()[lepidx["TightLepton"][0]] << std::endl;
-//                std::cout << wwwbaby.lep_isFromB()[lepidx["TightLepton"][1]] << std::endl;
-//                std::cout << wwwbaby.lep_isFromW()[lepidx["TightLepton"][0]] << std::endl;
-//                std::cout << wwwbaby.lep_isFromW()[lepidx["TightLepton"][1]] << std::endl;
-//                std::cout << wwwbaby.lep_relIso03EA()[lepidx["TightLepton"][0]] << std::endl;
-//                std::cout << wwwbaby.lep_relIso03EA()[lepidx["TightLepton"][1]] << std::endl;
-//                std::cout << wwwbaby.lep_p4()[lepidx["TightLepton"][0]].pt() << std::endl;
-//                std::cout << wwwbaby.lep_p4()[lepidx["TightLepton"][1]].pt() << std::endl;
-//                std::cout << wwwbaby.lep_p4()[lepidx["TightLepton"][0]].eta() << std::endl;
-//                std::cout << wwwbaby.lep_p4()[lepidx["TightLepton"][1]].eta() << std::endl;
-//                std::cout << wwwbaby.lep_p4()[lepidx["TightLepton"][0]].phi() << std::endl;
-//                std::cout << wwwbaby.lep_p4()[lepidx["TightLepton"][1]].phi() << std::endl;
-//                printEventID();
-//            }
-//        }
-//
-//        // If it did not pass W-mass cut, then skip
-//        if ( cutidx == 2 ) return;
-//        fillHistograms( hists, "SSMM_CutWMjj", 5 );
-//        if ( isPlusPlus() ) fillHistograms( hists, "SSppMM_CutWMjj", 5 + 30 );
-//        if ( isMinusMinus() ) fillHistograms( hists, "SSmmMM_CutWMjj", 5 + 60 );
-//
-//        // If it did not pass LowMjj cut, then skip (to kill VBS contributions)
-//        if ( cutidx == 3 ) return;
-//        fillHistograms( hists, "SSMM_CutLowMjj", 6 );
-//        if ( isPlusPlus() ) fillHistograms( hists, "SSppMM_CutLowMjj", 6 + 30 );
-//        if ( isMinusMinus() ) fillHistograms( hists, "SSmmMM_CutLowMjj", 6 + 60 );
-//
-//        // If it did not pass LowDEtajj cut, then skip (to kill VBS contributions)
-//        if ( cutidx == 4 ) return;
-//        fillHistograms( hists, "SSMM_CutLowDEtajj", 7 );
-//        if ( isPlusPlus() ) fillHistograms( hists, "SSppMM_CutLowDEtajj", 7 + 30 );
-//        if ( isMinusMinus() ) fillHistograms( hists, "SSmmMM_CutLowDEtajj", 7 + 60 );
+//        if ( jetidx["GoodSSJet"].size() == 0 )
+//            fillHistograms( hists, "SSMM_CutNjet", 0 );
 //    }
-//    else if ( isSSEM() && Mll() > 30. )
-//    {
-//        // Fill the histogram for after selecting one muon and one electron with same sign muons with Mll > 30 inclusively
-//        fillHistograms( hists, "SSEM_CutSSEMLep", 10 );
-//        if ( isPlusPlus() ) fillHistograms( hists, "SSppEM_CutSSEMLep", 10 + 30 );
-//        if ( isMinusMinus() ) fillHistograms( hists, "SSmmEM_CutSSEMLep", 10 + 60 );
-//
-//        // If it did not pass the >= 2jet requirements, then skip
-//        if ( cutidx == 5 ) return;
-//        fillHistograms( hists, "SSEM_CutNTwoJet", 11 );
-//        if ( isPlusPlus() ) fillHistograms( hists, "SSppEM_CutNTwoJet", 11 + 30 );
-//        if ( isMinusMinus() ) fillHistograms( hists, "SSmmEM_CutNTwoJet", 11 + 60 );
-//
-//        // If it did not pass the n veto lep == 2 cut, then skip
-//        if ( cutidx == 6 ) return;
-//        fillHistograms( hists, "SSEM_CutThirdLepVeto", 12 );
-//        if ( isPlusPlus() ) fillHistograms( hists, "SSppEM_CutThirdLepVeto", 12 + 30 );
-//        if ( isMinusMinus() ) fillHistograms( hists, "SSmmEM_CutThirdLepVeto", 12 + 60 );
-//
-//        // If it did not pass nisotrack == 0 cut, then skip
-//        if ( cutidx == 7 ) return;
-//        fillHistograms( hists, "SSEM_CutIsoTrackVeto", 13 );
-//        if ( isPlusPlus() ) fillHistograms( hists, "SSppEM_CutIsoTrackVeto", 13 + 30 );
-//        if ( isMinusMinus() ) fillHistograms( hists, "SSmmEM_CutIsoTrackVeto", 13 + 60 );
-//
-//        // Run the selection
-//        passSScommon( 0, cutidx );
-//
-//        // If it did not pass N-bjet = 0 cut, then skip
-//        if ( cutidx == 1 ) return;
-//        fillHistograms( hists, "SSEM_CutBVeto", 14 );
-//        if ( isPlusPlus() ) fillHistograms( hists, "SSppEM_CutBVeto", 14 + 30 );
-//        if ( isMinusMinus() ) fillHistograms( hists, "SSmmEM_CutBVeto", 14 + 60 );
-//
-//        // If it did not pass W-mass cut, then skip
-//        if ( cutidx == 2 ) return;
-//        fillHistograms( hists, "SSEM_CutWMjj", 15 );
-//        if ( isPlusPlus() ) fillHistograms( hists, "SSppEM_CutWMjj", 15 + 30 );
-//        if ( isMinusMinus() ) fillHistograms( hists, "SSmmEM_CutWMjj", 15 + 60 );
-//
-//        // If it did not pass LowMjj cut, then skip (to kill VBS contributions)
-//        if ( cutidx == 3 ) return;
-//        fillHistograms( hists, "SSEM_CutLowMjj", 16 );
-//        if ( isPlusPlus() ) fillHistograms( hists, "SSppEM_CutLowMjj", 16 + 30 );
-//        if ( isMinusMinus() ) fillHistograms( hists, "SSmmEM_CutLowMjj", 16 + 60 );
-//
-//        // If it did not pass LowDEtajj cut, then skip (to kill VBS contributions)
-//        if ( cutidx == 4 ) return;
-//        fillHistograms( hists, "SSEM_CutLowDEtajj", 17 );
-//        if ( isPlusPlus() ) fillHistograms( hists, "SSppEM_CutLowDEtajj", 17 + 30 );
-//        if ( isMinusMinus() ) fillHistograms( hists, "SSmmEM_CutLowDEtajj", 17 + 60 );
-//
-//        // If it did not pass MET cut, then skip
-//        if (!( wwwbaby.met_pt() > 40. )) return;
-//        fillHistograms( hists, "SSEM_CutMET", 18 );
-//        if ( isPlusPlus() ) fillHistograms( hists, "SSppEM_CutMET", 18 + 30 );
-//        if ( isMinusMinus() ) fillHistograms( hists, "SSmmEM_CutMET", 18 + 60 );
-//
-//        // If it did not pass MET cut, then skip
-//        if (!( MTmax() > 90. )) return;
-//        fillHistograms( hists, "SSEM_CutMET", 19 );
-//        if ( isPlusPlus() ) fillHistograms( hists, "SSppEM_CutMET", 19 + 30 );
-//        if ( isMinusMinus() ) fillHistograms( hists, "SSmmEM_CutMET", 19 + 60 );
-//    }
-//    else if ( isSSEE() && Mll() > 40. )
-//    {
-//        // Fill the histogram for after selecting one muon and one electron with same sign muons with Mll > 30 inclusively
-//        fillHistograms( hists, "SSEE_CutSSEELep", 20 );
-//        if ( isPlusPlus() ) fillHistograms( hists, "SSppEE_CutSSEELep", 20 + 30 );
-//        if ( isMinusMinus() ) fillHistograms( hists, "SSmmEE_CutSSEELep", 20 + 60 );
-//
-//        // If in Z-peak reject
-//        if (!( Mll() < 60. || Mll() > 100. )) return;
-//        fillHistograms( hists, "SSEE_CutSSZVeto", 21 );
-//        if ( isPlusPlus() ) fillHistograms( hists, "SSppEE_CutSSZVeto", 21 + 30 );
-//        if ( isMinusMinus() ) fillHistograms( hists, "SSmmEE_CutSSZVeto", 21 + 60 );
-//
-//        // If it did not pass the >= 2jet requirements, then skip
-//        if ( cutidx == 5 ) return;
-//        fillHistograms( hists, "SSEE_CutNTwoJet", 22 );
-//        if ( isPlusPlus() ) fillHistograms( hists, "SSppEE_CutNTwoJet", 22 + 30 );
-//        if ( isMinusMinus() ) fillHistograms( hists, "SSmmEE_CutNTwoJet", 22 + 60 );
-//
-//        // If it did not pass the n veto lep == 2 cut, then skip
-//        if ( cutidx == 6 ) return;
-//        fillHistograms( hists, "SSEE_CutThirdLepVeto", 23 );
-//        if ( isPlusPlus() ) fillHistograms( hists, "SSppEE_CutThirdLepVeto", 23 + 30 );
-//        if ( isMinusMinus() ) fillHistograms( hists, "SSmmEE_CutThirdLepVeto", 23 + 60 );
-//
-//        // If it did not pass nisotrack == 0 cut, then skip
-//        if ( cutidx == 7 ) return;
-//        fillHistograms( hists, "SSEE_CutIsoTrackVeto", 24 );
-//        if ( isPlusPlus() ) fillHistograms( hists, "SSppEE_CutIsoTrackVeto", 24 + 30 );
-//        if ( isMinusMinus() ) fillHistograms( hists, "SSmmEE_CutIsoTrackVeto", 24 + 60 );
-//
-//        // Run the selection
-//        passSScommon( 0, cutidx );
-//
-//        // If it did not pass N-bjet = 0 cut, then skip
-//        if ( cutidx == 1 ) return;
-//        fillHistograms( hists, "SSEE_CutBVeto", 25 );
-//        if ( isPlusPlus() ) fillHistograms( hists, "SSppEE_CutBVeto", 25 + 30 );
-//        if ( isMinusMinus() ) fillHistograms( hists, "SSmmEE_CutBVeto", 25 + 60 );
-//
-//        // If it did not pass W-mass cut, then skip
-//        if ( cutidx == 2 ) return;
-//        fillHistograms( hists, "SSEE_CutWMjj", 26 );
-//        if ( isPlusPlus() ) fillHistograms( hists, "SSppEE_CutWMjj", 26 + 30 );
-//        if ( isMinusMinus() ) fillHistograms( hists, "SSmmEE_CutWMjj", 26 + 60 );
-//
-//        // If it did not pass LowMjj cut, then skip (to kill VBS contributions)
-//        if ( cutidx == 3 ) return;
-//        fillHistograms( hists, "SSEE_CutLowMjj", 27 );
-//        if ( isPlusPlus() ) fillHistograms( hists, "SSppEE_CutLowMjj", 27 + 30 );
-//        if ( isMinusMinus() ) fillHistograms( hists, "SSmmEE_CutLowMjj", 27 + 60 );
-//
-//        // If it did not pass LowDEtajj cut, then skip (to kill VBS contributions)
-//        if ( cutidx == 4 ) return;
-//        fillHistograms( hists, "SSEE_CutLowDEtajj", 28 );
-//        if ( isPlusPlus() ) fillHistograms( hists, "SSppEE_CutLowDEtajj", 28 + 30 );
-//        if ( isMinusMinus() ) fillHistograms( hists, "SSmmEE_CutLowDEtajj", 28 + 60 );
-//
-//        // If it did not pass MET cut, then skip
-//        if (!( wwwbaby.met_pt() > 40. )) return;
-//        fillHistograms( hists, "SSEM_CutMET", 29 );
-//        if ( isPlusPlus() ) fillHistograms( hists, "SSppEM_CutMET", 29 + 30 );
-//        if ( isMinusMinus() ) fillHistograms( hists, "SSmmEM_CutMET", 29 + 60 );
-//    }
-//
+//    if ( isSSEM() && Mll() > 40. && abs(wwwbaby.lep_pdgId()[lepidx["LbntLepton"][0]]) == 13 )
+//        fillHistograms( hists, "SSEM_CutSSEMLep", 1 );
+//    if ( isSSEE() && Mll() > 40. )
+//        fillHistograms( hists, "SSEE_CutSSEELep", 2 );
 //}
-////_________________________________________________________________________________________________
-///* Two SS lepton */
-//bool passpresel( int& cutidx )
-//{
-//    passSSpresel( 0, cutidx );
-//    if ( cutidx < 5 )
-//        return false;
-//    else
-//        return true;
-//}
-////_________________________________________________________________________________________________
-//bool passSkim()
-//{
-//    int cutidx = -1;
-//
-//    // If  did not pass two same sign leptons skip
-//    if (!( passpresel( cutidx ) ))
-//        return false;
-//
-//    // Now split based on lepton flavors
-//    if ( isSSMM() && Mll() > 40. ) return true;
-//    else if ( isSSEM() && Mll() > 30. ) return true;
-//    else if ( isSSEE() && Mll() > 40. ) return true;
-//    else return false;
-//}
+
+// eof

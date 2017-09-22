@@ -137,7 +137,6 @@ if [ "${DEBUG}" == true ]; then
     COMPILERFLAG=+g
     gdb --args root.exe -l -b -q 'run.C("'${SCANCHAINNAME}'","'${INPUTFILENAMES}'","'${INPUTTTREENAME}'","'${OUTPUTROOTNAME}'","'${NEVENTS}'", "'${COMPILERFLAG}'")'
 else
-
     if [ "${PERF}" == true ]; then
         COMPILERFLAG=+g
         root.exe -l -b -q 'run.C("'${SCANCHAINNAME}'","'${INPUTFILENAMES}'","'${INPUTTTREENAME}'","'${OUTPUTROOTNAME}'","'1'", "'${COMPILERFLAG}'")'

@@ -43,6 +43,6 @@ except:
 
 if foundBad:
     print "[RSR] removing output file because it does not deserve to live"
-    #os.system("rm ${OUTPUTNAME}.root")
+    os.system("rm %s" % args.filepath)
 else:
     print "[RSR] passed the rigorous sweeproot"
